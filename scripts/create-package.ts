@@ -1,9 +1,9 @@
-import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { cp, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { parseArgs } from "node:util";
-import * as p from "@clack/prompts";
+import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { cp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { parseArgs } from 'node:util';
+import * as p from '@clack/prompts';
 
 /**
  * Flags accepted by the script; any missing value is prompted for.
@@ -16,17 +16,17 @@ type CliArgs = {
   /** Template folder under `templates/`. */
   template?: string;
   /** Skip `pnpm install` after scaffolding. */
-  "skip-install": boolean;
+  'skip-install': boolean;
   /** Print usage and exit. */
   help: boolean;
 };
 
-const ROOT_DIR = join(import.meta.dirname, "..");
-const PACKAGES_DIR = join(ROOT_DIR, "packages");
-const TEMPLATES_DIR = join(ROOT_DIR, "templates");
-const SCOPE = "@storybookjs";
+const ROOT_DIR = join(import.meta.dirname, '..');
+const PACKAGES_DIR = join(ROOT_DIR, 'packages');
+const TEMPLATES_DIR = join(ROOT_DIR, 'templates');
+const SCOPE = '@storybookjs';
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-const PLACEHOLDER_FILES = ["README.md"];
+const PLACEHOLDER_FILES = ['README.md'];
 
 const HELP = `Usage: pnpm new [options]
 
@@ -53,27 +53,27 @@ const templates = (await readdir(TEMPLATES_DIR, { withFileTypes: true }))
 
 p.intro(`Create a ${SCOPE} package`);
 
-const name = await resolveOption("name", args.name, () =>
-  p.text({ message: "Package name", placeholder: "vite-plugin-foo", validate: validateName }),
+const name = await resolveOption('name', args.name, () =>
+  p.text({ message: 'Package name', placeholder: 'vite-plugin-foo', validate: validateName })
 );
 const nameError = validateName(name);
 if (nameError) fail(nameError);
 
-const description = await resolveOption("description", args.description, () =>
-  p.text({ message: "Description", placeholder: "One line about what it does" }),
+const description = await resolveOption('description', args.description, () =>
+  p.text({ message: 'Description', placeholder: 'One line about what it does' })
 );
 
 const template = await resolveOption(
-  "template",
+  'template',
   args.template ?? (templates.length === 1 ? templates[0] : undefined),
   () =>
     p.select({
-      message: "Template",
+      message: 'Template',
       options: templates.map((value) => ({ value, label: value })),
-    }),
+    })
 );
 if (!templates.includes(template)) {
-  fail(`Unknown template "${template}". Available: ${templates.join(", ")}`);
+  fail(`Unknown template "${template}". Available: ${templates.join(', ')}`);
 }
 
 const fullName = `${SCOPE}/${name}`;
@@ -85,8 +85,8 @@ const targetDir = join(PACKAGES_DIR, name);
 try {
   await cp(join(TEMPLATES_DIR, template), targetDir, { recursive: true });
 
-  const pkgPath = join(targetDir, "package.json");
-  const pkg = JSON.parse(await readFile(pkgPath, "utf8"));
+  const pkgPath = join(targetDir, 'package.json');
+  const pkg = JSON.parse(await readFile(pkgPath, 'utf8'));
   pkg.name = fullName;
   pkg.description = description;
   pkg.repository.directory = `packages/${name}`;
@@ -94,28 +94,28 @@ try {
 
   for (const file of PLACEHOLDER_FILES) {
     const path = join(targetDir, file);
-    const content = await readFile(path, "utf8");
+    const content = await readFile(path, 'utf8');
     // Function replacers, so `$&`-style patterns in user input stay literal.
     await writeFile(
       path,
-      content.replaceAll("{{name}}", () => name).replaceAll("{{description}}", () => description),
+      content.replaceAll('{{name}}', () => name).replaceAll('{{description}}', () => description)
     );
   }
 
-  run("pnpm", ["exec", "oxfmt", targetDir]);
+  run('pnpm', ['exec', 'oxfmt', targetDir]);
 } catch (error) {
   await rm(targetDir, { recursive: true, force: true });
   fail(`Scaffolding failed, removed packages/${name}:\n${errorMessage(error)}`);
 }
 
-if (!args["skip-install"]) {
+if (!args['skip-install']) {
   const spin = p.spinner();
-  spin.start("Installing dependencies");
+  spin.start('Installing dependencies');
   try {
-    run("pnpm", ["install"]);
-    spin.stop("Dependencies installed");
+    run('pnpm', ['install']);
+    spin.stop('Dependencies installed');
   } catch (error) {
-    spin.error("pnpm install failed");
+    spin.error('pnpm install failed');
     fail(`packages/${name} was created; run \`pnpm install\` once fixed:\n${errorMessage(error)}`);
   }
 }
@@ -129,13 +129,13 @@ function parseCliArgs(): CliArgs {
   const argv = process.argv.slice(2);
   try {
     const { values } = parseArgs({
-      args: argv[0] === "--" ? argv.slice(1) : argv,
+      args: argv[0] === '--' ? argv.slice(1) : argv,
       options: {
-        name: { type: "string" },
-        description: { type: "string" },
-        template: { type: "string" },
-        "skip-install": { type: "boolean", default: false },
-        help: { type: "boolean", short: "h", default: false },
+        name: { type: 'string' },
+        description: { type: 'string' },
+        template: { type: 'string' },
+        'skip-install': { type: 'boolean', default: false },
+        help: { type: 'boolean', short: 'h', default: false },
       },
     });
     return values;
@@ -149,11 +149,11 @@ function parseCliArgs(): CliArgs {
  * Runs a command from the repo root, surfacing its stderr when it fails.
  */
 function run(command: string, commandArgs: string[]): void {
-  const result = spawnSync(command, commandArgs, { cwd: ROOT_DIR, encoding: "utf8" });
+  const result = spawnSync(command, commandArgs, { cwd: ROOT_DIR, encoding: 'utf8' });
   if (result.error) throw result.error;
   if (result.status !== 0) {
     throw new Error(
-      `\`${command} ${commandArgs.join(" ")}\` failed\n${result.stderr || result.stdout}`,
+      `\`${command} ${commandArgs.join(' ')}\` failed\n${result.stderr || result.stdout}`
     );
   }
 }
@@ -171,14 +171,14 @@ function errorMessage(error: unknown): string {
 async function resolveOption(
   flag: string,
   value: string | undefined,
-  prompt: () => Promise<string | symbol>,
+  prompt: () => Promise<string | symbol>
 ): Promise<string> {
   if (value !== undefined) return value;
   if (!interactive) fail(`Missing --${flag} (required when not running in a terminal)`);
 
   const answer = await prompt();
-  if (typeof answer === "symbol") {
-    p.cancel("Cancelled");
+  if (typeof answer === 'symbol') {
+    p.cancel('Cancelled');
     process.exit(1);
   }
   return answer;
@@ -188,8 +188,8 @@ async function resolveOption(
  * Returns an error message when the name is invalid or already taken locally.
  */
 function validateName(value: string | undefined): string | undefined {
-  if (!value) return "Name is required";
-  if (!NAME_PATTERN.test(value)) return "Use lowercase letters, digits and dashes only";
+  if (!value) return 'Name is required';
+  if (!NAME_PATTERN.test(value)) return 'Use lowercase letters, digits and dashes only';
   if (existsSync(join(PACKAGES_DIR, value))) return `packages/${value} already exists`;
   return undefined;
 }
@@ -199,8 +199,8 @@ function validateName(value: string | undefined): string | undefined {
  */
 async function isPublished(packageName: string): Promise<boolean> {
   try {
-    const url = `https://registry.npmjs.org/${packageName.replace("/", "%2f")}`;
-    const response = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(3000) });
+    const url = `https://registry.npmjs.org/${packageName.replace('/', '%2f')}`;
+    const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
     return response.ok;
   } catch {
     return false;

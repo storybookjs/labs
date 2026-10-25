@@ -6,6 +6,13 @@
   },
   "rules": {},
   "env": {
-    "builtin": true
-  }
+    "builtin": true,
+    "node": true
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts"],
+      "plugins": ["vitest"]
+    }
+  ]
 }

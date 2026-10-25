@@ -1,12 +1,12 @@
-import { configDefaults, defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    projects: ["packages/*"],
+    projects: ['packages/*'],
     forceRerunTriggers: [
       ...configDefaults.forceRerunTriggers,
-      "**/pnpm-lock.yaml",
-      "**/tsconfig*.json",
+      '**/pnpm-lock.yaml',
+      '**/tsconfig*.json',
     ],
     passWithNoTests: true,
   },
