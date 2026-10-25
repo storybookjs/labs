@@ -1,0 +1,3 @@
+# @storybookjs/{{name}}
+
+{{description}}
