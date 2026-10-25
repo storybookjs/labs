@@ -1,2 +1,16 @@
 packages:
   - packages/*
+
+# `pnpm add` writes new versions here; versions outside these ranges are rejected.
+catalogMode: strict
+cleanupUnusedCatalogs: true
+
+catalogs:
+  dev:
+    "@clack/prompts": ^1.8.1
+    "@types/node": ^26.6.5
+    oxfmt: ^0.74.0
+    oxlint: ^1.89.0
+    tsdown: ^0.23.2
+    typescript: ^7.0.2
+    vitest: ^5.0.5
