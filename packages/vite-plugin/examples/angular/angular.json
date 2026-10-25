@@ -1,0 +1,53 @@
+{
+  "$schema": "../../node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": {
+    "packageManager": "npm",
+    "analytics": false,
+    "cache": {
+      "enabled": true,
+      "path": ".angular/cache"
+    }
+  },
+  "projects": {
+    "angular-example": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/main.ts",
+            "index": "index.html",
+            "tsConfig": "tsconfig.app.json",
+            "outputPath": "dist/app",
+            "styles": ["src/styles.css"],
+            "polyfills": []
+          },
+          "configurations": {
+            "development": {
+              "optimization": false,
+              "sourceMap": true,
+              "extractLicenses": false
+            },
+            "production": {
+              "optimization": true,
+              "outputHashing": "all"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "./tools/builders:dev-server",
+          "options": {
+            "buildTarget": "angular-example:build:development",
+            "host": "127.0.0.1",
+            "port": 5203
+          }
+        }
+      }
+    }
+  }
+}

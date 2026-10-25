@@ -1,0 +1,28 @@
+{
+  "name": "@storybookjs/vite-plugin-react-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:middleware": "node server.mjs",
+    "storybook": "vite --mode storybook",
+    "build": "tsc -b && vite build",
+    "storybook:build": "vite build --mode storybook",
+    "test:e2e": "playwright test -c playwright.config.ts"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@storybook/react-vite": "https://pkg.pr.new/@storybook/react-vite@bd420ab3b60",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "storybook": "https://pkg.pr.new/storybook@bd420ab3b60",
+    "typescript": "5.9.3",
+    "vite": "^7.3.1"
+  }
+}

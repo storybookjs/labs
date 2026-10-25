@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "isolatedDeclarations": true,
+    // Destructures `getBuilders()` tuples, which this flag would type as possibly undefined.
+    "noUncheckedIndexedAccess": false
+  },
+  "include": ["src"]
+}

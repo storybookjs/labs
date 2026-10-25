@@ -1,0 +1,34 @@
+{
+  "name": "@storybookjs/vite-plugin-nuxt-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "dev": "nuxt dev --host 127.0.0.1 --port 5213",
+    "build": "nuxt typecheck && nuxt build",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "storybook": "vite --mode storybook --host 127.0.0.1 --port 5215 --strictPort",
+    "storybook:build": "vite build --mode storybook",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "nuxt": "4.6.2",
+    "vue": "^3.5.44",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@storybook/vue3-vite": "https://pkg.pr.new/@storybook/vue3-vite@bd420ab3b60",
+    "@types/node": "^22.19.1",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "h3": "^1.15.11",
+    "storybook": "https://pkg.pr.new/storybook@bd420ab3b60",
+    "typescript": "5.9.3",
+    "vite": "^7.3.1",
+    "vue-tsc": "^3.3.13"
+  }
+}

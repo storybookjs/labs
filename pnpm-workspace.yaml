@@ -1,8 +1,8 @@
 packages:
   - packages/*
+  - packages/*/examples/*
 
-# `pnpm add` writes new versions here; versions outside these ranges are rejected.
-catalogMode: strict
+# Shared versions for root tooling only; packages pin their own dependencies.
 cleanupUnusedCatalogs: true
 
 catalogs:
@@ -14,3 +14,33 @@ catalogs:
     tsdown: ^0.23.2
     typescript: ^7.0.2
     vitest: ^5.0.5
+
+# Keep root dependencies from satisfying packages' peer dependencies.
+resolvePeersFromWorkspaceRoot: false
+
+packageExtensions:
+  # Imports `typescript` without declaring it; resolve the consuming app's version.
+  '@analogjs/vite-plugin-angular':
+    peerDependencies:
+      typescript: '*'
+
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: true
+  lmdb: false
+  msgpackr-extract: false
+
+# Allows the pkg.pr.new Storybook canaries.
+blockExoticSubdeps: false
+
+minimumReleaseAgeExclude:
+  - '@vue/compiler-core@3.5.43'
+  - '@vue/compiler-dom@3.5.43'
+  - '@vue/compiler-sfc@3.5.43'
+  - '@vue/compiler-ssr@3.5.43'
+  - '@vue/reactivity@3.5.43'
+  - '@vue/runtime-core@3.5.43'
+  - '@vue/runtime-dom@3.5.43'
+  - '@vue/server-renderer@3.5.43'
+  - '@vue/shared@3.5.43'
+  - vue@3.5.43

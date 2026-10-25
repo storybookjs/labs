@@ -1,0 +1,21 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../.oxlintrc.json"],
+  "overrides": [
+    {
+      "files": ["examples/*/src/**", "examples/*/.storybook/preview.{js,ts}"],
+      "env": {
+        "node": false,
+        "browser": true
+      }
+    },
+    {
+      "files": ["examples/react/**/*.{js,jsx,ts,tsx}"],
+      "plugins": ["react", "jsx-a11y"]
+    },
+    {
+      "files": ["examples/vue/**/*.{js,ts,vue}"],
+      "plugins": ["vue"]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "builders": {
+    "dev-server": {
+      "implementation": "./dev-server.js",
+      "schema": "./dev-server-schema.json",
+      "description": "Angular CLI development server with the Storybook Vite dev server mounted as middleware."
+    }
+  }
+}
