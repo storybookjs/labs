@@ -1,0 +1,30 @@
+{
+  "name": "@storybookjs/labs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Experiments from the Storybook team",
+  "homepage": "https://github.com/storybookjs/labs#readme",
+  "bugs": {
+    "url": "https://github.com/storybookjs/labs/issues"
+  },
+  "license": "ISC",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storybookjs/labs.git"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "lint": "oxlint --no-error-on-unmatched-pattern",
+    "lint:fix": "oxlint --fix --no-error-on-unmatched-pattern",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0"
+  },
+  "packageManager": "pnpm@11.26.0"
+}
