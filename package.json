@@ -16,22 +16,19 @@
   "type": "module",
   "scripts": {
     "new": "node scripts/create-package.ts",
-    "build": "pnpm --filter \"./packages/*\" --if-present build",
-    "typecheck": "tsc --noEmit && pnpm --filter \"./packages/*\" --if-present typecheck",
-    "test": "vitest run",
-    "lint": "oxlint --no-error-on-unmatched-pattern",
-    "lint:fix": "oxlint --fix --no-error-on-unmatched-pattern",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "build": "vp run --filter \"./packages/*\" build",
+    "typecheck": "tsc --noEmit && vp run --filter \"./packages/*\" typecheck",
+    "test": "vp test run",
+    "lint": "vp lint --no-error-on-unmatched-pattern",
+    "lint:fix": "vp lint --fix --no-error-on-unmatched-pattern",
+    "fmt": "vp fmt",
+    "fmt:check": "vp fmt --check"
   },
   "devDependencies": {
     "@clack/prompts": "catalog:dev",
     "@types/node": "catalog:dev",
-    "oxfmt": "catalog:dev",
-    "oxlint": "catalog:dev",
-    "tsdown": "catalog:dev",
     "typescript": "catalog:dev",
-    "vitest": "catalog:dev"
+    "vite-plus": "catalog:dev"
   },
   "engines": {
     "node": ">=22.19.0"

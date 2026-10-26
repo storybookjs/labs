@@ -15,7 +15,7 @@ type CliArgs = {
   description?: string;
   /** Template folder under `templates/`. */
   template?: string;
-  /** Skip `pnpm install` after scaffolding. */
+  /** Skip `vp install` after scaffolding. */
   'skip-install': boolean;
   /** Print usage and exit. */
   help: boolean;
@@ -36,7 +36,7 @@ Options:
   --name <name>          Package name, published as ${SCOPE}/<name>
   --description <text>   One-line package description
   --template <template>  Template folder under templates/
-  --skip-install         Don't run pnpm install afterwards
+  --skip-install         Don't run vp install afterwards
   -h, --help             Show this help`;
 
 const args = parseCliArgs();
@@ -102,7 +102,7 @@ try {
     );
   }
 
-  run('pnpm', ['exec', 'oxfmt', targetDir]);
+  run('vp', ['fmt', targetDir]);
 } catch (error) {
   await rm(targetDir, { recursive: true, force: true });
   fail(`Scaffolding failed, removed packages/${name}:\n${errorMessage(error)}`);
@@ -112,11 +112,11 @@ if (!args['skip-install']) {
   const spin = p.spinner();
   spin.start('Installing dependencies');
   try {
-    run('pnpm', ['install']);
+    run('vp', ['install']);
     spin.stop('Dependencies installed');
   } catch (error) {
-    spin.error('pnpm install failed');
-    fail(`packages/${name} was created; run \`pnpm install\` once fixed:\n${errorMessage(error)}`);
+    spin.error('vp install failed');
+    fail(`packages/${name} was created; run \`vp install\` once fixed:\n${errorMessage(error)}`);
   }
 }
 

@@ -21,28 +21,23 @@ jobs:
         with:
           persist-credentials: false
 
-      # Version is read from package.json#packageManager.
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          cache: true
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      # Installs vp at the catalog's vite-plus version, then runs `vp install`.
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
           node-version: 22
-
-      - run: pnpm install --frozen-lockfile
+          cache: true
 
       - name: Lint
-        run: pnpm lint --format github
+        run: vp run lint --format github
 
       - name: Format
-        run: pnpm fmt:check
+        run: vp run fmt:check
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: vp run typecheck
 
       - name: Build
-        run: pnpm build
+        run: vp run build
 
   test:
     name: Test
@@ -51,28 +46,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # Full history so `vitest --changed` can diff against the base branch.
+          # Full history so `vp test --changed` can diff against the base branch.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          cache: true
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
           node-version: 22
-
-      - run: pnpm install --frozen-lockfile
+          cache: true
 
       - name: Test affected packages
         if: github.event_name == 'pull_request'
-        run: pnpm test --changed "origin/${BASE_REF}"
+        run: vp test run --changed "origin/${BASE_REF}"
         env:
           BASE_REF: ${{ github.base_ref }}
 
       - name: Test all packages
         if: github.event_name != 'pull_request'
-        run: pnpm test
+        run: vp test run
 
   template:
     name: Template smoke test
@@ -82,24 +72,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          cache: true
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
           node-version: 22
-
-      - run: pnpm install --frozen-lockfile
+          cache: true
 
       - name: Scaffold a package
-        run: pnpm new --name ci-smoke --description "CI smoke test" --skip-install
+        run: vp run new --name ci-smoke --description "CI smoke test" --skip-install
 
       # The new package adds a lockfile importer, so the lockfile can't be frozen here.
-      - run: pnpm install --no-frozen-lockfile
+      - run: vp install --no-frozen-lockfile
 
       - name: Typecheck, build & test
-        run: pnpm typecheck && pnpm build && pnpm test
+        run: vp run typecheck && vp run build && vp test run
 
   zizmor:
     name: Audit workflows

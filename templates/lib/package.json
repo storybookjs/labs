@@ -24,8 +24,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsdown",
-    "prepack": "tsdown",
+    "build": "vp pack",
+    "prepack": "vp pack",
     "typecheck": "tsc --noEmit"
   }
 }
