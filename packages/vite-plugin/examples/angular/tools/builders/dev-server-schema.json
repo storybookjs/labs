@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Storybook-aware Angular development server",
+  "description": "Mirrors the @angular/build:dev-server options and adds the embedded Storybook mount.",
+  "type": "object",
+  "properties": {
+    "buildTarget": {
+      "type": "string",
+      "description": "Application build target whose output the development server serves."
+    },
+    "port": {
+      "type": "number",
+      "default": 4200,
+      "description": "Port the development server listens on."
+    },
+    "host": {
+      "type": "string",
+      "default": "localhost",
+      "description": "Host the development server listens on."
+    },
+    "proxyConfig": {
+      "type": "string",
+      "description": "Proxy configuration file, resolved against the workspace root."
+    },
+    "ssl": {
+      "type": "boolean",
+      "default": false,
+      "description": "Serve over HTTPS."
+    },
+    "sslKey": {
+      "type": "string",
+      "description": "SSL key to serve with HTTPS."
+    },
+    "sslCert": {
+      "type": "string",
+      "description": "SSL certificate to serve with HTTPS."
+    },
+    "allowedHosts": {
+      "description": "Hosts the development server responds to. `true` allows any host.",
+      "default": [],
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "define": {
+      "type": "object",
+      "description": "Global identifiers replaced during the build.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "headers": {
+      "type": "object",
+      "description": "Custom headers added to every response.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "open": {
+      "type": "boolean",
+      "default": false,
+      "description": "Open the default browser once the server is listening."
+    },
+    "verbose": {
+      "type": "boolean",
+      "description": "Log verbose build output."
+    },
+    "liveReload": {
+      "type": "boolean",
+      "default": true,
+      "description": "Reload the browser when the application rebuilds."
+    },
+    "servePath": {
+      "type": "string",
+      "description": "Path the application is served from."
+    },
+    "hmr": {
+      "type": "boolean",
+      "description": "Apply Angular component updates without a full page reload."
+    },
+    "watch": {
+      "type": "boolean",
+      "default": true,
+      "description": "Rebuild the application when its source files change."
+    },
+    "poll": {
+      "type": "number",
+      "description": "File watching polling interval in milliseconds."
+    },
+    "inspect": {
+      "default": false,
+      "description": "Activate the Node.js inspector for server-side rendering.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "prebundle": {
+      "default": true,
+      "description": "Prebundle third-party dependencies.",
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": ["exclude"]
+        }
+      ]
+    },
+    "storybookConfigDir": {
+      "type": "string",
+      "description": "Overrides the Storybook configuration directory exported by storybook-middleware.js."
+    },
+    "storybookBase": {
+      "type": "string",
+      "description": "Overrides the embedded Storybook mount path exported by storybook-middleware.js."
+    }
+  },
+  "additionalProperties": false,
+  "required": ["buildTarget"]
+}

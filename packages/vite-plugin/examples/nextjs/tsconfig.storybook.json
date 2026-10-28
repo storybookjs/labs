@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "checkJs": true,
+    "incremental": false,
+    "plugins": [],
+    "types": ["node", "react", "react-dom", "vite/client"],
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    ".storybook/**/*.ts",
+    "src/components/**/*.ts",
+    "src/components/**/*.tsx",
+    "next.config.mjs",
+    "storybook-middleware.mjs",
+    "server.mjs",
+    "playwright.config.ts",
+    "e2e-tests/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

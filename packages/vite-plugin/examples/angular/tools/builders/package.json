@@ -1,0 +1,7 @@
+{
+  "name": "@experimental-vite-plugin/angular-example-builders",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "builders": "./builders.json"
+}

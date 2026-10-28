@@ -1,8 +1,8 @@
 packages:
   - packages/*
+  - packages/*/examples/*
 
-# `pnpm add` writes new versions here; versions outside these ranges are rejected.
-catalogMode: strict
+# Shared versions for root tooling only; packages pin their own dependencies.
 cleanupUnusedCatalogs: true
 
 catalogs:
@@ -10,12 +10,54 @@ catalogs:
     '@clack/prompts': ^1.8.1
     '@types/node': ^26.6.5
     typescript: ^7.0.2
+    # Vite+ core, for packages that build or test with `vp`.
     vite: npm:@voidzero-dev/vite-plus-core@1.4.0
     vite-plus: 1.4.0
+
+# The nuxt-storybook canary's `^11.0.0-alpha.5` ranges would pull a second Storybook from npm.
 overrides:
-  vite@*: catalog:dev
+  '@storybook-vue/nuxt>@storybook/builder-vite': https://pkg.pr.new/storybookjs/storybook/@storybook/builder-vite@5170f92e5a8edca2a71e5f22cb0503aeb47f420a
+  '@storybook-vue/nuxt>@storybook/vue3': https://pkg.pr.new/storybookjs/storybook/@storybook/vue3@5170f92e5a8edca2a71e5f22cb0503aeb47f420a
+  '@storybook-vue/nuxt>@storybook/vue3-vite': https://pkg.pr.new/@storybook/vue3-vite@5170f92
+
+# Keep root dependencies from satisfying packages' peer dependencies.
+resolvePeersFromWorkspaceRoot: false
+
+# Refreshes the examples' injected copies of the built plugin; `dev` skips `dist` cleaning so
+# its hardlinks stay live instead.
+syncInjectedDepsAfterScripts:
+  - build
+  - prepare
+
+packageExtensions:
+  # Imports `typescript` without declaring it; resolve the consuming app's version.
+  '@analogjs/vite-plugin-angular':
+    peerDependencies:
+      typescript: '*'
+
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: true
+  lmdb: false
+  msgpackr-extract: false
+
+# Allows the pkg.pr.new Storybook canaries.
+blockExoticSubdeps: false
+
+minimumReleaseAgeExclude:
+  - '@vue/compiler-core@3.5.43'
+  - '@vue/compiler-dom@3.5.43'
+  - '@vue/compiler-sfc@3.5.43'
+  - '@vue/compiler-ssr@3.5.43'
+  - '@vue/reactivity@3.5.43'
+  - '@vue/runtime-core@3.5.43'
+  - '@vue/runtime-dom@3.5.43'
+  - '@vue/server-renderer@3.5.43'
+  - '@vue/shared@3.5.43'
+  - vue@3.5.43
+
 peerDependencyRules:
-  allowAny:
-    - vite
+  # The Vite+ core alias reports its own version (1.x) to Vitest's `vite` peer.
   allowedVersions:
-    vite: '*'
+    'vitest>vite': '*'
+    '@vitest/mocker>vite': '*'

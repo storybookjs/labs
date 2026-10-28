@@ -29,10 +29,36 @@ export default defineConfig({
         files: ['**/*.test.ts'],
         plugins: ['vitest'],
       },
+      {
+        files: [
+          'packages/vite-plugin/examples/*/src/**',
+          'packages/vite-plugin/examples/*/.storybook/preview.{js,ts}',
+        ],
+        env: {
+          node: false,
+          browser: true,
+        },
+      },
+      {
+        // Examples are plain Vite apps, so their configs import `vite` directly.
+        files: ['packages/vite-plugin/examples/**'],
+        rules: {
+          'vite-plus/prefer-vite-plus-imports': 'off',
+        },
+      },
+      {
+        files: ['packages/vite-plugin/examples/react/**/*.{js,jsx,ts,tsx}'],
+        plugins: ['react', 'jsx-a11y'],
+      },
+      {
+        files: ['packages/vite-plugin/examples/vue/**/*.{js,ts,vue}'],
+        plugins: ['vue'],
+      },
     ],
     options: {
       typeAware: true,
-      typeCheck: true,
+      // tsgolint can't check `.vue`/Angular/Nuxt sources; `typecheck` scripts own type errors.
+      typeCheck: false,
     },
     jsPlugins: [
       {

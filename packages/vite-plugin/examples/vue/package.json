@@ -1,0 +1,32 @@
+{
+  "name": "@storybookjs/vite-plugin-vue-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5183",
+    "storybook": "vite --mode storybook --port 5185",
+    "build": "vue-tsc --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "storybook:build": "vite build --mode storybook",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@storybook/vue3-vite": "https://pkg.pr.new/@storybook/vue3-vite@5170f92",
+    "@storybookjs/vite-plugin": "workspace:*",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "storybook": "https://pkg.pr.new/storybook@5170f92",
+    "typescript": "5.9.3",
+    "vite": "^7.3.1",
+    "vue-tsc": "^3.3.11"
+  },
+  "dependenciesMeta": {
+    "@storybookjs/vite-plugin": {
+      "injected": true
+    }
+  }
+}

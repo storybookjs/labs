@@ -1,0 +1,72 @@
+{
+  "name": "@storybookjs/vite-plugin",
+  "version": "0.0.0",
+  "description": "Experimental Storybook integration for Vite",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storybookjs/labs.git",
+    "directory": "packages/vite-plugin"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./preset": "./dist/preset.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch --no-clean",
+    "prepare": "vp pack",
+    "prepack": "vp pack",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "vp run --filter \"./examples/*\" test:e2e",
+    "test:e2e:react": "vp run --filter ./examples/react test:e2e",
+    "test:e2e:vue": "vp run --filter ./examples/vue test:e2e",
+    "test:e2e:nextjs": "vp run --filter ./examples/nextjs test:e2e",
+    "test:e2e:angular": "vp run --filter ./examples/angular test:e2e",
+    "test:e2e:nuxt": "vp run --filter ./examples/nuxt test:e2e",
+    "example:dev": "vp run --filter ./examples/react dev",
+    "example:storybook": "vp run --filter ./examples/react storybook",
+    "example:build": "vp run --filter ./examples/react build",
+    "example:storybook:build": "vp run --filter ./examples/react storybook:build",
+    "example:vue:dev": "vp run --filter ./examples/vue dev",
+    "example:vue:storybook": "vp run --filter ./examples/vue storybook",
+    "example:vue:build": "vp run --filter ./examples/vue build",
+    "example:vue:storybook:build": "vp run --filter ./examples/vue storybook:build",
+    "example:nextjs:dev": "vp run --filter ./examples/nextjs dev",
+    "example:nextjs:build": "vp run --filter ./examples/nextjs build",
+    "example:angular:dev": "vp run --filter ./examples/angular dev",
+    "example:angular:storybook": "vp run --filter ./examples/angular storybook",
+    "example:angular:build": "vp run --filter ./examples/angular build",
+    "example:angular:storybook:build": "vp run --filter ./examples/angular storybook:build",
+    "example:nuxt:dev": "vp run --filter ./examples/nuxt dev",
+    "example:nuxt:storybook": "vp run --filter ./examples/nuxt storybook",
+    "example:nuxt:build": "vp run --filter ./examples/nuxt build",
+    "example:nuxt:storybook:build": "vp run --filter ./examples/nuxt storybook:build"
+  },
+  "dependencies": {
+    "pathe": "^1.1.2",
+    "polka": "^1.0.0-next.28"
+  },
+  "peerDependencies": {
+    "storybook": "^11.0.0-alpha.8",
+    "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
+  },
+  "devDependencies": {
+    "storybook": "https://pkg.pr.new/storybook@5170f92",
+    "vite": "catalog:dev"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
