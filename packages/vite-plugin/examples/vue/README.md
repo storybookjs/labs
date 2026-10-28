@@ -1,6 +1,6 @@
 # Vue example
 
-A small Vue 3 + TypeScript app using `experimental_vitePlugin` from `@storybook/vue3-vite/node`.
+A small Vue 3 + TypeScript app using `experimental_vitePlugin` from `@storybookjs/vite-plugin`.
 The same typed button powers the reactive counter and two Storybook stories.
 
 ## Run from the repository root
@@ -17,7 +17,7 @@ Playwright, the repository root supplies TypeScript and Node types; this workspa
 | `pnpm --filter @storybookjs/vite-plugin-vue-example run storybook:build` | Build static Storybook only.                                                                    |
 | `pnpm --filter @storybookjs/vite-plugin-vue-example run test:e2e`        | Run the Chromium integration tests.                                                             |
 
-Both Storybook dependencies use the **bd420ab3b60** canary: `storybook` and `@storybook/vue3-vite`.
+Both Storybook dependencies use the **5170f92** canary: `storybook` and `@storybook/vue3-vite`.
 The framework pulls the matching builder and Vue renderer. Do not substitute a stable release,
 an arbitrary `11.0.0-alpha.0`, or the `create-storybook` scaffolder.
 

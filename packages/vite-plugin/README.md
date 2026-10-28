@@ -1,37 +1,12 @@
 # @storybookjs/vite-plugin
 
-An experimental, ESM-only extraction of Storybook's Vite plugin. It embeds Storybook in an
-existing Vite dev server and adds a dedicated Storybook dev/build mode.
+An experimental vite plugin to run Storybook and expose it through your vite server.
 
 ## Installation
 
-This package starts at version `0.0.0`; publication to npm is not assumed. Run `pnpm install`
-at the labs repository root, then `pnpm pack` in `packages/vite-plugin`, and install the
-resulting archive in your application. `pnpm pack` runs the package build automatically; use
-pnpm rather than npm, because only pnpm applies the `publishConfig.exports` that point at `dist`.
-
-Replace the archive path below with the actual local path. Install the matching canary core
-and a Vite-based Storybook framework together:
-
-```sh
-npm install --save-dev /path/to/storybookjs-vite-plugin-0.0.0.tgz \
-  vite@^7.3.1 \
-  https://pkg.pr.new/storybook@bd420ab3b60 \
-  https://pkg.pr.new/@storybook/react-vite@bd420ab3b60
 ```
-
-After publication, `@storybookjs/vite-plugin` can replace the archive specifier.
-
-- The required core canary is `https://pkg.pr.new/storybook@bd420ab3b60`.
-- For React, use `https://pkg.pr.new/@storybook/react-vite@bd420ab3b60` and your application's
-  React dependencies. Other frameworks must use a compatible Vite-based Storybook framework.
-- The canary reports version `11.0.0-alpha.0`, which is the package's exact Storybook peer
-  requirement. That version number alone does **not** identify the required canary contents;
-  installing an arbitrary alpha or stable release is not equivalent.
-- A `create-storybook` canary URL is a **scaffolder**, not the `storybook` runtime dependency.
-  It cannot replace the core URL above.
-- The inherited Vite peer range is `^6.3.0 || ^7.0.0 || ^8.0.0`; local development uses
-  `^7.3.1`. Compatibility across the full range needs integration testing.
+pnpm i @storybookjs/vite-plugin
+```
 
 ## Usage
 
@@ -39,40 +14,21 @@ Add the plugin alongside your existing application plugins in the Vite configura
 
 ```ts
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import {
   experimental_vitePlugin,
   type experimental_VitePluginUserOptions,
 } from '@storybookjs/vite-plugin';
 
-const storybookOptions = {
+// default values
+const storybookOptions: experimental_VitePluginUserOptions = {
   configDir: '.storybook',
   base: '/__storybook',
-} satisfies experimental_VitePluginUserOptions;
+}
 
 export default defineConfig({
-  plugins: [react(), experimental_vitePlugin(storybookOptions)],
+  plugins: [experimental_vitePlugin(storybookOptions)],
 });
 ```
-
-The React Vite plugin in this example belongs to the host application; install it there if
-the application does not already use it. Keep your normal Storybook configuration, stories,
-and compatible addons. For example, the Storybook main configuration can contain:
-
-```ts
-import type { StorybookConfig } from '@storybook/react-vite';
-
-const config: StorybookConfig = {
-  framework: { name: '@storybook/react-vite', options: {} },
-  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-};
-
-export default config;
-```
-
-The package root exports only `experimental_vitePlugin` and the
-`experimental_VitePluginUserOptions` type. The bundled preset is an internal entry and must
-not be manually registered in Storybook.
 
 ### Modes
 
@@ -83,19 +39,6 @@ not be manually registered in Storybook.
 | `vite build --mode storybook` | Static Storybook build only; skips the host app build.                      |
 | `vite build`                  | Normal host app build; the plugin does not activate.                        |
 | `vite preview`                | Normal Vite preview; the plugin does not activate.                          |
-
-For the usual port, visit `http://localhost:5173/__storybook/` in embedded mode or
-`http://localhost:5173/` in dedicated mode. A bare embedded mount redirects to its
-trailing-slash form, preserving the query string. Other host routes are left alone.
-
-The preview uses a separate HMR path, `/__storybook-hmr`, on the shared HTTP server.
-Storybook's server-channel upgrades are also forwarded through that server. Keep these
-WebSocket routes available when placing the dev server behind a proxy. The plugin forwards
-Vite's `server.allowedHosts`; keep an explicit allowlist when exposing a dev server.
-
-Static output defaults to `storybook-static` beneath Vite's project root. Serve that output
-with a static HTTP server; `vite preview` does not start Storybook or automatically select
-its output directory.
 
 ### Middleware mode
 
@@ -160,7 +103,7 @@ Lint, formatting, typechecking, and unit tests run from the labs repository root
 | Package command                | Purpose                                                                     |
 | ------------------------------ | --------------------------------------------------------------------------- |
 | `pnpm build`                   | Bundle the public entry and private preset with tsdown.                     |
-| `pnpm dev`                     | Rebuild `dist` on change, for linking the package outside this repository.  |
+| `pnpm dev`                     | Rebuild `dist` on change; the examples pick up each rebuild.                |
 | `pnpm typecheck`               | Check package source with TypeScript.                                       |
 | `pnpm example:dev`             | Start the embedded React example.                                           |
 | `pnpm example:storybook`       | Start the example in dedicated mode.                                        |
@@ -172,19 +115,3 @@ Lint, formatting, typechecking, and unit tests run from the labs repository root
 The example commands above target React; `example:vue:*`, `example:nextjs:*`,
 `example:angular:*`, and `example:nuxt:*` are the equivalents for the other workspaces. The Next.js example
 demonstrates the embedded mount only, so it has no `:storybook` aliases.
-
-Install the browser used by the examples with `pnpm exec playwright install chromium` before E2E
-tests. The workspace suites are responsible for browser-level embedded, dedicated, middleware,
-HMR, restart, and static-output validation; unit tests alone do not establish those behaviors.
-
-tsdown emits ESM `.mjs` entries and `.d.mts` declarations. It keeps package dependencies and
-peers external, including Storybook's internal subpaths. Only `pathe` and `polka` are runtime
-dependencies; Storybook and Vite remain peers. Playwright, Storybook, and Vite are package
-development dependencies; Node types, TypeScript, Vitest, and tsdown come from the repository root.
-
-Inside the workspace, `exports` point at `src`, so consumers load the TypeScript sources
-directly; `publishConfig.exports` switches them to `dist` when packing. The preset resolves to
-the sibling TypeScript entry from source and to the sibling `.mjs` entry in a built package.
-Node 22.19+ can load the TypeScript sources. The `prepack` script runs the build.
-
- 

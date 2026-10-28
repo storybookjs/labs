@@ -16,21 +16,17 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
-    "./preset": "./src/preset.ts",
+    ".": "./dist/index.mjs",
+    "./preset": "./dist/preset.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {
-    "access": "public",
-    "exports": {
-      ".": "./dist/index.mjs",
-      "./preset": "./dist/preset.mjs",
-      "./package.json": "./package.json"
-    }
+    "access": "public"
   },
   "scripts": {
     "build": "vp pack",
-    "dev": "vp pack --watch",
+    "dev": "vp pack --watch --no-clean",
+    "prepare": "vp pack",
     "prepack": "vp pack",
     "typecheck": "tsc --noEmit",
     "test:e2e": "vp run --filter \"./examples/*\" test:e2e",
@@ -63,11 +59,11 @@
     "polka": "^1.0.0-next.28"
   },
   "peerDependencies": {
-    "storybook": "11.0.0-alpha.0",
+    "storybook": "^11.0.0-alpha.8",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
   },
   "devDependencies": {
-    "storybook": "https://pkg.pr.new/storybook@bd420ab3b60",
+    "storybook": "https://pkg.pr.new/storybook@5170f92",
     "vite": "catalog:dev"
   },
   "engines": {

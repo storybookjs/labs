@@ -21,7 +21,6 @@ import {
   registerIndexJsonRoute,
   type StoryIndexGenerator,
   useStatics,
-  addGlobalToContext,
   withTelemetry,
 } from 'storybook/internal/core-server';
 import type { Builder, CoreConfig, Options, Presets } from 'storybook/internal/types';
@@ -41,6 +40,7 @@ import { createPrefixGuard } from './prefix-guard.ts';
 import type { VitePluginPresetOptions } from './preset.ts';
 import { startPreview } from './preview-lifecycle.ts';
 import { isPluginDisabled, withPluginDisabled } from './self-guard.ts';
+import { getSocketPaths } from './socket-paths.ts';
 import type { UserOptions } from './types.ts';
 
 export type { UserOptions as experimental_VitePluginUserOptions } from './types.ts';
@@ -54,7 +54,6 @@ type StorybookApp = {
 type ServerChannelOptions = Parameters<typeof getServerChannel>[1];
 
 const PLUGIN_NAME = 'storybook:vite-plugin';
-const HMR_PATH = '/__storybook-hmr';
 
 const PRESET_PATH = new URL(
   import.meta.url.endsWith('.ts') ? './preset.ts' : './preset.mjs',
@@ -142,7 +141,7 @@ function main(options?: UserOptions): PluginOption {
       app.use((req, res) => handlePolkaApp(previewApp, req, res));
 
       const core = await sb.presets.apply<CoreConfig>('core', {});
-      doTelemetry(app, core, storyIndexGeneratorPromise, sb);
+      void doTelemetry(app, core, storyIndexGeneratorPromise, sb);
 
       return { options: sb, app, previewBuilder };
     }));
@@ -202,12 +201,18 @@ function main(options?: UserOptions): PluginOption {
           allowedHosts: host.config.server.allowedHosts,
           host: typeof host.config.server.host === 'string' ? host.config.server.host : undefined,
         });
-        forwardServerChannelUpgrades(upgradeServer, getSharedUpgradeEmitter());
+        const { channelPath, hmrPath } = getSocketPaths({
+          middlewareMode: Boolean(host.config.server.middlewareMode),
+          hostBase: host.config.base,
+          previewBase: basePath,
+        });
+        forwardServerChannelUpgrades(upgradeServer, getSharedUpgradeEmitter(), channelPath);
         const builderServer = toBuilderServer(upgradeServer);
 
         const storybook = await loadStorybookApp(channel, builderServer, {
           base: basePath,
-          hmrPath: HMR_PATH,
+          hmrPath,
+          channelPath,
           allowedHosts: host.config.server.allowedHosts,
         });
         const reportPort = (): void => {
@@ -277,11 +282,22 @@ function hmrServerOf(hmr: HmrOptions | boolean | undefined): ViteHttpServer | un
   return typeof hmr === 'object' && hmr ? hmr.server : undefined;
 }
 
-function forwardServerChannelUpgrades(upgradeServer: ViteHttpServer, emitter: EventEmitter): void {
+function forwardServerChannelUpgrades(
+  upgradeServer: ViteHttpServer,
+  emitter: EventEmitter,
+  channelPath: string
+): void {
   const forward = (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
-    if (req.url?.startsWith(SERVER_CHANNEL_PATH)) {
-      emitter.emit('upgrade', req, socket, head);
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    if (url.pathname !== channelPath) {
+      return;
     }
+    // The server channel only accepts its default path; other host listeners still see the original URL.
+    const forwarded: IncomingMessage =
+      channelPath === SERVER_CHANNEL_PATH
+        ? req
+        : Object.create(req, { url: { value: `${SERVER_CHANNEL_PATH}${url.search}` } });
+    emitter.emit('upgrade', forwarded, socket, head);
   };
   upgradeServer.on('upgrade', forward);
   upgradeServer.once('close', () => upgradeServer.off('upgrade', forward));

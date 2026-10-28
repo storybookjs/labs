@@ -11,11 +11,5 @@
     "verbatimModuleSyntax": true,
     "types": ["node"]
   },
-  "include": [
-    "storybook-middleware.ts",
-    "vite.config.ts",
-    ".storybook/**/*.ts",
-    "playwright.config.ts",
-    "e2e-tests/**/*.ts"
-  ]
+  "include": [".storybook/**/*.ts", "playwright.config.ts", "e2e-tests/**/*.ts"]
 }

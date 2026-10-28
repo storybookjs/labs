@@ -1,6 +1,6 @@
 # React example
 
-A React 19 + TypeScript app using `experimental_vitePlugin` from `@storybook/react-vite/node`.
+A React 19 + TypeScript app using `experimental_vitePlugin` from `@storybookjs/vite-plugin`.
 There are no source aliases or links to a Storybook checkout.
 
 Install dependencies from the repository root first. Vite,
@@ -24,7 +24,7 @@ and host-server restart recovery. HMR tests temporarily edit only this example
 and restore files in `finally`; do not edit the fixture during a run. Storybook
 telemetry is disabled for all test servers.
 
-Both Storybook dependencies use the `bd420ab3b60` canary. Keep them aligned: the
+Both Storybook dependencies use the `5170f92` canary. Keep them aligned: the
 published React framework supplies its matching builder and renderer. The
 restart regression must retain a working server channel and preview HMR after
 Vite reloads its configuration; do not skip it to work around canary mismatches.

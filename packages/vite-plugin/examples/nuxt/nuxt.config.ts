@@ -1,7 +1,8 @@
-import {
-  experimental_vitePlugin,
-  type experimental_VitePluginUserOptions,
-} from '@storybook/vue3-vite/node';
+import path from 'node:path';
+
+import { experimental_vitePlugin } from '@storybookjs/vite-plugin';
+
+const STORYBOOK_BASE = '/__storybook';
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-01',
@@ -9,14 +10,22 @@ export default defineNuxtConfig({
   telemetry: false,
   // Stories belong to Storybook; keep them out of Nuxt's component and page scanning.
   ignore: ['**/*.stories.ts'],
-  hooks: {
-    'vite:serverCreated'(server) {
-      server.config.plugins?.push(
-        experimental_vitePlugin({
-          base: '/__storybook/',
-          hmrPath: '/__storybook_hmr',
-        } as experimental_VitePluginUserOptions)
-      );
+  modules: [
+    (_options, nuxt): void => {
+      if (!nuxt.options.dev) {
+        return;
+      }
+
+      nuxt.hook('vite:extendConfig', (config: { plugins?: unknown[] }, { isClient }) => {
+        if (isClient) {
+          config.plugins?.push(
+            experimental_vitePlugin({
+              configDir: path.join(nuxt.options.rootDir, '.storybook'),
+              base: STORYBOOK_BASE,
+            })
+          );
+        }
+      });
     },
-  },
+  ],
 });

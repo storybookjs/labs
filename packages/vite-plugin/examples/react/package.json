@@ -17,12 +17,18 @@
   },
   "devDependencies": {
     "@playwright/test": "1.58.2",
-    "@storybook/react-vite": "https://pkg.pr.new/@storybook/react-vite@bd420ab3b60",
+    "@storybook/react-vite": "https://pkg.pr.new/@storybook/react-vite@5170f92",
+    "@storybookjs/vite-plugin": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.7.0",
-    "storybook": "https://pkg.pr.new/storybook@bd420ab3b60",
+    "storybook": "https://pkg.pr.new/storybook@5170f92",
     "typescript": "5.9.3",
     "vite": "^7.3.1"
+  },
+  "dependenciesMeta": {
+    "@storybookjs/vite-plugin": {
+      "injected": true
+    }
   }
 }

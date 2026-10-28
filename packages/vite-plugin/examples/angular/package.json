@@ -30,10 +30,16 @@
     "@angular/cli": "21.2.24",
     "@angular/compiler-cli": "21.2.23",
     "@playwright/test": "1.58.2",
-    "@storybook/angular-vite": "https://pkg.pr.new/@storybook/angular-vite@bd420ab3b60",
+    "@storybook/angular-vite": "https://pkg.pr.new/@storybook/angular-vite@5170f92",
+    "@storybookjs/vite-plugin": "workspace:*",
     "@types/node": "^22.20.3",
-    "storybook": "https://pkg.pr.new/storybook@bd420ab3b60",
+    "storybook": "https://pkg.pr.new/storybook@5170f92",
     "typescript": "5.9.3",
     "vite": "^7.3.1"
+  },
+  "dependenciesMeta": {
+    "@storybookjs/vite-plugin": {
+      "injected": true
+    }
   }
 }

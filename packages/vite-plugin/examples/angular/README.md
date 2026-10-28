@@ -91,7 +91,7 @@ routes.
 
 Story edits hot-update the preview, and Angular CLI applies its own template update to the
 host without a reload. Editing an Angular **component** does not currently update a running
-preview: the `bd420ab3b60` canary's Angular preview picks the change up on the next iframe load,
+preview: the `5170f92` canary's Angular preview picks the change up on the next iframe load,
 not through an HMR push. That is the same in dedicated `vite --mode storybook`, so it is a
 framework behavior rather than something the embedding causes. Arbitrary class changes are
 not guaranteed to preserve component state.
@@ -118,7 +118,7 @@ generated documentation file is required.
 - Taking the HTTP server from a request socket is a workaround for the missing hook, not a
   documented Angular contract.
 - The framework is `@storybook/angular-vite`, not the webpack-based `@storybook/angular`.
-  Both framework and Storybook runtime use canary `bd420ab3b60`. Angular runtime/compiler are
+  Both framework and Storybook runtime use canary `5170f92`. Angular runtime/compiler are
   pinned to 21.2.23 and Angular build/CLI/devkit to 21.2.24, whose exact Vite dependency
   (7.3.6) matches the Vite this workspace resolves; Analog is pinned to 2.7.2 and TypeScript
   to 5.9.3.

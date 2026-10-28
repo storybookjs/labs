@@ -14,8 +14,20 @@ catalogs:
     vite: npm:@voidzero-dev/vite-plus-core@1.4.0
     vite-plus: 1.4.0
 
+# The nuxt-storybook canary's `^11.0.0-alpha.5` ranges would pull a second Storybook from npm.
+overrides:
+  '@storybook-vue/nuxt>@storybook/builder-vite': https://pkg.pr.new/storybookjs/storybook/@storybook/builder-vite@5170f92e5a8edca2a71e5f22cb0503aeb47f420a
+  '@storybook-vue/nuxt>@storybook/vue3': https://pkg.pr.new/storybookjs/storybook/@storybook/vue3@5170f92e5a8edca2a71e5f22cb0503aeb47f420a
+  '@storybook-vue/nuxt>@storybook/vue3-vite': https://pkg.pr.new/@storybook/vue3-vite@5170f92
+
 # Keep root dependencies from satisfying packages' peer dependencies.
 resolvePeersFromWorkspaceRoot: false
+
+# Refreshes the examples' injected copies of the built plugin; `dev` skips `dist` cleaning so
+# its hardlinks stay live instead.
+syncInjectedDepsAfterScripts:
+  - build
+  - prepare
 
 packageExtensions:
   # Imports `typescript` without declaring it; resolve the consuming app's version.

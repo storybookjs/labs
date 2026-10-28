@@ -12,7 +12,7 @@ both share one Node HTTP listener at **http://127.0.0.1:5193**.
 
 Use Node.js **22.19.0+**. Install dependencies once from the repository root with
 `pnpm install`. Do not install separately inside this workspace. The framework and Storybook core both use the
-matching `bd420ab3b60` canary, and Vite resolves to the root workspace's `^7.3.1`.
+matching `5170f92` canary, and Vite resolves to the root workspace's `^7.3.1`.
 
 Run workspace scripts from the root using
 `pnpm --filter @storybookjs/vite-plugin-nextjs-example run <script>`:
