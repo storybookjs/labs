@@ -1,0 +1,39 @@
+name: Preview
+
+# Publishes every package to pkg.pr.new on PRs and on main, so a change can be tried with
+# `pnpm add https://pkg.pr.new/storybookjs/labs/<package>@<sha>` before it's released.
+# Needs the pkg.pr.new GitHub app installed on the repository.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Publish to pkg.pr.new
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version: 22
+          cache: true
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      - name: Build
+        run: vp run --filter "./packages/*" build
+
+      # `--compact` uses each package's `repository.directory` for the short URL form.
+      - name: Publish previews
+        run: vp exec pkg-pr-new publish "./packages/*" --pnpm --compact --comment=update

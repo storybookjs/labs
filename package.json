@@ -28,6 +28,8 @@
   "devDependencies": {
     "@clack/prompts": "catalog:dev",
     "@types/node": "catalog:dev",
+    "changelogithub": "catalog:dev",
+    "pkg-pr-new": "catalog:dev",
     "typescript": "catalog:dev",
     "vite-plus": "catalog:dev"
   },

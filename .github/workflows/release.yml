@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '@storybookjs/*@*'
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Publish & release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub release
+      id-token: write # npm trusted publishing + provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version: 22
+          cache: true
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      # Splits the tag into package name and version, locates the package through pnpm's
+      # workspace filter, and checks that its package.json already carries the tagged version.
+      - name: Resolve package
+        id: pkg
+        run: |
+          name="${TAG%@*}"
+          version="${TAG##*@}"
+
+          # `[{ name, version, path }]`, or `[]` when no workspace package has that name.
+          info=$(pnpm list --filter "$name" --depth -1 --json)
+          dir=$(node -p 'const [p] = JSON.parse(process.argv[1]); p ? require("path").relative(process.cwd(), p.path) : ""' "$info")
+          actual=$(node -p 'JSON.parse(process.argv[1])[0]?.version ?? ""' "$info")
+
+          if [ -z "$dir" ]; then
+            echo "::error::No workspace package named $name."
+            exit 1
+          fi
+          if [ "$actual" != "$version" ]; then
+            echo "::error file=$dir/package.json::Tag $TAG but package.json version is $actual."
+            exit 1
+          fi
+
+          # Previous release of this package, if any, for the changelog range.
+          previous=$(git tag --list "$name@*" --sort=-v:refname | grep -vx "$TAG" | head -n 1 || true)
+
+          prerelease=false
+          case "$version" in *-*) prerelease=true ;; esac
+
+          {
+            echo "name=$name"
+            echo "version=$version"
+            echo "dir=$dir"
+            echo "previous=$previous"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          TAG: ${{ github.ref_name }}
+
+      - name: Build
+        run: vp run --filter "$NAME" build
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+
+      - name: Publish to npm
+        run: pnpm --filter "$NAME" publish --access public --no-git-checks --provenance
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+
+      - name: Create GitHub release
+        run: |
+          args=(--name "$TAG" --to "$TAG" --commit-filter-by-paths "$DIR" --contributors)
+          [ -n "$PREVIOUS" ] && args+=(--from "$PREVIOUS")
+          [ "$PRERELEASE" = true ] && args+=(--prerelease)
+          vp exec changelogithub "${args[@]}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          DIR: ${{ steps.pkg.outputs.dir }}
+          PREVIOUS: ${{ steps.pkg.outputs.previous }}
+          PRERELEASE: ${{ steps.pkg.outputs.prerelease }}

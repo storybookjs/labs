@@ -9,6 +9,8 @@ catalogs:
   dev:
     '@clack/prompts': ^1.8.1
     '@types/node': ^26.6.5
+    changelogithub: ^15.0.5
+    pkg-pr-new: ^0.0.92
     typescript: ^7.0.2
     # Vite+ core, for packages that build or test with `vp`.
     vite: npm:@voidzero-dev/vite-plus-core@1.4.0
