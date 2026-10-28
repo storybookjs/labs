@@ -23,7 +23,7 @@ import {
 const storybookOptions: experimental_VitePluginUserOptions = {
   configDir: '.storybook',
   base: '/__storybook',
-}
+};
 
 export default defineConfig({
   plugins: [experimental_vitePlugin(storybookOptions)],
