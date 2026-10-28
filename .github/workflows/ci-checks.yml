@@ -20,6 +20,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Full history so PRs can diff against the base branch to select packages.
+          fetch-depth: 0
 
       # Installs vp at the catalog's vite-plus version, then runs `vp install`.
       - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
@@ -27,17 +29,86 @@ jobs:
           node-version: 22
           cache: true
 
+      # Lint and format are fast and repo-wide, so they always cover everything.
       - name: Lint
         run: vp run lint --format github
 
       - name: Format
         run: vp run fmt:check
 
+      # On PRs, typecheck and build only the packages changed since the base branch, plus their
+      # dependencies and dependents. Changes outside packages fall back to every package unless
+      # they're known to be harmless; pushes to main always check every package.
+      - name: Select packages
+        id: packages
+        run: |
+          all='--filter ./packages/*'
+          if [ "$EVENT_NAME" != pull_request ]; then
+            echo "filters=$all" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Captured first so a failing `git diff` fails the step instead of selecting nothing.
+          base=$(git merge-base "origin/${BASE_REF}" HEAD)
+          files=$(git -c core.quotePath=false diff --name-only "$base" HEAD)
+
+          filters=()
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            case "$file" in
+              # Examples are never checked by the root scripts and don't affect their package.
+              packages/*/examples/*) ;;
+              packages/*/*)
+                manifest="./packages/$(echo "$file" | cut -d/ -f2)/package.json"
+                # A deleted package has no manifest left to check.
+                [ -f "$manifest" ] || continue
+                name=$(node -p 'require(process.argv[1]).name ?? ""' "$manifest")
+                if [ -z "$name" ]; then
+                  echo "::error file=$manifest::Package has no name, so it can't be selected."
+                  exit 1
+                fi
+                filters+=("--filter $name..." "--filter ...$name")
+                ;;
+              *.md | LICENSE | .gitignore | scripts/* | templates/*)
+                # Docs don't affect packages; the template job covers scripts and templates.
+                ;;
+              *)
+                echo "Changed outside packages ($file): checking every package."
+                echo "filters=$all" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
+          done <<< "$files"
+
+          if [ ${#filters[@]} -eq 0 ]; then
+            echo "No package changes: skipping package typecheck and build."
+            echo "filters=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Dependents include the examples, which the root scripts never check.
+          filters+=('--filter !./packages/*/examples/*')
+          echo "filters=$(printf '%s\n' "${filters[@]}" | sort -u | paste -sd ' ')" >> "$GITHUB_OUTPUT"
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+
+      # `--fail-if-no-match` turns a filter that selects nothing into a failure, not a silent pass.
       - name: Typecheck
-        run: vp run typecheck
+        run: |
+          read -r -a args <<< "$FILTERS"
+          vp run typecheck:root
+          if [ ${#args[@]} -gt 0 ]; then vp run --fail-if-no-match "${args[@]}" typecheck; fi
+        env:
+          FILTERS: ${{ steps.packages.outputs.filters }}
 
       - name: Build
-        run: vp run build
+        if: steps.packages.outputs.filters != ''
+        run: |
+          read -r -a args <<< "$FILTERS"
+          vp run --fail-if-no-match "${args[@]}" build
+        env:
+          FILTERS: ${{ steps.packages.outputs.filters }}
 
   test:
     name: Test

@@ -17,7 +17,8 @@
   "scripts": {
     "new": "node scripts/create-package.ts",
     "build": "vp run --filter \"./packages/*\" build",
-    "typecheck": "tsc --noEmit && vp run --filter \"./packages/*\" typecheck",
+    "typecheck": "vp run typecheck:root && vp run --filter \"./packages/*\" typecheck",
+    "typecheck:root": "tsc --noEmit",
     "test": "vp test run",
     "lint": "vp lint --no-error-on-unmatched-pattern",
     "lint:fix": "vp lint --fix --no-error-on-unmatched-pattern",
