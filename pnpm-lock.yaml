@@ -12,12 +12,18 @@ catalogs:
     '@types/node':
       specifier: ^26.6.5
       version: 26.6.5
+    '@types/semver':
+      specifier: ^7.8.0
+      version: 7.8.0
     changelogithub:
       specifier: ^15.0.5
       version: 15.0.5
     pkg-pr-new:
       specifier: ^0.0.92
       version: 0.0.92
+    semver:
+      specifier: ^7.8.5
+      version: 7.8.5
     typescript:
       specifier: ^7.0.2
       version: 7.0.2
@@ -45,12 +51,18 @@ importers:
       '@types/node':
         specifier: catalog:dev
         version: 26.6.5
+      '@types/semver':
+        specifier: catalog:dev
+        version: 7.8.0
       changelogithub:
         specifier: catalog:dev
         version: 15.0.5
       pkg-pr-new:
         specifier: catalog:dev
         version: 0.0.92
+      semver:
+        specifier: catalog:dev
+        version: 7.8.5
       typescript:
         specifier: catalog:dev
         version: 7.0.2
@@ -3346,6 +3358,9 @@ packages:
 
   '@types/resolve@1.20.6':
     resolution: {integrity: sha512-A4STmOXPhMUtHH+S6ymgE2GiBSMqf4oTvcQZMcHzokuTLVYzXTB8ttjcgxOVaAp2lGwEdzZ0J+cRbbeevQj1UQ==}
+
+  '@types/semver@7.8.0':
+    resolution: {integrity: sha512-1mAINjtQCXXeLkJ9ehXkwOcBpqtLxiVtKhpUf83DdRNdQKV0iXZpaHYqRr7nj+wvxuJzoAmAwXI+sCNMv1CzLQ==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -10184,6 +10199,8 @@ snapshots:
   '@types/resolve@1.20.2': {}
 
   '@types/resolve@1.20.6': {}
+
+  '@types/semver@7.8.0': {}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
