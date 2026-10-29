@@ -51,7 +51,11 @@ const manifest = JSON.parse(readFileSync(join(ROOT_DIR, manifestPath), 'utf8')) 
   version?: unknown;
 };
 if (typeof manifest.version !== 'string') fail(`${name} has no version.`, manifestPath);
-const manifestVersion = assertExperimentalVersion(manifest.version, `${name}'s package.json`, manifestPath);
+const manifestVersion = assertExperimentalVersion(
+  manifest.version,
+  `${name}'s package.json`,
+  manifestPath
+);
 if (!semver.eq(manifestVersion, version)) {
   fail(`Tag ${tag} but ${name} is at version ${manifestVersion}.`, manifestPath);
 }
