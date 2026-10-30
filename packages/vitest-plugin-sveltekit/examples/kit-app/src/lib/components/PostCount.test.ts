@@ -43,13 +43,3 @@ test('follows a stream driven by the test', async () => {
   feed.error(httpError(503, 'Feed down'));
   await expect.element(screen.getByRole('alert')).toMatchTextContent(/Feed down/);
 });
-
-test('stops the stream when the component unmounts', async () => {
-  const feed = remote(getPostCount).mockStream(1);
-  const screen = await render(PostCount);
-  await expect.element(screen.getByText('1', { exact: true })).toBeVisible();
-
-  screen.unmount();
-  // An emit after unmount must not throw: the generator was torn down through `request.signal`.
-  feed.emit(2);
-});

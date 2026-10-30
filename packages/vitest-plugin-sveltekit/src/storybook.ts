@@ -1,8 +1,13 @@
 import { goto, refreshAll } from '$app/navigation';
 import { navigating, page } from '$app/state';
 import { definePreviewAddon } from 'storybook/internal/csf';
+import { fn } from 'storybook/test';
 
 import { installRemoteEnv, resetRemoteState } from './runtime/env.ts';
+import { setSpyFactory } from './runtime/registry.ts';
+
+// `storybook/test` spies, so the calls show in the Actions panel.
+setSpyFactory(() => fn());
 
 /**
  * Resets every remote function mock and connects SvelteKit's remote function runtime to

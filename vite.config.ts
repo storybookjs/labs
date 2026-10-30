@@ -30,18 +30,15 @@ export default defineConfig({
         plugins: ['vitest'],
       },
       {
-        files: [
-          'packages/vite-plugin/examples/*/src/**',
-          'packages/vite-plugin/examples/*/.storybook/preview.{js,ts}',
-        ],
+        files: ['packages/*/examples/*/src/**', 'packages/*/examples/*/.storybook/preview.{js,ts}'],
         env: {
           node: false,
           browser: true,
         },
       },
       {
-        // Examples are plain Vite apps, so their configs import `vite` directly.
-        files: ['packages/vite-plugin/examples/**'],
+        // Examples are plain Vite apps, so their configs import `vite` and `vitest` directly.
+        files: ['packages/*/examples/**'],
         rules: {
           'vite-plus/prefer-vite-plus-imports': 'off',
         },

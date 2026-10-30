@@ -1,7 +1,12 @@
-import { fn } from 'storybook/test';
-import { beforeEach } from 'vitest';
+// Runs in the user's Vitest, which is not Vite+.
+// oxlint-disable-next-line vite-plus/prefer-vite-plus-imports
+import { beforeEach, type Mock, vi } from 'vitest';
 
 import { installRemoteEnv, resetRemoteState } from './runtime/env.ts';
+import { setSpyFactory } from './runtime/registry.ts';
+
+// Vitest's own spies: `storybook/test` would bring a second `expect` into the test page.
+setSpyFactory(() => vi.fn());
 
 /**
  * The page that remote function requests come from. Plain Vitest has no `$app/state`, so this
@@ -17,8 +22,9 @@ export const navigating: { to: { url: URL } | null } | null = null;
  * Stands in for SvelteKit's `goto` when a remote function redirects. A spy, so tests can assert
  * on it: `expect(goto).toHaveBeenCalledWith('/posts/1', expect.anything())`.
  */
-export const goto: ReturnType<typeof fn<(url: string, options?: object) => Promise<void>>> =
-  fn(async (_url: string, _options?: object) => {}).mockName('goto');
+export const goto: Mock<(url: string, options?: object) => Promise<void>> = vi
+  .fn(async (_url: string, _options?: object) => {})
+  .mockName('goto');
 
 beforeEach(async () => {
   page.url = defaultUrl();

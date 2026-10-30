@@ -7,8 +7,8 @@ declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
     fetch: typeof fetch;
     decoders: Record<string, (data: any) => any>;
     encoders: Record<string, (data: any) => any>;
-    page: { url: URL };
-    navigating: { to: { url: URL } | null } | null;
+    page: { url: { pathname: string; search: string } };
+    navigating: { to: { url: { pathname: string; search: string } } | null } | null;
     goto: (url: string | URL, options?: { refreshAll?: boolean }) => Promise<void>;
     refreshAll: () => Promise<void>;
     handleError: (
@@ -26,6 +26,16 @@ declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
   }
   export const query_map: Map<string, Map<string, CacheEntry>>;
   export const live_query_map: Map<string, Map<string, CacheEntry>>;
+
+  /** `HandledHttpError` extends it. */
+  export class HttpError {
+    status: number;
+    body: App.Error;
+  }
+  export class SvelteKitError extends Error {
+    status: number;
+    text: string;
+  }
 
   export const app_dir: string;
   export const base: string;
@@ -46,10 +56,7 @@ declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
     getClientAddress: () => string;
     platform?: unknown;
   }): RequestState;
-  export function get_cookies(
-    request: Request,
-    url: URL
-  ): { cookies: RequestEvent['cookies'] };
+  export function get_cookies(request: Request, url: URL): { cookies: RequestEvent['cookies'] };
   export const noop_span: RequestEvent['tracing']['current'];
 
   type Factory = (validate: 'unchecked', fn: (...args: any[]) => any, options?: object) => any;

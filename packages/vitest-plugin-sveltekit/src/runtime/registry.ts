@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { fn } from 'storybook/test';
+import type { fn } from 'storybook/test';
 
 import type { RemoteKind } from '../node/analyze.ts';
 
@@ -27,7 +27,20 @@ export interface RemoteEntry {
   hash: string;
   name: string;
   kind: RemoteKind;
-  spy: RemoteSpy;
+  /** Created on first use, with the host's spy factory. */
+  readonly spy: RemoteSpy;
+}
+
+/**
+ * Makes an empty spy. Each host sets its own: Storybook `fn()` from `storybook/test` (calls show in
+ * the Actions panel), Vitest `vi.fn()`. Importing `storybook/test` in Vitest would load a second
+ * `expect` and break `expect.requireAssertions`.
+ */
+let spyFactory: (() => unknown) | undefined;
+
+/** `factory` returns a Vitest-style mock function (`fn()`, `vi.fn()`); the types differ per host. */
+export function setSpyFactory(factory: () => unknown): void {
+  spyFactory = factory;
 }
 
 const entries = new Map<string, RemoteEntry>();
@@ -46,7 +59,16 @@ export function registerRemoteFunction(client: object, id: string, kind: RemoteK
   } else {
     const slash = id.indexOf('/');
     const name = id.slice(slash + 1);
-    entry = { id, hash: id.slice(0, slash), name, kind, spy: createSpy(name, kind) };
+    let spy: RemoteSpy | undefined;
+    entry = {
+      id,
+      hash: id.slice(0, slash),
+      name,
+      kind,
+      get spy() {
+        return (spy ??= createSpy(this.name, this.kind));
+      },
+    };
     entries.set(id, entry);
   }
 
@@ -88,7 +110,18 @@ export function onRegister(listener: (hash: string) => void): void {
 }
 
 /** Resets every spy to its default: unmocked queries fail, unmocked forms and commands resolve. */
+let generation = 0;
+
+/**
+ * Counts the resets. A request reads it when it starts: another value later means that the story
+ * or test that sent the request is over, and the spies now belong to the next one.
+ */
+export function resetGeneration(): number {
+  return generation;
+}
+
 export function resetRemoteFunctions(): void {
+  generation++;
   for (const entry of entries.values()) {
     entry.spy.mockReset();
     applyDefaults(entry.spy, entry.name, entry.kind);
@@ -96,7 +129,12 @@ export function resetRemoteFunctions(): void {
 }
 
 function createSpy(name: string, kind: RemoteKind): RemoteSpy {
-  const spy = fn() as RemoteSpy;
+  if (!spyFactory) {
+    throw new Error(
+      '[vitest-plugin-sveltekit] remote functions have no spies yet. Add `@storybookjs/vitest-plugin-sveltekit/vitest` to `test.setupFiles` (Vitest), or the preview annotations from `@storybookjs/vitest-plugin-sveltekit/storybook` (Storybook).'
+    );
+  }
+  const spy = spyFactory() as RemoteSpy;
 
   spy.mockPending = () => {
     const never = () => new Promise<never>(() => {});
@@ -160,9 +198,10 @@ type StreamEvent<T> =
  * A push-based stream for `mockStream()`. Each connection (each call of the spy) is an async
  * generator that reads from its own queue. New connections start with the latest value.
  */
-function createStream<T>(initial: [initial?: T]) {
+function createStream<T>(initialValue: [value?: T]) {
   const connections = new Set<(event: StreamEvent<T>) => void>();
-  let latest: { value: T } | undefined = initial.length > 0 ? { value: initial[0] as T } : undefined;
+  let latest: { value: T } | undefined =
+    initialValue.length > 0 ? { value: initialValue[0] as T } : undefined;
   let final: StreamEvent<T> | undefined;
 
   const broadcast = (event: StreamEvent<T>) => {

@@ -51,7 +51,9 @@ test('explains how to mock a query without a mock', async () => {
 
   await expect
     .element(screen.getByRole('alert'))
-    .toMatchTextContent(/`getPosts` has no mock\. Call `remote\(getPosts\)\.mockResolvedValue\(\.\.\.\)`/);
+    .toMatchTextContent(
+      /`getPosts` has no mock\. Call `remote\(getPosts\)\.mockResolvedValue\(\.\.\.\)`/
+    );
 });
 
 test('calls the batch mock once per argument', async () => {
