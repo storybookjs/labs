@@ -172,7 +172,8 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
 
         if (id.endsWith(SERVER_QUERY)) {
           if (!server) return;
-          return { code: createServerModule(code, source, file, kitDir), map: null };
+          const exports = analyzeRemoteModule(code, file);
+          return { code: createServerModule(code, exports, file, kitDir), map: null };
         }
 
         const exports = analyzeRemoteModule(code, file);
