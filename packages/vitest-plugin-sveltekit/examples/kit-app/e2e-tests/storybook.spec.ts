@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { expect, type Frame, type Page, test } from '@playwright/test';
 
 // Runs against `storybook dev` and against the static `storybook build` (see the config). Each
@@ -96,6 +99,68 @@ const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> =
       await expect(page.getByTestId('live-status')).toHaveText('live');
     },
   ],
+  // Server mode: the real remote functions, on the PGlite database from `__mocks__/db.ts`.
+  [
+    'server-postlist--real-query',
+    (page) => expect(page.getByTestId('stats-1')).toHaveText('7 views, 3 likes'),
+  ],
+  [
+    'server-postlist--mixed-with-mock',
+    (page) => expect(page.getByTestId('stats-1')).toHaveText('99 views, 9 likes'),
+  ],
+  [
+    'server-postlist--delete-signed-in',
+    async (page) => {
+      await expect(page.getByRole('link', { name: 'Also from the database' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'From the database', exact: true })).toHaveCount(
+        0
+      );
+    },
+  ],
+  [
+    'server-postlist--delete-forbidden',
+    (page) =>
+      expect(page.getByRole('alert')).toHaveText('Could not delete: Sign in to delete posts'),
+  ],
+  [
+    'server-posts--create-and-refresh',
+    (page) => expect(page.getByRole('link', { name: 'Second post' })).toBeVisible(),
+  ],
+  [
+    'server-posts--schema-issue',
+    (page) => expect(page.getByRole('alert')).toHaveText('Title is required'),
+  ],
+  [
+    'server-posts--handler-issue',
+    (page) => expect(page.getByRole('alert')).toHaveText('A post with this title exists'),
+  ],
+  // The overlap probes: their play functions check the results; the live count stays connected.
+  [
+    'server-overlap--live-then-command',
+    (page) => expect(page.getByTestId('live-status')).toHaveText('live'),
+  ],
+  [
+    'server-overlap--two-real-commands',
+    (page) => expect(page.getByTestId('live-status')).toHaveText('live'),
+  ],
+  [
+    'server-overlap--cookie-survives-slow-request',
+    (page) => expect(page.getByTestId('live-status')).toHaveText('live'),
+  ],
+  [
+    'server-posts--submitting',
+    (page) => expect(page.getByRole('button', { name: 'Create' })).toBeDisabled(),
+  ],
+  [
+    'server-postdetail--real-prerender',
+    (page) =>
+      expect(page.getByRole('heading', { name: 'Prerendered from the database' })).toBeVisible(),
+  ],
+  [
+    'server-postdetail--not-found',
+    (page) => expect(page.getByRole('alert')).toHaveText('Post 42 not found'),
+  ],
+  ['server-postcount--live-polling', (page) => expect(page.locator('output')).toHaveText('3')],
 ];
 
 /** Records the phases and play errors that the preview reports on its channel. */
@@ -160,6 +225,19 @@ test('serves the manager with the story index', async ({ page, request }) => {
   await expect(preview.getByRole('link', { name: 'First post' })).toBeVisible();
 });
 
+test('the static build has the values of the declared private env variables only', () => {
+  test.skip(test.info().project.name !== 'storybook-static', 'Reads the `storybook build` output');
+  const dir = path.join(import.meta.dirname, '../storybook-static');
+  const code = readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((file) => file.endsWith('.js'))
+    .map((file) => readFileSync(path.join(dir, file), 'utf8'))
+    .join('\n');
+
+  expect(code).toMatch(/LIVE_POLL_MS"?:["`]100["`]/);
+  expect(code).not.toContain('undeclared-canary-5e2a');
+  expect(code).not.toContain('shell-canary-8b3f');
+});
+
 for (const [id, check] of stories) {
   test(`renders ${id} and runs its play function`, async ({ page }) => {
     await watchStories(page);
@@ -180,6 +258,21 @@ const transitions: Array<[from: string, to: string, check: (frame: Preview) => P
   ],
   [
     'postcount--live-stream-open',
+    'postcount--live-generator',
+    async (frame) => {
+      await expect(frame.locator('output')).toHaveText('2');
+      await expect(frame.getByTestId('live-status')).toHaveText('done');
+    },
+  ],
+  // Server mode: a pending submission does not leak into the next story.
+  [
+    'server-posts--submitting',
+    'server-posts--create-and-refresh',
+    (frame) => expect(frame.getByRole('link', { name: 'Second post' })).toBeVisible(),
+  ],
+  // Server mode: the real generator's stream ends with its story.
+  [
+    'server-postcount--live-polling',
     'postcount--live-generator',
     async (frame) => {
       await expect(frame.locator('output')).toHaveText('2');
@@ -218,7 +311,11 @@ for (const [from, to, check] of transitions) {
       Object.assign(window, { phases, playErrors, samePreview: true });
     });
 
-    await page.locator(`[data-item-id="${to}"]`).click();
+    // Through the sidebar, as a person would. A story of another component needs its group open.
+    const item = page.locator(`[data-item-id="${to}"]`);
+    if (!(await item.isVisible()))
+      await page.locator(`[data-item-id="${to.split('--')[0]}"]`).click();
+    await item.click();
     await expect.poll(() => currentRender(preview)).toEqual({ id: to, phase: 'finished' });
     await expectPlayed(preview);
     await check(preview);

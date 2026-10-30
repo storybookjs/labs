@@ -41,11 +41,20 @@ function count(name: RegExp, pattern: RegExp): number {
 test('runs the component tests in Vitest browser mode', () => {
   const { status, output, failed, passed } = vitest('components');
   expect(failed, output).toBe(0);
-  expect(passed, output).toBeGreaterThanOrEqual(count(/\.test\.ts$/, /^test(\.fails)?\(/gm));
+  expect(passed, output).toBeGreaterThanOrEqual(
+    count(/(?<!\.server)\.test\.ts$/, /^test(\.fails)?\(/gm)
+  );
   expect(status, output).toBe(0);
 });
 
-test('runs the stories through @storybook/addon-vitest', () => {
+test('runs the server mode tests in Vitest browser mode', () => {
+  const { status, output, failed, passed } = vitest('server');
+  expect(failed, output).toBe(0);
+  expect(passed, output).toBeGreaterThanOrEqual(count(/\.server\.test\.ts$/, /^test\(/gm));
+  expect(status, output).toBe(0);
+});
+
+test('runs the stories (mocked and server mode) through @storybook/addon-vitest', () => {
   const { status, output, failed, passed } = vitest('storybook');
   const stories =
     count(/\.stories\.ts$/, /^export const \w+ = meta\.story\(/gm) +
