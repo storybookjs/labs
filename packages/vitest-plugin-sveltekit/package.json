@@ -20,6 +20,7 @@
     "./storybook": "./dist/storybook.mjs",
     "./vitest": "./dist/vitest.mjs",
     "./remote.mock": "./dist/remote.mock.mjs",
+    "./server.mock": "./dist/server.mock.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {

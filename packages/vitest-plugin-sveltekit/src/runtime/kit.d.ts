@@ -33,25 +33,25 @@ declare module 'virtual:vitest-plugin-sveltekit/kit' {
     handleError?: HandleServerError;
     transport?: Transport;
   }): void;
-  /** Answers a remote request inside the request store of `event`. */
-  export function handle_remote_request(event: RequestEvent): Promise<Response>;
-  /** The remote function id in a `/_app/remote/...` URL, or `false`. */
-  export function get_remote_id(url: URL): string | false;
-
-  /** From sveltejs/kit PR B (SB-2443), `$app/server`. */
-  export function withRequestEvent<T>(
-    init: {
-      request?: Request;
-      url?: string | URL;
-      locals?: App.Locals;
-      cookies?: Record<string, string>;
-      params?: Record<string, string>;
-      route?: { id: string | null };
-      platform?: App.Platform;
-      signal?: AbortSignal;
-    },
-    fn: (event: RequestEvent) => T
+  export function set_hooks(hooks: Record<string, unknown>): void;
+  export function init_transport(transport: Record<string, unknown>): void;
+  export function create_request_state(options: {
+    getClientAddress: () => string;
+    platform?: unknown;
+  }): RequestState;
+  export function get_cookies(
+    request: Request,
+    url: URL
+  ): {
+    cookies: RequestEvent['cookies'];
+    new_cookies: Map<string, unknown>;
+    set_trailing_slash: (trailing_slash: 'never' | 'always' | 'ignore') => void;
+  };
+  export function with_request_store<T>(
+    store: { event: RequestEvent; state: RequestState },
+    fn: () => T
   ): T;
+  export const noop_span: RequestEvent['tracing']['current'];
 
   type Factory = (validate: 'unchecked', fn: (...args: any[]) => any, options?: object) => any;
   export const query: Factory & { batch: Factory; live: Factory };
@@ -66,4 +66,20 @@ declare module 'virtual:vitest-plugin-sveltekit/kit' {
     reconnectAll: () => Promise<void>;
   }
   export function requested(query: unknown, limit: number): RequestedResult;
+}
+
+// App files that `vitestPluginSvelteKit()` finds: hooks and, in server mode, the env setup.
+declare module 'virtual:vitest-plugin-sveltekit/app' {
+  import type { Handle, HandleServerError, ServerInit, Transport } from '@sveltejs/kit/hooks';
+
+  export const serverMode: boolean;
+  /** The app's `src/hooks.ts`, or `{}`. */
+  export const universalHooks: { transport?: Transport };
+  /** The app's `src/hooks.server.ts`, or `{}` (and always `{}` outside server mode). */
+  export function loadServerHooks(): Promise<{
+    handle?: Handle;
+    handleError?: HandleServerError;
+    init?: ServerInit;
+  }>;
+  export function initEnv(): void;
 }
