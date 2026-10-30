@@ -3,7 +3,7 @@ import * as kit from 'virtual:@storybookjs/vitest-plugin-sveltekit/kit';
 import { resetRequestEvent } from './request-event.ts';
 import { resetAsyncLocalStorage } from './async-local-storage.ts';
 import { resetGeneration, resetRemoteFunctions } from './registry.ts';
-import { handleRemoteRequest, isRemoteRequest, transport } from './server.ts';
+import { handleRemoteRequest, isRemoteRequest, prepareServer, transport } from './server.ts';
 
 /** What the host (Storybook or Vitest) provides in place of SvelteKit's router. */
 export interface RemoteHost extends Pick<kit.RemoteEnv, 'page' | 'navigating'> {
@@ -44,6 +44,7 @@ export async function resetRemoteState(): Promise<void> {
   // Ends the open `query.live` connections: their real generators stop through `request.signal`.
   await kit.reset_remote_state();
   resetAsyncLocalStorage();
+  await prepareServer();
 }
 
 function transportFunctions(kind: 'encode' | 'decode'): Record<string, (data: any) => any> {

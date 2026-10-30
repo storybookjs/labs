@@ -7,7 +7,8 @@ import type { Plugin, ResolvedConfig } from 'vite';
 
 import { analyzeRemoteModule } from './node/analyze.ts';
 import { appModule, findAppFiles, type AppFiles } from './node/app.ts';
-import { REMOTE_MODULE } from './node/files.ts';
+import { findRemoteFiles, findServerDependencies } from './node/dependencies.ts';
+import { REMOTE_MODULE, resolveModule } from './node/files.ts';
 import { hash } from './node/hash.ts';
 import { createServerModule, SERVER_QUERY } from './node/server-module.ts';
 import { createClientStub } from './node/stub.ts';
@@ -60,13 +61,34 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
     name: 'vitest-plugin-sveltekit',
     enforce: 'pre',
 
-    config() {
+    config(userConfig) {
+      // `configResolved` decides again, from the resolved plugin list.
+      enabled = isEnabled(options, userConfig.plugins ?? []);
+      const include = [
+        `${PACKAGE_NAME} > storybook/test`,
+        `${PACKAGE_NAME} > storybook/internal/csf`,
+      ];
+
+      if (server && enabled) {
+        // The server code loads on the first request; pre-bundle its packages up front.
+        const projectRoot = path.resolve(userConfig.root ?? process.cwd());
+        const src = path.join(projectRoot, 'src');
+        const hooks = resolveModule(path.join(src, 'hooks.server'));
+        const exclude = new Set(userConfig.optimizeDeps?.exclude ?? []);
+        include.push(
+          ...findServerDependencies(projectRoot, [
+            ...findRemoteFiles(src),
+            ...(hooks ? [hooks] : []),
+          ]).filter((dependency) => !exclude.has(packageName(dependency)))
+        );
+      }
+
       return {
         optimizeDeps: {
           // The runtime imports a virtual module, which the dependency optimizer cannot resolve.
           exclude: [PACKAGE_NAME],
           // So the optimizer does not find these in the middle of a run and reload the page.
-          include: [`${PACKAGE_NAME} > storybook/test`, `${PACKAGE_NAME} > storybook/internal/csf`],
+          include,
         },
       };
     },
@@ -226,6 +248,11 @@ function removePlugins(config: ResolvedConfig, names: string[]): void {
   const plugins = config.plugins as Plugin[];
   const kept = plugins.filter((plugin) => !names.includes(plugin.name));
   plugins.splice(0, plugins.length, ...kept);
+}
+
+function packageName(specifier: string): string {
+  const parts = specifier.split('/');
+  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]!;
 }
 
 function cleanId(id: string): string {

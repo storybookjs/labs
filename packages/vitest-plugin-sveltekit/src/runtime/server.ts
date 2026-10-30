@@ -8,6 +8,7 @@ import { requestEvent } from './request-event.ts';
 import {
   getRemoteEntries,
   getServerModuleLoader,
+  getServerModuleLoaders,
   hasRemoteModule,
   isMocked,
   onRegister,
@@ -45,7 +46,7 @@ export const transport: Transport = app.universalHooks.transport ?? {};
 export async function handleRemoteRequest(input: Request): Promise<Response> {
   const { handle } = await (setupPromise ??= setup());
 
-  const request = withCookies(input);
+  const request = input;
   const id = new URL(request.url).pathname.slice(remotePrefix().length);
   const state = kit.create_request_state({ getClientAddress: () => '127.0.0.1' });
   const { event, newCookies } = createEvent(request);
@@ -57,6 +58,15 @@ export async function handleRemoteRequest(input: Request): Promise<Response> {
 
   storeCookies(newCookies);
   return response;
+}
+
+/**
+ * Server mode: loads the server hooks and the server copy of every remote file the story or test
+ * imports, so the first request does not pay for it (and time out a `findBy`).
+ */
+export async function prepareServer(): Promise<void> {
+  await (setupPromise ??= setup());
+  if (app.serverMode) await Promise.all(getServerModuleLoaders().map((load) => load()));
 }
 
 export function isRemoteRequest(url: URL): boolean {
@@ -227,17 +237,16 @@ function refreshingRequested(handler: (...args: unknown[]) => unknown) {
   };
 }
 
-/** Sends the cookies of `requestEvent.cookies`, like a browser sends its cookies. */
-function withCookies(request: Request): Request {
-  const cookies = requestEvent.cookies.getAll();
-  if (cookies.length === 0) return request;
-
-  const headers = new Headers(request.headers);
-  headers.set(
-    'cookie',
-    cookies.map(({ name, value }) => `${name}=${encodeURIComponent(value)}`).join('; ')
-  );
-  return new Request(request, { headers });
+/**
+ * The `cookie` header for `requestEvent.cookies`, like a browser sends its cookies. Browsers drop
+ * a `cookie` header on a `Request` they construct, so it goes straight to SvelteKit's cookie
+ * parser instead.
+ */
+function cookieHeader(): string {
+  return requestEvent.cookies
+    .getAll()
+    .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
+    .join('; ');
 }
 
 type NewCookies = Map<string, { name: string; value: string; options: { maxAge?: number } }>;
@@ -261,7 +270,11 @@ function createEvent(request: Request): { event: RequestEvent; newCookies: NewCo
   }
   if (requestEvent.url) url = new URL(requestEvent.url);
 
-  const { cookies, new_cookies, set_trailing_slash } = kit.get_cookies(request, url);
+  const header = cookieHeader();
+  const withCookies = {
+    headers: { get: (name: string) => (name === 'cookie' ? header : request.headers.get(name)) },
+  } as Request;
+  const { cookies, new_cookies, set_trailing_slash } = kit.get_cookies(withCookies, url);
   // SvelteKit queues `cookies.set()` until the route's trailing slash option is known.
   set_trailing_slash('never');
 
