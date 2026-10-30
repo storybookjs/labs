@@ -114,8 +114,10 @@ describe('vitestPluginSvelteKit', () => {
       const result = transform(plugin, remoteCode, `${remoteFile}?server`);
 
       expect(result?.code.startsWith(remoteCode)).toBe(true);
+      expect(result?.code).toContain('$$_exports_$$["getPosts"] = getPosts;');
+      expect(result?.code).toContain('$$_exports_$$["createPost"] = create;');
       expect(result?.code).toContain(
-        '$$_init_$$({ "getPosts": getPosts, "createPost": create }, "src/lib/posts.remote.ts", "1rlm6aw");'
+        '$$_init_$$($$_exports_$$, "src/lib/posts.remote.ts", "1rlm6aw");'
       );
       expect(result?.code).not.toContain('?server";');
     });
@@ -151,6 +153,35 @@ describe('vitestPluginSvelteKit', () => {
       await expect(handler.call(context, './other.remote.ts', remoteFile, {})).resolves.toBe(
         undefined
       );
+    });
+
+    it('gives server code a server copy of a helper that imports a remote module', async () => {
+      const { plugin } = setup([], { enabled: true, server: true });
+      const { handler } = plugin.resolveId as {
+        handler: (id: string, importer?: string, options?: object) => Promise<unknown>;
+      };
+      const dir = path.resolve(import.meta.dirname, '../test/fixtures/server-context/src');
+      const context = {
+        environment: { config: { consumer: 'client' } },
+        resolve: async (id: string, importer: string) =>
+          id.startsWith('.') ? { id: path.resolve(path.dirname(importer), id) } : null,
+      };
+      const resolveFrom = (id: string, importer: string) =>
+        handler.call(context, id, path.join(dir, importer), {});
+
+      // a.remote.ts → helper.ts → b.remote.ts
+      await expect(resolveFrom('./helper.ts', 'a.remote.ts?server')).resolves.toEqual({
+        id: `${dir}/helper.ts?server`,
+      });
+      await expect(resolveFrom('./b.remote.ts', 'helper.ts?server')).resolves.toEqual({
+        id: `${dir}/b.remote.ts?server`,
+      });
+      // The data layer stays one module, so mocks still replace it.
+      await expect(resolveFrom('./data.ts', 'a.remote.ts?server')).resolves.toEqual({
+        id: `${dir}/data.ts`,
+      });
+      // Client code keeps the client stubs.
+      await expect(resolveFrom('./helper.ts', 'Component.svelte')).resolves.toBe(undefined);
     });
 
     it('loads the app’s server hooks lazily', () => {

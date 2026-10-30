@@ -1,12 +1,13 @@
-import type { RequestEvent } from '@sveltejs/kit';
 import type { Handle, Transport } from '@sveltejs/kit/hooks';
 import * as app from 'virtual:@storybookjs/vitest-plugin-sveltekit/app';
 import * as kit from 'virtual:@storybookjs/vitest-plugin-sveltekit/kit';
 
 import type { RemoteKind } from '../node/analyze.ts';
+import { pinRequest, unpinRequest } from './async-local-storage.ts';
 import { requestEvent } from './request-event.ts';
 import {
   getRemoteEntries,
+  getRemoteEntryById,
   getServerModuleLoader,
   getServerModuleLoaders,
   hasRemoteModule,
@@ -43,21 +44,63 @@ export const transport: Transport = app.universalHooks.transport ?? {};
  * runtime: `handle_remote_call` runs the remote function and builds the same `Response` a
  * SvelteKit server sends. The app's `handle` hook runs around it, as on a server.
  */
-export async function handleRemoteRequest(input: Request): Promise<Response> {
+export async function handleRemoteRequest(request: Request, alone = false): Promise<Response> {
+  // The cookie jar of the story or test that sends the request (`resetRequestEvent` replaces it).
+  const generation = resetGeneration();
+  const jar = requestEvent.cookies;
   const { handle } = await (setupPromise ??= setup());
-
-  const request = input;
   const id = new URL(request.url).pathname.slice(remotePrefix().length);
-  const state = kit.create_request_state({ getClientAddress: () => '127.0.0.1' });
-  const { event, newCookies } = createEvent(request);
 
-  // TODO: switch to `withRequestEvent` from `$app/server` when sveltekit/kit PR B lands.
-  const response = await kit.with_request_store({ event, state }, () =>
-    handle({ event, resolve: (event) => kit.handle_remote_call(event, state, id) })
+  return kit.withRequestEvent(
+    {
+      request,
+      // Without `url`, `withRequestEvent` takes `event.url` from the `x-sveltekit-pathname` header,
+      // like SvelteKit's server.
+      url: requestEvent.url,
+      locals: { ...requestEvent.locals },
+      params: { ...requestEvent.params },
+      route: { ...requestEvent.route },
+      platform: requestEvent.platform,
+    },
+    async (event) => {
+      // `handle_remote_call` needs the state that `withRequestEvent` made for this request.
+      const { state } = kit.get_request_store();
+      // A mock or a `query.live` pull may run in between: this request keeps its store.
+      if (alone) pinRequest(state.remote);
+
+      try {
+        // Not `withRequestEvent({ cookies })`: that puts them on a `cookie` header, which browsers
+        // drop from a `Request` they construct.
+        const sent = cookieMap(jar.getAll());
+        for (const [name, value] of sent) event.cookies.set(name, value, { path: '/' });
+
+        const response = await handle({
+          event,
+          resolve: (event) => kit.handle_remote_call(event, state, id),
+        });
+
+        // Apply what the remote function (or `handle`) set or deleted, as a browser applies
+        // `set-cookie`: not the whole jar, another request may have changed it in the meantime.
+        // Not at all when the story or test ended meanwhile: it would land in the next one.
+        if (resetGeneration() === generation) {
+          const received = cookieMap(event.cookies.getAll());
+          for (const name of sent.keys()) if (!received.has(name)) jar.delete(name);
+          for (const [name, value] of received) if (sent.get(name) !== value) jar.set(name, value);
+        }
+
+        return response;
+      } finally {
+        if (alone) unpinRequest(state.remote);
+      }
+    }
   );
+}
 
-  storeCookies(newCookies);
-  return response;
+/** Name to value, without deleted cookies (SvelteKit reports those with an empty value). */
+function cookieMap(cookies: Array<{ name: string; value: string }>): Map<string, string> {
+  return new Map(
+    cookies.filter(({ value }) => value !== '').map(({ name, value }) => [name, value])
+  );
 }
 
 /**
@@ -67,6 +110,21 @@ export async function handleRemoteRequest(input: Request): Promise<Response> {
 export async function prepareServer(): Promise<void> {
   await (setupPromise ??= setup());
   if (app.serverMode) await Promise.all(getServerModuleLoaders().map((load) => load()));
+}
+
+/**
+ * Server mode runs real remote functions one at a time, as SvelteKit's server does in a
+ * webcontainer (`serialise` in `runtime/server/instance.js`). Browsers have no async context, so a
+ * request that resumes after an `await` would see the request store of the request that started
+ * last (see `async-local-storage.ts`), and its refreshes would go into that request's response.
+ * Mocks are not queued: they read the store before their first `await`, and may stay pending on
+ * purpose. `query.live` streams stay open, so they do not wait either; the running request is
+ * pinned instead, so their pulls do not take its store.
+ */
+export function runsAlone(request: Request): boolean {
+  if (!app.serverMode || request.headers.get('accept')?.includes('text/event-stream')) return false;
+  const entry = getRemoteEntryById(new URL(request.url).pathname.slice(remotePrefix().length));
+  return entry !== undefined && !isMocked(entry);
 }
 
 export function isRemoteRequest(url: URL): boolean {
@@ -235,65 +293,4 @@ function refreshingRequested(handler: (...args: unknown[]) => unknown) {
       throw error;
     }
   };
-}
-
-/**
- * The `cookie` header for `requestEvent.cookies`, like a browser sends its cookies. Browsers drop
- * a `cookie` header on a `Request` they construct, so it goes straight to SvelteKit's cookie
- * parser instead.
- */
-function cookieHeader(): string {
-  return requestEvent.cookies
-    .getAll()
-    .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
-    .join('; ');
-}
-
-type NewCookies = Map<string, { name: string; value: string; options: { maxAge?: number } }>;
-
-/** Keeps the cookies a remote function set, like a browser stores `set-cookie`. */
-function storeCookies(newCookies: NewCookies): void {
-  for (const { name, value, options } of newCookies.values()) {
-    if (value === '' || options.maxAge === 0) requestEvent.cookies.delete(name);
-    else requestEvent.cookies.set(name, value);
-  }
-}
-
-function createEvent(request: Request): { event: RequestEvent; newCookies: NewCookies } {
-  let url = new URL(request.url);
-
-  // Like SvelteKit: `event.url` is the page URL the client sends, not the endpoint URL.
-  const pathname = request.headers.get('x-sveltekit-pathname');
-  if (pathname !== null) {
-    url.pathname = pathname;
-    url.search = request.headers.get('x-sveltekit-search') ?? '';
-  }
-  if (requestEvent.url) url = new URL(requestEvent.url);
-
-  const header = cookieHeader();
-  const withCookies = {
-    headers: { get: (name: string) => (name === 'cookie' ? header : request.headers.get(name)) },
-  } as Request;
-  const { cookies, new_cookies, set_trailing_slash } = kit.get_cookies(withCookies, url);
-  // SvelteKit queues `cookies.set()` until the route's trailing slash option is known.
-  set_trailing_slash('never');
-
-  const event = {
-    cookies,
-    fetch: (input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init),
-    getClientAddress: () => '127.0.0.1',
-    locals: { ...requestEvent.locals },
-    params: { ...requestEvent.params },
-    platform: requestEvent.platform,
-    request,
-    route: { ...requestEvent.route },
-    setHeaders: () => {},
-    url,
-    isDataRequest: false,
-    isSubRequest: false,
-    isRemoteRequest: true,
-    tracing: { enabled: false, root: kit.noop_span, current: kit.noop_span },
-  } as unknown as RequestEvent;
-
-  return { event, newCookies: new_cookies as NewCookies };
 }

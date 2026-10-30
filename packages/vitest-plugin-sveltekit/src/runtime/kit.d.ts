@@ -54,23 +54,21 @@ declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
   }): void;
   export function set_hooks(hooks: Record<string, unknown>): void;
   export function init_transport(transport: Record<string, unknown>): void;
-  export function create_request_state(options: {
-    getClientAddress: () => string;
-    platform?: unknown;
-  }): RequestState;
-  export function get_cookies(
-    request: Request,
-    url: URL
-  ): {
-    cookies: RequestEvent['cookies'];
-    new_cookies: Map<string, unknown>;
-    set_trailing_slash: (trailing_slash: 'never' | 'always' | 'ignore') => void;
-  };
-  export function with_request_store<T>(
-    store: { event: RequestEvent; state: RequestState },
-    fn: () => T
+  /** From sveltejs/kit PR B (SB-2443), `$app/server`. */
+  export function withRequestEvent<T>(
+    init: {
+      request?: Request;
+      url?: string | URL;
+      locals?: App.Locals;
+      cookies?: Record<string, string>;
+      params?: Record<string, string>;
+      route?: { id: string | null };
+      platform?: App.Platform;
+      signal?: AbortSignal;
+    },
+    fn: (event: RequestEvent) => T
   ): T;
-  export const noop_span: RequestEvent['tracing']['current'];
+  export function get_request_store(): { event: RequestEvent; state: RequestState };
 
   type Factory = (validate: 'unchecked', fn: (...args: any[]) => any, options?: object) => any;
   export const query: Factory & { batch: Factory; live: Factory };
