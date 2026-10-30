@@ -60,6 +60,8 @@ export interface StubOptions {
   kitClientRuntime: string;
   /** Path of this package's registry module. */
   registry: string;
+  /** Server mode: the id of the module's server copy, loaded when a request needs it. */
+  serverModule?: string;
 }
 
 /**
@@ -71,6 +73,7 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
   const names = new Set(exports.map((entry) => entry.name));
   const namespace = freeName('__remote', names);
   const registry = freeName('__register', names);
+  const registerModule = freeName('__registerModule', names);
 
   const aliases = new Map<string, string>();
   let aliasIndex = 0;
@@ -100,11 +103,19 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
     registrations.push(`${registry}(${local}, ${JSON.stringify(id)}, ${JSON.stringify(kind)});`);
   }
 
+  const registryImports = [`registerRemoteFunction as ${registry}`];
+  if (options.serverModule) registryImports.push(`registerRemoteModule as ${registerModule}`);
+
   let code = `import * as ${namespace} from ${JSON.stringify(options.kitClientRuntime)};\n`;
-  code += `import { registerRemoteFunction as ${registry} } from ${JSON.stringify(options.registry)};\n\n`;
+  code += `import { ${registryImports.join(', ')} } from ${JSON.stringify(options.registry)};\n\n`;
   code += declarations.join('\n');
   if (reexports.length > 0) code += `\nexport { ${reexports.join(', ')} };`;
   code += `\n\n${registrations.join('\n')}\n`;
+
+  if (options.serverModule) {
+    code += `${registerModule}(${JSON.stringify(options.hash)}, () => import(${JSON.stringify(options.serverModule)}));\n`;
+  }
+
   return code;
 }
 
