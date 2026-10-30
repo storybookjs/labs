@@ -8,12 +8,13 @@
     "#lib/*": "./src/lib/*"
   },
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
+    "dev": "vp dev",
+    "build": "vp build",
     "storybook": "storybook dev --port 6006 --ci",
     "storybook:build": "storybook build",
     "test": "vitest run",
-    "test:e2e": "playwright test -c playwright.config.ts"
+    "test:e2e": "playwright test -c playwright.config.ts",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
@@ -28,9 +29,11 @@
     "playwright": "1.64.1",
     "storybook": "11.0.0-alpha.8",
     "svelte": "^5.57.3",
+    "svelte-check": "^4.7.7",
     "typescript": "^6.0.3",
     "valibot": "^1.5.0",
     "vite": "catalog:dev",
+    "vite-plus": "catalog:dev",
     "vitest": "5.0.5",
     "vitest-browser-svelte": "^3.1.0"
   },
@@ -38,5 +41,8 @@
     "@storybookjs/vitest-plugin-sveltekit": {
       "injected": true
     }
+  },
+  "engines": {
+    "node": ">=22.19.0"
   }
 }

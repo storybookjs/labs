@@ -2,7 +2,7 @@ import { command, form, getRequestEvent, prerender, query } from '$app/server';
 import { error, invalid } from '@sveltejs/kit';
 import * as v from 'valibot';
 
-import * as db from '#lib/server/db';
+import * as db from '#lib/server/db.ts';
 
 export const getPosts = query(v.optional(v.picklist(['newest', 'oldest']), 'newest'), (order) =>
   db.listPosts(order)

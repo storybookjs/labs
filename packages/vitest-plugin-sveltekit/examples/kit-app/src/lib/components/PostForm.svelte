@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createPost } from '#lib/posts.remote';
+  import { createPost } from '#lib/posts.remote.ts';
 </script>
 
 <form {...createPost} aria-label="New post">

@@ -2,7 +2,7 @@ import { httpError, remote } from '@storybookjs/vitest-plugin-sveltekit/remote.m
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
-import { getPostCount } from '#lib/posts.remote';
+import { getPostCount } from '#lib/posts.remote.ts';
 
 import PostCount from './PostCount.svelte';
 

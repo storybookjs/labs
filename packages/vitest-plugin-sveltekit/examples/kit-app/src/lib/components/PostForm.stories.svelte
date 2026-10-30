@@ -4,7 +4,7 @@
   import { invalid } from '@sveltejs/kit';
   import { expect, waitFor } from 'storybook/test';
 
-  import { createPost } from '#lib/posts.remote';
+  import { createPost } from '#lib/posts.remote.ts';
 
   import PostForm from './PostForm.svelte';
 
@@ -14,7 +14,7 @@
     beforeEach: () => {
       remote(createPost).mockImplementation(async (data, issue) => {
         if (data.title.length < 3) invalid(issue.title('Title must be at least 3 characters'));
-        return { id: 3, title: data.title, body: data.body };
+        return { id: 3, title: data.title, body: data.body ?? '' };
       });
     },
   });

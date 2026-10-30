@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
-import { getPost } from '#lib/posts.remote';
+import { getPost } from '#lib/posts.remote.ts';
 
 import PostDetail from './PostDetail.svelte';
 

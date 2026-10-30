@@ -35,7 +35,8 @@
     "example:dev": "vp run --filter ./examples/kit-app dev",
     "example:storybook": "vp run --filter ./examples/kit-app storybook",
     "example:storybook:build": "vp run --filter ./examples/kit-app storybook:build",
-    "example:test": "vp run --filter ./examples/kit-app test"
+    "example:test": "vp run --filter ./examples/kit-app test",
+    "example:check": "vp run --filter ./examples/kit-app check"
   },
   "dependencies": {
     "oxc-parser": "^0.156.0",
