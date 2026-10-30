@@ -75,10 +75,19 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
 
     resolveId: {
       filter: {
-        id: /^(virtual:@storybookjs\/vitest-plugin-sveltekit\/kit|node:async_hooks|#app\/env\/server)$/,
+        id: /^(virtual:@storybookjs\/vitest-plugin-sveltekit\/kit|node:async_hooks|#app\/env\/server|@storybook\/sveltekit\/.*)$/,
       },
-      handler(id, importer) {
+      async handler(id, importer, resolveOptions) {
         if (!enabled || this.environment.config.consumer !== 'client') return;
+
+        // `@storybook/sveltekit` aliases `$app/state` and `$app/navigation` to bare specifiers.
+        // This package does not depend on `@storybook/sveltekit`, so resolve them from the project.
+        if (id.startsWith('@storybook/sveltekit/') && importer && isInside(importer, distDir)) {
+          return this.resolve(id, path.join(root, 'package.json'), {
+            ...resolveOptions,
+            skipSelf: true,
+          });
+        }
 
         if (id === KIT_VIRTUAL_ID) return RESOLVED_KIT_VIRTUAL_ID;
 
