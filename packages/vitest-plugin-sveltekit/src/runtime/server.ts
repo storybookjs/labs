@@ -136,25 +136,25 @@ async function perArgument(handler: (...args: unknown[]) => unknown, args: unkno
  * runs again and the new value goes back in the same response.
  */
 function refreshingRequested(handler: (...args: unknown[]) => unknown) {
-  return async (...args: unknown[]) => {
-    // `requested()` reads the request store, which is only reliable before the first `await`.
-    const refreshes: Array<() => Promise<void>> = [];
+  return (...args: unknown[]) => {
+    // The request store is sticky in the browser (see `async-local-storage.ts`), so it is only
+    // this request's before the first `await`: any other request that starts in the meantime (a
+    // second mutation, a live stream pulling its next value, a query, an error being serialised)
+    // replaces it. So every requested query is bound and marked for refresh synchronously, here,
+    // not after the handler. SvelteKit runs the marked refreshes at the end of the request, after
+    // the handler, so they see what the handler changed.
     for (const hash of registeredHashes()) {
       for (const fn of Object.values(getRemoteModule(hash)) as Array<{ __: { type: string } }>) {
         const { type } = fn.__;
         if (type === 'query' || type === 'query_batch') {
-          const entry = kit.requested(fn, Infinity);
-          refreshes.push(() => entry.refreshAll());
+          for (const { query } of kit.requested(fn, Infinity)) void query.refresh();
         } else if (type === 'query_live') {
-          const entry = kit.requested(fn, Infinity);
-          refreshes.push(() => entry.reconnectAll());
+          for (const { query } of kit.requested(fn, Infinity)) void query.reconnect();
         }
       }
     }
 
-    const result = await handler(...args);
-    await Promise.all(refreshes.map((refresh) => refresh()));
-    return result;
+    return handler(...args);
   };
 }
 
