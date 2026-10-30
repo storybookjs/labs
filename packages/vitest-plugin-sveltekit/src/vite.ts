@@ -3,13 +3,14 @@ import { fileURLToPath } from 'node:url';
 
 import path from 'pathe';
 
-import type { Plugin, ResolvedConfig } from 'vite';
+import type { Plugin, ResolvedConfig, Rollup } from 'vite';
 
 import { analyzeRemoteModule } from './node/analyze.ts';
 import { appModule, findAppFiles, type AppFiles } from './node/app.ts';
 import { findRemoteFiles, findServerDependencies } from './node/dependencies.ts';
 import { REMOTE_MODULE, resolveModule } from './node/files.ts';
 import { hash } from './node/hash.ts';
+import { isProjectScript, isRemoteModule, reachesRemoteModule } from './node/server-context.ts';
 import { createServerModule, SERVER_QUERY } from './node/server-module.ts';
 import { createClientStub } from './node/stub.ts';
 
@@ -56,6 +57,19 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
   let kitDir = '';
   const server = options.server ?? false;
   let app: AppFiles = { serverHooks: null, universalHooks: null, env: null };
+  /** Server mode: whether a project script leads to a remote module (see `reachesRemoteModule`). */
+  const reachesRemote = new Map<string, Promise<boolean>>();
+  const leadsToRemote = (file: string, context: Pick<Rollup.PluginContext, 'resolve'>) => {
+    let result = reachesRemote.get(file);
+    if (!result) {
+      result = reachesRemoteModule(file, async (specifier, importer) => {
+        const target = await context.resolve(specifier, importer, { skipSelf: true });
+        return target && !target.external ? cleanId(target.id) : null;
+      });
+      reachesRemote.set(file, result);
+    }
+    return result;
+  };
 
   return {
     name: 'vitest-plugin-sveltekit',
@@ -108,23 +122,19 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
       ]);
     },
 
+    watchChange() {
+      reachesRemote.clear();
+    },
+
     resolveId: {
-      filter: {
-        id: [
-          /^(virtual:@storybookjs\/vitest-plugin-sveltekit\/(kit|app)|node:async_hooks|#app\/env\/server|@storybook\/sveltekit\/.*)$/,
-          REMOTE_MODULE,
-        ],
-      },
+      // Server mode looks at every import of server code, so it has no filter.
+      ...(!server && {
+        filter: {
+          id: /^(virtual:@storybookjs\/vitest-plugin-sveltekit\/(kit|app)|node:async_hooks|#app\/env\/server|@storybook\/sveltekit\/.*)$/,
+        },
+      }),
       async handler(id, importer, resolveOptions) {
         if (!enabled || this.environment.config.consumer !== 'client') return;
-
-        // A remote module imported by the server copy of another one gets its server copy too,
-        // as it would on SvelteKit's server.
-        if (REMOTE_MODULE.test(id)) {
-          if (!server || !importer?.endsWith(SERVER_QUERY) || id.endsWith(SERVER_QUERY)) return;
-          const resolved = await this.resolve(id, importer, { ...resolveOptions, skipSelf: true });
-          return resolved && { ...resolved, id: cleanId(resolved.id) + SERVER_QUERY };
-        }
 
         // `@storybook/sveltekit` aliases `$app/state` and `$app/navigation` to bare specifiers.
         // This package does not depend on `@storybook/sveltekit`, so resolve them from the project.
@@ -146,6 +156,24 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         // maps it to a module that throws.
         if (id === '#app/env/server' && importer && isInside(importer, kitDir)) {
           return path.join(kitDir, 'src/runtime/app/env/server.js');
+        }
+
+        // Server code imports server code, as on SvelteKit's server: a remote module imported by
+        // the server copy of a module gets its server copy too. So does a project script that
+        // leads to a remote module (`a.remote.ts → helper.ts → b.remote.ts`), so its remote
+        // functions are the server ones. Other modules (the data layer) stay one shared module,
+        // so `vi.mock` and `sb.mock` still replace them.
+        if (server && importer?.endsWith(SERVER_QUERY) && !id.endsWith(SERVER_QUERY)) {
+          const resolved = await this.resolve(id, importer, { ...resolveOptions, skipSelf: true });
+          if (!resolved || resolved.external) return resolved;
+          const file = cleanId(resolved.id);
+          if (
+            isRemoteModule(file) ||
+            (isProjectScript(file) && (await leadsToRemote(file, this)))
+          ) {
+            return { ...resolved, id: file + SERVER_QUERY };
+          }
+          return resolved;
         }
       },
     },
@@ -207,10 +235,8 @@ function kitModule(kitDir: string): string {
     `export { set_manifest, set_hooks } from ${file('runtime/server/internal.js')};`,
     `export { init_transport } from ${file('runtime/app/internal/transport.js')};`,
     `export { query, form, command, prerender, requested } from ${file('runtime/app/server/remote/index.js')};`,
-    `export { create_request_state } from ${file('runtime/server/state.js')};`,
-    `export { get_cookies } from ${file('runtime/server/cookie.js')};`,
-    `export { noop_span } from ${file('telemetry.js')};`,
-    `export { with_request_store } from ${file('exports/internal/server/index.js')};`,
+    `export { withRequestEvent } from ${file('runtime/app/server/request-event.js')};`,
+    `export { get_request_store } from ${file('exports/internal/server/index.js')};`,
     '',
   ].join('\n');
 }
