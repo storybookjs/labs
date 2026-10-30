@@ -8,7 +8,8 @@ import { defineConfig } from 'vitest/config';
 const browser = () => ({
   enabled: true,
   headless: true,
-  provider: playwright(),
+  // `gc()` lets a test check what happens when a remote function's proxy is collected.
+  provider: playwright({ launchOptions: { args: ['--js-flags=--expose-gc'] } }),
   instances: [{ browser: 'chromium' as const }],
 });
 
@@ -45,6 +46,7 @@ export default defineConfig({
         plugins: [vitestPluginSvelteKit({ server: true })],
         test: {
           name: 'server',
+          expect: { requireAssertions: true },
           include: ['src/**/*.server.test.ts'],
           browser: browser(),
           setupFiles: ['@storybookjs/vitest-plugin-sveltekit/vitest', './src/vitest-server.setup.ts'],
