@@ -277,10 +277,41 @@ resolves `undefined`.
 ## SvelteKit patch
 
 SvelteKit's client runtime for remote functions calls the router directly. This package needs a way
-to give it a different `fetch`, `page` and `goto`, and to reset its caches between tests. That
-change is proposed to SvelteKit. Until it is released, apply
-[`patches/@sveltejs__kit@3.1.1.patch`](../../patches/@sveltejs__kit@3.1.1.patch) with
-`pnpm patch` or `patch-package`.
+to give it a different `fetch`, `page` and `goto`, and a way to reset its caches and form state
+between tests: `set_remote_env` and `reset_remote_state` from `@sveltejs/kit/internal/client`,
+proposed to SvelteKit. Each request runs in `withRequestEvent` from `$app/server`, also proposed.
+
+Until these are released, use the patch from this repository. It is for one SvelteKit version, so
+pin that version exactly. A range such as `^3.1.0` can keep an older version in your lockfile, and
+then pnpm applies no patch.
+
+1. Pin SvelteKit in `package.json`:
+
+   ```json
+   "devDependencies": {
+     "@sveltejs/kit": "3.1.1"
+   }
+   ```
+
+2. Copy [`patches/@sveltejs__kit@3.1.1.patch`](../../patches/@sveltejs__kit@3.1.1.patch) to the
+   `patches/` folder of your project.
+
+3. Tell pnpm about it in `pnpm-workspace.yaml`:
+
+   ```yaml
+   patchedDependencies:
+     '@sveltejs/kit@3.1.1': patches/@sveltejs__kit@3.1.1.patch
+   ```
+
+   If you set `minimumReleaseAge`, pnpm refuses a SvelteKit version younger than that age. Exclude
+   it until it is old enough:
+
+   ```yaml
+   minimumReleaseAgeExclude:
+     - '@sveltejs/kit@3.1.1'
+   ```
+
+4. Run `pnpm install`. With npm or yarn, apply the same file with `patch-package`.
 
 ## Development
 

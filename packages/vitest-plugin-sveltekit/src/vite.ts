@@ -142,7 +142,8 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
 function kitModule(kitDir: string): string {
   const file = (relative: string) => JSON.stringify(path.join(kitDir, 'src', relative));
   return [
-    `export { set_remote_env, reset_remote_state } from ${file('runtime/client/remote-functions/env.js')};`,
+    // PR A's public entry, `@sveltejs/kit/internal/client`.
+    `export { set_remote_env, reset_remote_state } from ${file('exports/internal/client.js')};`,
     `export { query_map, live_query_map } from ${file('runtime/client/client.js')};`,
     `export { HttpError, SvelteKitError } from ${file('exports/internal/shared.js')};`,
     `export { app_dir, base } from ${file('runtime/app/paths/client.js')};`,
@@ -150,9 +151,8 @@ function kitModule(kitDir: string): string {
     `export { set_manifest, set_hooks } from ${file('runtime/server/internal.js')};`,
     `export { init_transport } from ${file('runtime/app/internal/transport.js')};`,
     `export { query, form, command, prerender, requested } from ${file('runtime/app/server/remote/index.js')};`,
-    `export { create_request_state } from ${file('runtime/server/state.js')};`,
-    `export { get_cookies } from ${file('runtime/server/cookie.js')};`,
-    `export { noop_span } from ${file('telemetry.js')};`,
+    `export { withRequestEvent } from ${file('runtime/app/server/request-event.js')};`,
+    `export { get_request_store } from ${file('exports/internal/server/index.js')};`,
     '',
   ].join('\n');
 }
