@@ -46,8 +46,13 @@ function setup(): void {
 
   kit.init_transport({});
   kit.set_hooks({
-    handle: ({ event, resolve }: { event: RequestEvent; resolve: (event: RequestEvent) => unknown }) =>
-      resolve(event),
+    handle: ({
+      event,
+      resolve,
+    }: {
+      event: RequestEvent;
+      resolve: (event: RequestEvent) => unknown;
+    }) => resolve(event),
     handleError: ({ kind, error }: { kind: string; error: unknown }) => {
       // Same as SvelteKit's default: expected errors (`error(404)`) are not logged.
       if (kind === 'unknown') console.error(error);
@@ -66,7 +71,8 @@ function setup(): void {
           ? { value: loader(hash), configurable: true, enumerable: true, writable: false }
           : undefined,
       has: (_, hash) => typeof hash === 'string' && hasRemoteModule(hash),
-      get: (_, hash) => (typeof hash === 'string' && hasRemoteModule(hash) ? loader(hash) : undefined),
+      get: (_, hash) =>
+        typeof hash === 'string' && hasRemoteModule(hash) ? loader(hash) : undefined,
     }),
   });
 }
@@ -78,23 +84,29 @@ function setup(): void {
 function getRemoteModule(hash: string): RemoteModule {
   let module = modules.get(hash);
   if (!module) {
-    module = Object.fromEntries(getRemoteEntries(hash).map((entry) => [entry.name, fake(entry)]));
+    module = Object.fromEntries(
+      getRemoteEntries(hash).map((entry) => [entry.name, fakeServerExport(entry)])
+    );
     modules.set(hash, module);
   }
   return module;
 }
 
-/** Wraps the spy in SvelteKit's server factory for its kind, as the remote file would. */
-function fake(entry: RemoteEntry): unknown {
+/**
+ * The server export behind a mocked remote function: its spy wrapped in SvelteKit's server factory
+ * for its kind, as the remote file would.
+ */
+function fakeServerExport(entry: RemoteEntry): unknown {
   const handler = (...args: unknown[]) => entry.spy(...args);
-  const fn = create(entry.kind, handler);
+  const fn = createServerFunction(entry.kind, handler);
   // What SvelteKit's `init_remote_functions` does for each export.
   fn.__.id = entry.id;
   fn.__.name = entry.name;
   return fn;
 }
 
-function create(kind: RemoteKind, handler: (...args: unknown[]) => unknown) {
+/** Calls SvelteKit's server factory for `kind` (`query`, `form`, ...) with an `'unchecked'` handler. */
+function createServerFunction(kind: RemoteKind, handler: (...args: unknown[]) => unknown) {
   switch (kind) {
     case 'query':
       return kit.query('unchecked', handler);

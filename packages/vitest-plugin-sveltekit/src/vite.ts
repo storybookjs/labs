@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import path from 'pathe';
 
 import type { Plugin, ResolvedConfig } from 'vite';
 
@@ -25,8 +26,9 @@ const KIT_REMOTE_PLUGIN = 'vite-plugin-sveltekit-remote';
 /** SvelteKit plugins that `@storybook/sveltekit` removes, and that this plugin removes in Vitest. */
 const KIT_APP_PLUGINS = ['vite-plugin-sveltekit-compile', 'vite-plugin-sveltekit-guard'];
 
-// The same pattern as SvelteKit's `remote_module_pattern`, limited to script files.
-const REMOTE_MODULE = /[/.]remote\.[cm]?[jt]s$/;
+// SvelteKit's `remote_module_pattern`: `x.remote.ts`, `x.remote.svelte.ts`, `remote.js`, ... SvelteKit's
+// remote plugin matches on this alone; `moduleExtensions` only drive its guard for a disabled flag.
+const REMOTE_MODULE = /[/.]remote\.[^/]+$/;
 
 const distDir = path.dirname(fileURLToPath(import.meta.url));
 const runtimeFile = (name: string) => path.join(distDir, 'internal', `${name}.mjs`);
@@ -65,11 +67,16 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
       root = config.root;
       kitDir = resolveKitDir(root);
 
-      removePlugins(config, inStorybook ? [KIT_REMOTE_PLUGIN] : [KIT_REMOTE_PLUGIN, ...KIT_APP_PLUGINS]);
+      removePlugins(
+        config,
+        inStorybook ? [KIT_REMOTE_PLUGIN] : [KIT_REMOTE_PLUGIN, ...KIT_APP_PLUGINS]
+      );
     },
 
     resolveId: {
-      filter: { id: /^(virtual:@storybookjs\/vitest-plugin-sveltekit\/kit|node:async_hooks|#app\/env\/server)$/ },
+      filter: {
+        id: /^(virtual:@storybookjs\/vitest-plugin-sveltekit\/kit|node:async_hooks|#app\/env\/server)$/,
+      },
       handler(id, importer) {
         if (!enabled || this.environment.config.consumer !== 'client') return;
 
@@ -99,8 +106,11 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
       handler(code, id) {
         if (!enabled || this.environment.config.consumer !== 'client') return;
 
-        const file = posixify(path.relative(root, cleanId(id)));
-        if (!REMOTE_MODULE.test(file)) return;
+        // This package's own `remote.mock` matches the pattern too.
+        if (isInside(id, distDir)) return;
+        const file = path.relative(root, cleanId(id));
+        // Remote files in packages need SvelteKit's per-package opt-in check; not supported yet.
+        if (!REMOTE_MODULE.test(file) || file.includes('node_modules')) return;
 
         const exports = analyzeRemoteModule(code, file);
         let stub = createClientStub(exports, {
@@ -125,6 +135,7 @@ function kitModule(kitDir: string): string {
   return [
     `export { set_remote_env, reset_remote_state } from ${file('runtime/client/remote-functions/env.js')};`,
     `export { query_map, live_query_map } from ${file('runtime/client/client.js')};`,
+    `export { HttpError, SvelteKitError } from ${file('exports/internal/shared.js')};`,
     `export { app_dir, base } from ${file('runtime/app/paths/client.js')};`,
     `export { handle_remote_call } from ${file('runtime/server/remote-functions.js')};`,
     `export { set_manifest, set_hooks } from ${file('runtime/server/internal.js')};`,
@@ -150,9 +161,8 @@ function resolveKitDir(root: string): string {
 
 function removePlugins(config: ResolvedConfig, names: string[]): void {
   const plugins = config.plugins as Plugin[];
-  for (let i = plugins.length - 1; i >= 0; i--) {
-    if (names.includes(plugins[i].name)) plugins.splice(i, 1);
-  }
+  const kept = plugins.filter((plugin) => !names.includes(plugin.name));
+  plugins.splice(0, plugins.length, ...kept);
 }
 
 function cleanId(id: string): string {
@@ -162,8 +172,4 @@ function cleanId(id: string): string {
 function isInside(file: string, dir: string): boolean {
   const relative = path.relative(dir, cleanId(file));
   return !!relative && !relative.startsWith('..') && !path.isAbsolute(relative);
-}
-
-function posixify(file: string): string {
-  return file.replaceAll('\\', '/');
 }
