@@ -1,10 +1,16 @@
 import { httpError, remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
-import { expect } from 'storybook/test';
+import { error } from '@sveltejs/kit';
+import { expect, waitFor } from 'storybook/test';
 
-import { getPosts, getStats } from '#lib/posts.remote';
+import { deletePost, getPosts, getStats } from '#lib/posts.remote';
 
 import preview from '../../../.storybook/preview';
 import PostList from './PostList.svelte';
+
+const posts = [
+  { id: 1, title: 'First post', body: '' },
+  { id: 2, title: 'Second post', body: '' },
+];
 
 const meta = preview.meta({
   title: 'PostList',
@@ -16,22 +22,67 @@ const meta = preview.meta({
 
 export const Data = meta.story({
   beforeEach: () => {
-    remote(getPosts).mockResolvedValue([
-      { id: 1, title: 'First post', body: '' },
-      { id: 2, title: 'Second post', body: '' },
-    ]);
+    remote(getPosts).mockResolvedValue(posts);
   },
   play: async ({ canvas }) => {
     await expect(await canvas.findByRole('link', { name: 'First post' })).toBeVisible();
+    await expect(canvas.getByRole('link', { name: 'Second post' })).toBeVisible();
     await expect(remote(getPosts)).toHaveBeenCalledWith('newest');
   },
 });
 
-export const Failed = meta.story({
+export const Pending = meta.story({
+  beforeEach: () => {
+    remote(getPosts).mockPending();
+  },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText('Loading posts…')).toBeVisible();
+  },
+});
+
+export const HttpError = meta.story({
+  beforeEach: () => {
+    remote(getPosts).mockImplementation(() => error(503, 'The database is asleep'));
+  },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole('alert')).toHaveTextContent('The database is asleep');
+  },
+});
+
+export const RejectedValue = meta.story({
   beforeEach: () => {
     remote(getPosts).mockRejectedValue(httpError(404, 'No posts here'));
   },
   play: async ({ canvas }) => {
     await expect(await canvas.findByRole('alert')).toHaveTextContent('No posts here');
+  },
+});
+
+export const Batch = meta.story({
+  beforeEach: () => {
+    remote(getPosts).mockResolvedValue(posts);
+  },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByTestId('stats-2')).toHaveTextContent('200 views, 2 likes');
+    // One mock call per argument, although SvelteKit sent a single batched request.
+    await expect(remote(getStats)).toHaveBeenCalledTimes(2);
+    await expect(remote(getStats)).toHaveBeenCalledWith(1);
+    await expect(remote(getStats)).toHaveBeenCalledWith(2);
+  },
+});
+
+export const DeleteWithCommand = meta.story({
+  beforeEach: () => {
+    let current = [...posts];
+    remote(getPosts).mockImplementation(async () => current);
+    remote(deletePost).mockImplementation(async (id) => {
+      current = current.filter((post) => post.id !== id);
+    });
+  },
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(await canvas.findByRole('button', { name: 'Delete First post' }));
+    await waitFor(() => expect(canvas.queryByText('First post')).toBeNull());
+    await expect(remote(deletePost)).toHaveBeenCalledWith(1);
+    await expect(remote(getPosts)).toHaveBeenCalledTimes(2);
   },
 });

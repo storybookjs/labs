@@ -1,4 +1,8 @@
-import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import {
+  httpError,
+  remote,
+  type RemoteStream,
+} from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { expect } from 'storybook/test';
 
 import { getPostCount } from '#lib/posts.remote';
@@ -17,15 +21,47 @@ export const LiveGenerator = meta.story({
     });
   },
   play: async ({ canvas }) => {
+    await expect(await canvas.findByText('1')).toBeVisible();
     await expect(await canvas.findByText('2')).toBeVisible();
+    await expect(await canvas.findByText('done')).toBeVisible();
   },
 });
 
-export const LiveStream = meta.story({
+export const LiveArray = meta.story({
+  beforeEach: () => {
+    remote(getPostCount).mockReturnValue([3, 4]);
+  },
   play: async ({ canvas }) => {
-    const feed = remote(getPostCount).mockStream(5);
+    await expect(await canvas.findByText('4')).toBeVisible();
+    await expect(await canvas.findByText('done')).toBeVisible();
+  },
+});
+
+let feed: RemoteStream<number>;
+
+export const LiveStream = meta.story({
+  beforeEach: () => {
+    feed = remote(getPostCount).mockStream(5);
+  },
+  play: async ({ canvas }) => {
     await expect(await canvas.findByText('5')).toBeVisible();
+    await expect(await canvas.findByText('live')).toBeVisible();
+
     feed.emit(6);
     await expect(await canvas.findByText('6')).toBeVisible();
+
+    feed.error(httpError(503, 'Feed down'));
+    await expect(await canvas.findByRole('alert')).toHaveTextContent('Feed down');
+  },
+});
+
+export const LiveStreamOpen = meta.story({
+  beforeEach: () => {
+    remote(getPostCount).mockStream(7);
+  },
+  // Ends with the stream still open.
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByText('7')).toBeVisible();
+    await expect(await canvas.findByText('live')).toBeVisible();
   },
 });

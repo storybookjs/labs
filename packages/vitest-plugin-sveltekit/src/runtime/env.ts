@@ -41,10 +41,10 @@ export function installRemoteEnv(host: RemoteHost): void {
   });
 }
 
-/** Forgets cached query results and resets every remote function spy. */
-export function resetRemoteState(): void {
-  kit.reset_remote_state();
+/** Forgets cached query results and form state, and resets every remote function spy. */
+export async function resetRemoteState(): Promise<void> {
   resetRemoteFunctions();
+  await kit.reset_remote_state();
 }
 
 async function remoteFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {

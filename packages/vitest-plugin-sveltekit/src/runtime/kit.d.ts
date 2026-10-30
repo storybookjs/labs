@@ -19,7 +19,7 @@ declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
   }
 
   export function set_remote_env(env: Partial<RemoteEnv> | null): void;
-  export function reset_remote_state(): void;
+  export function reset_remote_state(): Promise<void>;
 
   interface CacheEntry {
     resource: { refresh(): Promise<void> } & { reconnect(): Promise<void> };
@@ -57,4 +57,10 @@ declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
   export const form: Factory;
   export const command: Factory;
   export const prerender: Factory;
+
+  interface RequestedResult {
+    refreshAll: () => Promise<void>;
+    reconnectAll: () => Promise<void>;
+  }
+  export function requested(query: unknown, limit: number): RequestedResult;
 }
