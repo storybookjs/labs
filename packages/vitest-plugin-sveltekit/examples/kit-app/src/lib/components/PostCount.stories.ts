@@ -5,7 +5,7 @@ import {
 } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { expect } from 'storybook/test';
 
-import { getPostCount } from '#lib/posts.remote';
+import { getPostCount } from '#lib/posts.remote.ts';
 
 import preview from '../../../.storybook/preview';
 import PostCount from './PostCount.svelte';

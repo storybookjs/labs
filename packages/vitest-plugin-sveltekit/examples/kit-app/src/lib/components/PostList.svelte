@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { deletePost, getPosts } from '#lib/posts.remote';
+  import { deletePost, getPosts } from '#lib/posts.remote.ts';
 
   import { errorMessage } from './error-message.ts';
   import PostStats from './PostStats.svelte';

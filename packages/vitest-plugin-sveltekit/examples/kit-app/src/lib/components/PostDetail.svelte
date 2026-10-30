@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getPost } from '#lib/posts.remote';
+  import { getPost } from '#lib/posts.remote.ts';
 
   import { errorMessage } from './error-message.ts';
 

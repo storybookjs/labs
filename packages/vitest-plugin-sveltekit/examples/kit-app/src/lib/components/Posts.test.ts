@@ -4,8 +4,8 @@ import { redirect } from '@sveltejs/kit';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
-import { createPost, getPosts, getStats } from '#lib/posts.remote';
-import type { Post } from '#lib/server/db';
+import { createPost, getPosts, getStats } from '#lib/posts.remote.ts';
+import type { Post } from '#lib/server/db.ts';
 
 import Posts from './Posts.svelte';
 
@@ -17,7 +17,7 @@ test('refreshes the queries after a successful submission', async () => {
   const posts: Post[] = [{ id: 1, title: 'First post', body: '' }];
   remote(getPosts).mockImplementation(async () => [...posts]);
   remote(createPost).mockImplementation(async ({ title, body }) => {
-    const post = { id: posts.length + 1, title, body };
+    const post = { id: posts.length + 1, title, body: body ?? '' };
     posts.push(post);
     return post;
   });

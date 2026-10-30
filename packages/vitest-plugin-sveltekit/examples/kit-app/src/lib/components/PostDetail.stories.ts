@@ -2,7 +2,7 @@ import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { error } from '@sveltejs/kit';
 import { expect } from 'storybook/test';
 
-import { getPost } from '#lib/posts.remote';
+import { getPost } from '#lib/posts.remote.ts';
 
 import preview from '../../../.storybook/preview';
 import PostDetail from './PostDetail.svelte';

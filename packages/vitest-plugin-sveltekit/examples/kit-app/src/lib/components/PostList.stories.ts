@@ -2,7 +2,7 @@ import { httpError, remote } from '@storybookjs/vitest-plugin-sveltekit/remote.m
 import { error, redirect } from '@sveltejs/kit';
 import { expect, waitFor } from 'storybook/test';
 
-import { deletePost, getPosts, getStats } from '#lib/posts.remote';
+import { deletePost, getPosts, getStats } from '#lib/posts.remote.ts';
 
 import preview from '../../../.storybook/preview';
 import PostList from './PostList.svelte';
