@@ -1,10 +1,8 @@
 <script lang="ts">
   import PostCount from '#lib/components/PostCount.svelte';
-  import PostForm from '#lib/components/PostForm.svelte';
-  import PostList from '#lib/components/PostList.svelte';
+  import Posts from '#lib/components/Posts.svelte';
 </script>
 
 <h1>Posts</h1>
 <PostCount />
-<PostList />
-<PostForm />
+<Posts />

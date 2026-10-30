@@ -2,7 +2,13 @@ import type { RequestEvent } from '@sveltejs/kit';
 import * as kit from 'virtual:@storybookjs/vitest-plugin-sveltekit/kit';
 
 import type { RemoteKind } from '../node/analyze.ts';
-import { getRemoteEntries, hasRemoteModule, onRegister, type RemoteEntry } from './registry.ts';
+import {
+  getRemoteEntries,
+  hasRemoteModule,
+  onRegister,
+  registeredHashes,
+  type RemoteEntry,
+} from './registry.ts';
 
 type RemoteModule = Record<string, unknown>;
 
@@ -97,9 +103,9 @@ function create(kind: RemoteKind, handler: (...args: unknown[]) => unknown) {
     case 'query_live':
       return kit.query.live('unchecked', handler);
     case 'form':
-      return kit.form('unchecked', handler);
+      return kit.form('unchecked', refreshingRequested(handler));
     case 'command':
-      return kit.command('unchecked', handler);
+      return kit.command('unchecked', refreshingRequested(handler));
     case 'prerender':
       // `dynamic`, so SvelteKit answers at runtime instead of expecting a prerendered file.
       return kit.prerender('unchecked', handler, { dynamic: true });
@@ -120,6 +126,35 @@ async function perArgument(handler: (...args: unknown[]) => unknown, args: unkno
     const result = results[index]!;
     if (result.status === 'rejected') throw result.reason;
     return result.value;
+  };
+}
+
+/**
+ * A real form or command handler refreshes the queries the client passed to `.updates(...)`
+ * (with `getPosts().refresh()` or `requested(...)`), or SvelteKit fails them. A mock cannot reach
+ * the server-side queries, so after it resolves, every requested query is refreshed: its mock
+ * runs again and the new value goes back in the same response.
+ */
+function refreshingRequested(handler: (...args: unknown[]) => unknown) {
+  return async (...args: unknown[]) => {
+    // `requested()` reads the request store, which is only reliable before the first `await`.
+    const refreshes: Array<() => Promise<void>> = [];
+    for (const hash of registeredHashes()) {
+      for (const fn of Object.values(getRemoteModule(hash)) as Array<{ __: { type: string } }>) {
+        const { type } = fn.__;
+        if (type === 'query' || type === 'query_batch') {
+          const entry = kit.requested(fn, Infinity);
+          refreshes.push(() => entry.refreshAll());
+        } else if (type === 'query_live') {
+          const entry = kit.requested(fn, Infinity);
+          refreshes.push(() => entry.reconnectAll());
+        }
+      }
+    }
+
+    const result = await handler(...args);
+    await Promise.all(refreshes.map((refresh) => refresh()));
+    return result;
   };
 }
 

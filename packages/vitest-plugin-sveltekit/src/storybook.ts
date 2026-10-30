@@ -8,8 +8,8 @@ import { installRemoteEnv, resetRemoteState } from './runtime/env.ts';
  * Resets every remote function mock and connects SvelteKit's remote function runtime to
  * Storybook's `$app/state` and `$app/navigation` mocks. Runs before each story.
  */
-export function beforeEach(): void {
-  resetRemoteState();
+export async function beforeEach(): Promise<void> {
+  await resetRemoteState();
   installRemoteEnv({ page, navigating, goto, refreshAll });
 }
 

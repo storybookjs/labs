@@ -73,6 +73,10 @@ export function getRemoteEntries(hash: string): RemoteEntry[] {
   return [...entries.values()].filter((entry) => entry.hash === hash);
 }
 
+export function registeredHashes(): Set<string> {
+  return new Set(Array.from(entries.values(), (entry) => entry.hash));
+}
+
 export function hasRemoteModule(hash: string): boolean {
   for (const entry of entries.values()) if (entry.hash === hash) return true;
   return false;

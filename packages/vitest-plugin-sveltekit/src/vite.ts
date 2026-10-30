@@ -51,6 +51,8 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         optimizeDeps: {
           // The runtime imports a virtual module, which the dependency optimizer cannot resolve.
           exclude: [PACKAGE_NAME],
+          // So the optimizer does not find these in the middle of a run and reload the page.
+          include: [`${PACKAGE_NAME} > storybook/test`, `${PACKAGE_NAME} > storybook/internal/csf`],
         },
       };
     },
@@ -127,7 +129,7 @@ function kitModule(kitDir: string): string {
     `export { handle_remote_call } from ${file('runtime/server/remote-functions.js')};`,
     `export { set_manifest, set_hooks } from ${file('runtime/server/internal.js')};`,
     `export { init_transport } from ${file('runtime/app/internal/transport.js')};`,
-    `export { query, form, command, prerender } from ${file('runtime/app/server/remote/index.js')};`,
+    `export { query, form, command, prerender, requested } from ${file('runtime/app/server/remote/index.js')};`,
     `export { create_request_state } from ${file('runtime/server/state.js')};`,
     `export { get_cookies } from ${file('runtime/server/cookie.js')};`,
     `export { noop_span } from ${file('telemetry.js')};`,

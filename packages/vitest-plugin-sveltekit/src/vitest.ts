@@ -20,10 +20,10 @@ export const navigating: { to: { url: URL } | null } | null = null;
 export const goto: ReturnType<typeof fn<(url: string, options?: object) => Promise<void>>> =
   fn(async (_url: string, _options?: object) => {}).mockName('goto');
 
-beforeEach(() => {
+beforeEach(async () => {
   page.url = defaultUrl();
   goto.mockClear();
-  resetRemoteState();
+  await resetRemoteState();
   installRemoteEnv({ page, navigating, goto });
 });
 
