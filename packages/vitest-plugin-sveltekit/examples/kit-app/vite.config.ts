@@ -49,7 +49,10 @@ export default defineConfig({
           expect: { requireAssertions: true },
           include: ['src/**/*.server.test.ts'],
           browser: browser(),
-          setupFiles: ['@storybookjs/vitest-plugin-sveltekit/vitest', './src/vitest-server.setup.ts'],
+          setupFiles: [
+            '@storybookjs/vitest-plugin-sveltekit/vitest',
+            './src/vitest-server.setup.ts',
+          ],
         },
       },
       {

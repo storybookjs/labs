@@ -20,6 +20,8 @@ export default defineConfig({
         ] as const)
       : []),
   ],
+  // The first server mode story compiles the server code (drizzle, PGlite) in `storybook dev`.
+  expect: { timeout: 15_000 },
   use: {
     trace: 'retain-on-failure',
   },
@@ -51,7 +53,8 @@ export default defineConfig({
     {
       command: 'pnpm exec storybook build --quiet && node e2e-tests/serve-static.mjs',
       cwd: import.meta.dirname,
-      env: { ...env, PORT: '6107' },
+      // A shell value that `.env` copies into an undeclared key: the build must leave it out.
+      env: { ...env, PORT: '6107', E2E_SHELL_CANARY: 'shell-canary-8b3f' },
       url: 'http://127.0.0.1:6107/index.json',
       timeout: 300_000,
       reuseExistingServer: false,

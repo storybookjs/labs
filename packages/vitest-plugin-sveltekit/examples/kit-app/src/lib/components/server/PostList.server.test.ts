@@ -51,7 +51,9 @@ test('runs the real command with the session cookie from requestEvent', async ()
 
   await screen.getByRole('button', { name: 'Delete From the database' }).click();
 
-  await expect.element(screen.getByText('From the database', { exact: true })).not.toBeInTheDocument();
+  await expect
+    .element(screen.getByText('From the database', { exact: true }))
+    .not.toBeInTheDocument();
   expect(await db.$count(posts)).toBe(1);
 });
 
