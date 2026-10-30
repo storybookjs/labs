@@ -1,0 +1,10 @@
+{
+  "name": "server-deps-fixture",
+  "private": true,
+  "imports": {
+    "#lib/*": "./src/lib/*",
+    "#config": {
+      "default": "./src/config.js"
+    }
+  }
+}

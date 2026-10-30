@@ -37,6 +37,8 @@ test('shows the issue the real handler reports with invalid()', async () => {
   await screen.getByLabelText('Title').fill('First post');
   await screen.getByRole('button', { name: 'Create' }).click();
 
-  await expect.element(screen.getByRole('alert')).toHaveTextContent('A post with this title exists');
+  await expect
+    .element(screen.getByRole('alert'))
+    .toHaveTextContent('A post with this title exists');
   expect(await db.$count(posts)).toBe(1);
 });

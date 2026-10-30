@@ -61,15 +61,20 @@ describe('vitestPluginSvelteKit', () => {
     expect(transform(plugin, code, `${root}/src/a.remote.ts`)?.code).toContain('__remote.query(');
   });
 
-  it('in Storybook started without the CLI, a storybook:* plugin turns it on', () => {
+  it('in Storybook started without the CLI, a storybook:* plugin turns it on; Storybook’s guard stays by default', () => {
     vi.stubEnv('VITEST', '');
     vi.stubEnv('STORYBOOK', '');
     const { names } = setup([
       named('storybook:sveltekit-mock-modules'),
+      named('storybook:sveltekit-guard-server-modules'),
       named('vite-plugin-sveltekit-remote'),
     ]);
 
-    expect(names).toEqual(['storybook:sveltekit-mock-modules', 'vitest-plugin-sveltekit']);
+    expect(names).toEqual([
+      'storybook:sveltekit-mock-modules',
+      'storybook:sveltekit-guard-server-modules',
+      'vitest-plugin-sveltekit',
+    ]);
   });
 
   it('turns a remote file into SvelteKit’s client stub', () => {
@@ -105,5 +110,115 @@ describe('vitestPluginSvelteKit', () => {
     expect(
       transform(plugin, 'export const a = 1;', `${root}/src/a.remote.ts`, 'server')
     ).toBeUndefined();
+  });
+
+  describe('server mode', () => {
+    const remoteCode = [
+      `import { query, form } from '$app/server';`,
+      `export const getPosts = query(() => []);`,
+      `const create = form(() => 1);`,
+      `export { create as createPost };`,
+    ].join('\n');
+    const remoteFile = `${root}/src/lib/posts.remote.ts`;
+
+    it('removes Storybook’s server module guard', () => {
+      const { names } = setup(
+        [named('storybook:sveltekit-guard-server-modules'), named('vite-plugin-sveltekit-remote')],
+        { enabled: true, server: true }
+      );
+      expect(names).toEqual(['vitest-plugin-sveltekit']);
+    });
+
+    it('keeps the source for the server copy and gives each export its id', () => {
+      const { plugin } = setup([], { enabled: true, server: true });
+      const result = transform(plugin, remoteCode, `${remoteFile}?server`);
+
+      expect(result?.code.startsWith(remoteCode)).toBe(true);
+      expect(result?.code).toContain(
+        '$$_init_$$({ "getPosts": getPosts, "createPost": create }, "src/lib/posts.remote.ts", "1rlm6aw");'
+      );
+      expect(result?.code).not.toContain('?server";');
+    });
+
+    it('registers a loader for the server copy in the client stub', () => {
+      const { plugin } = setup([], { enabled: true, server: true });
+      const result = transform(plugin, remoteCode, remoteFile);
+
+      expect(result?.code).toContain(
+        `__registerModule("1rlm6aw", () => import(${JSON.stringify(`${remoteFile}?server`)}));`
+      );
+    });
+
+    it('leaves `?server` ids alone without server mode', () => {
+      const { plugin } = setup([], { enabled: true });
+      expect(transform(plugin, remoteCode, `${remoteFile}?server`)).toBeUndefined();
+      expect(transform(plugin, remoteCode, remoteFile)?.code).not.toContain('__registerModule');
+    });
+
+    it('gives a server copy the server copies of the remote modules it imports', async () => {
+      const { plugin } = setup([], { enabled: true, server: true });
+      const { handler } = plugin.resolveId as {
+        handler: (id: string, importer?: string, options?: object) => Promise<unknown>;
+      };
+      const context = {
+        environment: { config: { consumer: 'client' } },
+        resolve: async () => ({ id: `${root}/src/lib/other.remote.ts` }),
+      };
+
+      await expect(
+        handler.call(context, './other.remote.ts', `${remoteFile}?server`, {})
+      ).resolves.toEqual({ id: `${root}/src/lib/other.remote.ts?server` });
+      await expect(handler.call(context, './other.remote.ts', remoteFile, {})).resolves.toBe(
+        undefined
+      );
+    });
+
+    it('loads the app’s server hooks lazily', () => {
+      const { plugin } = setup([], { enabled: true, server: true });
+      const { handler } = plugin.load as { handler: (id: string) => string | undefined };
+      const code = handler('\0virtual:vitest-plugin-sveltekit/app');
+
+      expect(code).toContain('export const serverMode = true;');
+      expect(code).toContain(
+        `export const loadServerHooks = () => import(${JSON.stringify(`${root}/src/hooks.server.ts`)});`
+      );
+      // `vite dev`: SvelteKit's generated env module already has the values.
+      expect(code).toContain('export function initEnv() {}');
+    });
+
+    const fixture = path.resolve(import.meta.dirname, '../test/fixtures/server-deps');
+    type ConfigHook = (config: object) => { optimizeDeps: { include: string[] } };
+
+    it('pre-bundles the packages the server code imports', () => {
+      const plugin = vitestPluginSvelteKit({ server: true });
+      const config = (plugin.config as ConfigHook)({
+        root: fixture,
+        optimizeDeps: { exclude: ['pkg-e'] },
+      });
+
+      expect(config.optimizeDeps.include).toEqual(
+        expect.arrayContaining(['pkg-a', 'pkg-b/sub', 'pkg-d/count', 'pkg-hooks'])
+      );
+      expect(config.optimizeDeps.include).not.toContain('pkg-e');
+    });
+
+    it('does not walk the server code when the plugin is off', () => {
+      vi.stubEnv('VITEST', '');
+      const plugin = vitestPluginSvelteKit({ server: true });
+      const config = (plugin.config as ConfigHook)({ root: fixture, plugins: [named('vite:x')] });
+
+      expect(config.optimizeDeps.include).not.toContain('pkg-a');
+    });
+
+    it('detects Storybook from the plugins in the config', () => {
+      vi.stubEnv('VITEST', '');
+      const plugin = vitestPluginSvelteKit({ server: true });
+      const config = (plugin.config as ConfigHook)({
+        root: fixture,
+        plugins: [[named('storybook:sveltekit-mock-modules')], false],
+      });
+
+      expect(config.optimizeDeps.include).toContain('pkg-a');
+    });
   });
 });
