@@ -10,7 +10,8 @@ export const SERVER_QUERY = '?server';
  * The server copy of a remote module: the source, plus the call SvelteKit's own plugin appends on
  * the server, which gives each export its id. SvelteKit passes the module's own namespace (a
  * self-import); that deadlocks in a build when the module graph has a top-level `await`, so the
- * exports are listed instead.
+ * exports are listed instead. They go on an object without a prototype, one assignment each, so an
+ * export named `__proto__` stays an export.
  */
 export function createServerModule(
   code: string,
@@ -19,12 +20,13 @@ export function createServerModule(
   kitDir: string
 ): string {
   const internal = path.join(kitDir, 'src/exports/internal/server/index.js');
-  const members = exports.map(({ name, local }) => `${JSON.stringify(name)}: ${local}`);
   return [
     code,
     '',
     `import { init_remote_functions as $$_init_$$ } from ${JSON.stringify(internal)};`,
-    `$$_init_$$({ ${members.join(', ')} }, ${JSON.stringify(file)}, ${JSON.stringify(hash(file))});`,
+    'const $$_exports_$$ = Object.create(null);',
+    ...exports.map(({ name, local }) => `$$_exports_$$[${JSON.stringify(name)}] = ${local};`),
+    `$$_init_$$($$_exports_$$, ${JSON.stringify(file)}, ${JSON.stringify(hash(file))});`,
     '',
   ].join('\n');
 }

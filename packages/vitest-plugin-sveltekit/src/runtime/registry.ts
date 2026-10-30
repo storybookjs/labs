@@ -93,6 +93,12 @@ export function getRemoteEntry(client: unknown): RemoteEntry {
   return entry;
 }
 
+/** The entry behind a request id, `<hash>/<name>` (a prerender id carries its argument too). */
+export function getRemoteEntryById(id: string): RemoteEntry | undefined {
+  const [hash, name] = id.split('/');
+  return entries.get(`${hash}/${name}`);
+}
+
 export function getRemoteEntries(hash: string): RemoteEntry[] {
   return [...entries.values()].filter((entry) => entry.hash === hash);
 }
