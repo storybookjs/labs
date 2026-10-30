@@ -58,7 +58,9 @@ declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
   export const command: Factory;
   export const prerender: Factory;
 
-  interface RequestedResult {
+  interface RequestedResult extends Iterable<{
+    query: { refresh(): Promise<void>; reconnect(): Promise<void> };
+  }> {
     refreshAll: () => Promise<void>;
     reconnectAll: () => Promise<void>;
   }

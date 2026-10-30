@@ -4,12 +4,13 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
-const browser = {
+// A function: Vitest writes the project name into the instances, so projects cannot share them.
+const browser = () => ({
   enabled: true,
   headless: true,
   provider: playwright(),
   instances: [{ browser: 'chromium' as const }],
-};
+});
 
 export default defineConfig({
   plugins: [
@@ -26,15 +27,17 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'components',
+          // Catches a second copy of `expect` (for example `storybook/test`'s) in the test page.
+          expect: { requireAssertions: true },
           include: ['src/**/*.test.ts'],
-          browser,
+          browser: browser(),
           setupFiles: ['@storybookjs/vitest-plugin-sveltekit/vitest'],
         },
       },
       {
         extends: true,
         plugins: [storybookTest({ configDir: '.storybook' })],
-        test: { name: 'storybook', browser },
+        test: { name: 'storybook', browser: browser() },
       },
     ],
   },

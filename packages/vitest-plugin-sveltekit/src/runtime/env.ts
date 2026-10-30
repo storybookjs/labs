@@ -54,6 +54,10 @@ async function remoteFetch(input: RequestInfo | URL, init?: RequestInit): Promis
     init
   );
   if (!isRemoteRequest(new URL(request.url))) return globalThis.fetch(input, init);
+  // A real request leaves the page's event loop; this one would not. Without the hop, a loop of
+  // requests with no await in between (SvelteKit reconnects a `query.live` at once when its
+  // stream redirects) runs on microtasks alone and freezes the page.
+  await new Promise<void>((resolve) => setTimeout(resolve));
   return handleRemoteRequest(request);
 }
 
