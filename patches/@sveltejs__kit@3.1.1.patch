@@ -1,0 +1,408 @@
+diff --git a/src/runtime/client/remote-functions/env.js b/src/runtime/client/remote-functions/env.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..ff882739512203e32dc798cf2b764b1fc1dfe8f0
+--- /dev/null
++++ b/src/runtime/client/remote-functions/env.js
+@@ -0,0 +1,85 @@
++import { app, _goto, handle_error, refreshAll, query_map, live_query_map, query_responses, prerender_responses } from '../client.js';
++import { navigating, page, notify_version } from '#app/state/client';
++
++/**
++ * @typedef {object} RemoteEnv
++ * @property {typeof fetch} fetch
++ * @property {Record<string, (data: any) => any>} decoders
++ * @property {Record<string, (data: any) => any>} encoders
++ * @property {{ url: URL }} page
++ * @property {{ to: { url: URL } | null } | null} navigating
++ * @property {(url: string | URL, opts?: { refreshAll?: boolean }) => Promise<void>} goto
++ * @property {() => Promise<void>} refreshAll
++ * @property {(error: unknown, event: { params: Record<string, string>; route: { id: string | null }; url: URL }) => Promise<App.Error>} handleError
++ * @property {(version: string | null) => void} notifyVersion
++ */
++
++// TEMPORARY labs patch: stands in for the client env setter of sveltejs/kit PR A (SB-2442).
++// Replace with the real diff when it lands.
++
++/** @type {RemoteEnv} */
++const default_env = {
++	fetch: (input, init) => fetch(input, init),
++	get decoders() {
++		return app.decoders;
++	},
++	get encoders() {
++		return app.encoders;
++	},
++	get page() {
++		return page;
++	},
++	get navigating() {
++		return navigating;
++	},
++	goto: (url, opts) => _goto(url, opts),
++	refreshAll: () => refreshAll(),
++	handleError: (error, event) => handle_error(error, event),
++	notifyVersion: (version) => notify_version(version)
++};
++
++/** @type {RemoteEnv} */
++export let env = default_env;
++
++/**
++ * Overrides parts of the environment the remote function client runtime reads.
++ * Pass `null` to restore the default, router-backed environment.
++ * @param {Partial<RemoteEnv> | null} overrides
++ */
++export function set_remote_env(overrides) {
++	env = overrides
++		? Object.defineProperties(
++				Object.create(default_env),
++				Object.getOwnPropertyDescriptors(overrides)
++			)
++		: default_env;
++}
++
++/** @type {Set<() => void>} */
++const reset_callbacks = new Set();
++
++/** @param {() => void} callback */
++export function on_remote_reset(callback) {
++	reset_callbacks.add(callback);
++}
++
++/**
++ * Drops every cached query, live query and prerender result, so the next call fetches again.
++ * Meant for test runners that render many components in one page.
++ */
++export function reset_remote_state() {
++	for (const map of [query_map, live_query_map]) {
++		for (const entries of map.values()) {
++			for (const entry of entries.values()) {
++				/** @type {any} */ (entry.resource)?.destroy?.();
++				entry.cleanup();
++			}
++		}
++		map.clear();
++	}
++
++	for (const key in query_responses) delete query_responses[key];
++	for (const key in prerender_responses) delete prerender_responses[key];
++
++	for (const callback of reset_callbacks) callback();
++}
+diff --git a/src/runtime/client/remote-functions/form.svelte.js b/src/runtime/client/remote-functions/form.svelte.js
+index f690e9288e313c17ace1d7ee4d1c2ceb853dc5ba..1f54ea0c7d2a3d040a9917ed7f25ee4f3f779a77 100644
+--- a/src/runtime/client/remote-functions/form.svelte.js
++++ b/src/runtime/client/remote-functions/form.svelte.js
+@@ -8,12 +8,9 @@ import * as w from '../../../messages/client-warnings.js';
+ 
+ import {
+ 	query_responses,
+-	_goto,
+-	set_nearest_error_page,
+-	handle_error,
+-	refreshAll
++	set_nearest_error_page
+ } from '../client.js';
+-import { page } from '#app/state/client';
++import { env } from './env.js';
+ import { tick } from 'svelte';
+ import { categorize_updates, fail_unhandled_refreshes, remote_request } from './shared.svelte.js';
+ import { createAttachmentKey } from 'svelte/attachments';
+@@ -87,11 +84,11 @@ export function form(id) {
+ 
+ 		/** @returns {string} */
+ 		function get_action() {
+-			if (page.url.search !== cached_search) {
+-				cached_search = page.url.search;
++			if (env.page.url.search !== cached_search) {
++				cached_search = env.page.url.search;
+ 
+-				if (page.url.search) {
+-					const params = new URLSearchParams(page.url.search);
++				if (env.page.url.search) {
++					const params = new URLSearchParams(env.page.url.search);
+ 					params.delete('/remote');
+ 					cached_query = params.toString();
+ 				} else {
+@@ -265,7 +262,7 @@ export function form(id) {
+ 
+ 							if (response.redirect) {
+ 								// Use internal version to allow redirects to external URLs
+-								await _goto(response.redirect, {
++								await env.goto(response.redirect, {
+ 									refreshAll: should_refresh
+ 								});
+ 								return true;
+@@ -276,7 +273,7 @@ export function form(id) {
+ 							if (succeeded) {
+ 								fail_unhandled_refreshes(refreshes);
+ 								if (should_refresh) {
+-									await refreshAll();
++									await env.refreshAll();
+ 								}
+ 							} else {
+ 								if (DEV) {
+@@ -473,7 +470,7 @@ export function form(id) {
+ 
+ 					await enhance_callback(create_enhance_callback_instance(form, form_data));
+ 				} catch (e) {
+-					const error = await handle_error(e, {
++					const error = await env.handleError(e, {
+ 						params: {},
+ 						route: { id: null },
+ 						url: new URL(location.href)
+diff --git a/src/runtime/client/remote-functions/prerender.svelte.js b/src/runtime/client/remote-functions/prerender.svelte.js
+index d8bfc8a12c295a536d77244400f9457357b5b007..b21c2200a5818a73efdadc3563b5db3c6349edd8 100644
+--- a/src/runtime/client/remote-functions/prerender.svelte.js
++++ b/src/runtime/client/remote-functions/prerender.svelte.js
+@@ -2,7 +2,8 @@
+ import { app_dir, base } from '#app/paths';
+ import { version } from '$app/env';
+ import * as devalue from 'devalue';
+-import { app, _goto, handle_error, prerender_responses } from '../client.js';
++import { prerender_responses } from '../client.js';
++import { env, on_remote_reset } from './env.js';
+ import { get_remote_request_headers, remote_request, unwrap_node } from './shared.svelte.js';
+ import { create_remote_key, stringify_remote_arg } from '../../shared.js';
+ import { noop } from '../../../utils/functions.js';
+@@ -72,7 +73,7 @@ export function prerender(id) {
+ 					const data = unwrap_node(prerender_responses[cache_key]);
+ 
+ 					if (prerender_cache) {
+-						void put(url, devalue.stringify(data, app.encoders));
++						void put(url, devalue.stringify(data, env.encoders));
+ 					}
+ 
+ 					return data;
+@@ -89,7 +90,7 @@ export function prerender(id) {
+ 
+ 						if (cached_response) {
+ 							const cached_result = await cached_response.text();
+-							return devalue.parse(cached_result, app.decoders);
++							return devalue.parse(cached_result, env.decoders);
+ 						}
+ 					} catch {
+ 						void prerender_cache.delete(url);
+@@ -100,7 +101,7 @@ export function prerender(id) {
+ 
+ 				if (result.redirect) {
+ 					// Use internal version to allow redirects to external URLs
+-					await _goto(result.redirect);
++					await env.goto(result.redirect);
+ 					return;
+ 				}
+ 
+@@ -108,7 +109,7 @@ export function prerender(id) {
+ 
+ 				// For successful prerender requests, save to cache
+ 				if (prerender_cache) {
+-					void put(url, devalue.stringify(data, app.encoders));
++					void put(url, devalue.stringify(data, env.encoders));
+ 				}
+ 
+ 				return data;
+@@ -125,6 +126,14 @@ export function prerender(id) {
+ /** @type {Map<string, WeakRef<Prerender<any>>>} */
+ const prerender_resources = new Map();
+ 
++on_remote_reset(() => {
++	prerender_resources.clear();
++	if (prerender_cache) {
++		const cache = prerender_cache;
++		void cache.keys().then((requests) => Promise.all(requests.map((r) => cache.delete(r))));
++	}
++});
++
+ const prerender_resource_cleanup = new FinalizationRegistry((/** @type {string} */ cache_key) => {
+ 	const ref = prerender_resources.get(cache_key);
+ 	if (ref && ref.deref() === undefined) {
+@@ -161,7 +170,7 @@ class Prerender {
+ 				return value;
+ 			},
+ 			async (e) => {
+-				const error = await handle_error(e, {
++				const error = await env.handleError(e, {
+ 					params: {},
+ 					route: { id: null },
+ 					url: new URL(location.href)
+diff --git a/src/runtime/client/remote-functions/query/index.js b/src/runtime/client/remote-functions/query/index.js
+index 0d7f881de79289e49c4696689c99d3212504542f..67c277e2a34c7eadd9604690d391ca269389e368 100644
+--- a/src/runtime/client/remote-functions/query/index.js
++++ b/src/runtime/client/remote-functions/query/index.js
+@@ -1,6 +1,7 @@
+ /** @import { RemoteQueryFunction } from '$app/server' */
+ import { app_dir, base } from '#app/paths';
+-import { _goto, query_map } from '../../client.js';
++import { query_map } from '../../client.js';
++import { env } from '../env.js';
+ import { QUERY_FUNCTION_ID, remote_request } from '../shared.svelte.js';
+ import { DEV } from 'esm-env';
+ import { QueryProxy } from './proxy.js';
+@@ -30,7 +31,7 @@ export function query(id) {
+ 
+ 			if (result.redirect) {
+ 				// Use internal version to allow redirects to external URLs
+-				await _goto(result.redirect);
++				await env.goto(result.redirect);
+ 			}
+ 		});
+ 	};
+diff --git a/src/runtime/client/remote-functions/query/instance.svelte.js b/src/runtime/client/remote-functions/query/instance.svelte.js
+index 3936ac92d0b238c3e6495bd305910b2e554ed462..43e9e304c5babcfd1d85fe29ac69e2aa4caadba2 100644
+--- a/src/runtime/client/remote-functions/query/instance.svelte.js
++++ b/src/runtime/client/remote-functions/query/instance.svelte.js
+@@ -1,5 +1,6 @@
+ /** @import { HttpError } from '@sveltejs/kit' */
+-import { query_responses, handle_error } from '../../client.js';
++import { query_responses } from '../../client.js';
++import { env } from '../env.js';
+ import { HandledHttpError } from '@sveltejs/kit/internal';
+ import { QUERY_OVERRIDE_KEY } from '../shared.svelte.js';
+ import { noop } from '../../../../utils/functions.js';
+@@ -142,7 +143,7 @@ export class Query {
+ 				//   LiveQuery does and preserve the last known good value and retry the connection
+ 				if (this.#latest.indexOf(resolve) === -1) return;
+ 
+-				const error = await handle_error(e, {
++				const error = await env.handleError(e, {
+ 					params: {},
+ 					route: { id: null },
+ 					url: new URL(location.href)
+diff --git a/src/runtime/client/remote-functions/query-batch.svelte.js b/src/runtime/client/remote-functions/query-batch.svelte.js
+index b3dbd5a2c2927c8a69ca90d3184cddce01eaab30..7126f25e09c43f888d4e00d6b1eae4ae29357563 100644
+--- a/src/runtime/client/remote-functions/query-batch.svelte.js
++++ b/src/runtime/client/remote-functions/query-batch.svelte.js
+@@ -1,6 +1,6 @@
+ /** @import { RemoteQueryFunction } from '$app/server' */
+ import { app_dir, base } from '#app/paths';
+-import { _goto } from '../client.js';
++import { env } from './env.js';
+ import { QUERY_FUNCTION_ID, remote_request } from './shared.svelte.js';
+ import { QueryProxy } from './query/proxy.js';
+ import { HandledHttpError } from '@sveltejs/kit/internal';
+@@ -50,7 +50,7 @@ export function query_batch(id) {
+ 
+ 						if (response.redirect) {
+ 							// Use internal version to allow redirects to external URLs
+-							await _goto(response.redirect);
++							await env.goto(response.redirect);
+ 
+ 							// settle all batched promises (with `undefined`, like a redirect
+ 							// from a non-batched query) so that callers don't hang forever
+diff --git a/src/runtime/client/remote-functions/query-live/instance.svelte.js b/src/runtime/client/remote-functions/query-live/instance.svelte.js
+index bb37fabdb0f0819f5f4600c9c488d69c7f3b96ce..0bd8772db4c9a4e1e3527ec682816e706f2c3d8f 100644
+--- a/src/runtime/client/remote-functions/query-live/instance.svelte.js
++++ b/src/runtime/client/remote-functions/query-live/instance.svelte.js
+@@ -1,4 +1,5 @@
+-import { query_responses, handle_error } from '../../client.js';
++import { query_responses } from '../../client.js';
++import { env } from '../env.js';
+ import { HttpError, Redirect, HandledHttpError } from '@sveltejs/kit/internal';
+ import { noop, once } from '../../../../utils/functions.js';
+ import { with_resolvers } from '../../../../utils/promise.js';
+@@ -413,7 +414,7 @@ export class LiveQuery {
+ 
+ 	/** @param {unknown} e */
+ 	async #fail(e) {
+-		const error = await handle_error(e, {
++		const error = await env.handleError(e, {
+ 			params: {},
+ 			route: { id: null },
+ 			url: new URL(location.href)
+diff --git a/src/runtime/client/remote-functions/query-live/iterator.js b/src/runtime/client/remote-functions/query-live/iterator.js
+index d1322a35463d9463fdc1b7e6cfd7be7692317dc3..574a0108d0e334c50bc22ee21fdfbc1fb38f323a 100644
+--- a/src/runtime/client/remote-functions/query-live/iterator.js
++++ b/src/runtime/client/remote-functions/query-live/iterator.js
+@@ -1,7 +1,6 @@
+ /** @import { RemoteFunctionResponse } from 'types' */
+ import { app_dir, base } from '#app/paths';
+-import { app } from '../../client.js';
+-import { notify_version } from '#app/state/client';
++import { env } from '../env.js';
+ import { handle_side_channel_response } from '../shared.svelte.js';
+ import * as devalue from 'devalue';
+ import { HttpError, HandledHttpError } from '@sveltejs/kit/internal';
+@@ -24,13 +23,13 @@ export async function* create_live_iterator(
+ ) {
+ 	const url = `${base}/${app_dir}/remote/${id}${payload ? `?payload=${payload}` : ''}`;
+ 
+-	const response = await fetch(url, {
++	const response = await env.fetch(url, {
+ 		headers: { accept: 'text/event-stream' },
+ 		signal: controller.signal
+ 	});
+ 
+ 	// detect new deployments from the response header
+-	notify_version(response.headers.get('x-sveltekit-version'));
++	env.notifyVersion(response.headers.get('x-sveltekit-version'));
+ 
+ 	if (!response.ok) {
+ 		/** @type {RemoteFunctionResponse | undefined} */
+@@ -59,7 +58,7 @@ export async function* create_live_iterator(
+ 
+ 		for await (const node of read_sse(reader)) {
+ 			if (node.type === 'result') {
+-				yield devalue.parse(node.result, app.decoders);
++				yield devalue.parse(node.result, env.decoders);
+ 				continue;
+ 			}
+ 
+diff --git a/src/runtime/client/remote-functions/shared.svelte.js b/src/runtime/client/remote-functions/shared.svelte.js
+index 354da4230d10cd430079f38fb226b2432edbac08..6b84523aee125931253c6fbe917dad73d5f2c8ac 100644
+--- a/src/runtime/client/remote-functions/shared.svelte.js
++++ b/src/runtime/client/remote-functions/shared.svelte.js
+@@ -2,11 +2,11 @@
+ /** @import { RemoteQueryUpdate } from '$app/server' */
+ /** @import { CacheEntry } from './cache.svelte.js' */
+ import * as devalue from 'devalue';
+-import { app, _goto, live_query_map, query_map, query_responses } from '../client.js';
++import { live_query_map, query_map, query_responses } from '../client.js';
+ import { HttpError, Redirect, HandledHttpError } from '@sveltejs/kit/internal';
+ import { untrack } from 'svelte';
+ import { create_remote_key, split_remote_key } from '../../shared.js';
+-import { navigating, page, notify_version } from '#app/state/client';
++import { env } from './env.js';
+ import * as e from '../../../messages/client-errors.js';
+ 
+ /** Indicates a query function, as opposed to a query instance */
+@@ -98,7 +98,7 @@ export function get_remote_request_headers() {
+ 	// even in forks because it's state-based - therefore not using window.location.
+ 	// Use untrack(...) to Avoid accidental reactive dependency on pathname/search
+ 	return untrack(() => {
+-		const url = navigating?.to?.url ?? page.url;
++		const url = env.navigating?.to?.url ?? env.page.url;
+ 
+ 		return {
+ 			'x-sveltekit-pathname': url.pathname,
+@@ -113,11 +113,11 @@ export function get_remote_request_headers() {
+  * @param {Set<string> | null} [refreshes]
+  */
+ export async function remote_request(url, init, refreshes) {
+-	const response = await fetch(url, init);
++	const response = await env.fetch(url, init);
+ 	const status = response.status;
+ 
+ 	// detect new deployments from the response header
+-	notify_version(response.headers.get('x-sveltekit-version'));
++	env.notifyVersion(response.headers.get('x-sveltekit-version'));
+ 
+ 	if (!response.ok) {
+ 		const result = await response.json().catch(() => undefined);
+@@ -134,7 +134,7 @@ export async function remote_request(url, init, refreshes) {
+ 	}
+ 
+ 	const data = /** @type {RemoteFunctionData} */ (
+-		result.data ? devalue.parse(result.data, app.decoders) : {}
++		result.data ? devalue.parse(result.data, env.decoders) : {}
+ 	);
+ 
+ 	/**
+@@ -214,7 +214,7 @@ export function fail_unhandled_refreshes(refreshes) {
+ export async function handle_side_channel_response(response) {
+ 	if (response.type === 'redirect') {
+ 		// Use internal version to allow redirects to external URLs
+-		await _goto(response.location);
++		await env.goto(response.location);
+ 		throw new Redirect(307, response.location);
+ 	}
+ 
