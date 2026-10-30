@@ -1,8 +1,10 @@
 import { httpError, remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { page } from '@storybookjs/vitest-plugin-sveltekit/vitest';
 import { error } from '@sveltejs/kit';
-import { beforeEach, expect, test } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
+import { getRequestEvent } from '$app/server';
 import { deletePost, getPosts, getStats } from '#lib/posts.remote.ts';
 
 import PostList from './PostList.svelte';
@@ -79,4 +81,21 @@ test('refreshes the query a command updates', async () => {
   await expect.element(screen.getByText('First post')).not.toBeInTheDocument();
   expect(remote(deletePost)).toHaveBeenCalledWith(1);
   expect(remote(getPosts)).toHaveBeenCalledTimes(2);
+});
+
+test('gives a mock the request event, also after an await', async () => {
+  page.url = new URL('/feed?tag=svelte', location.origin);
+  remote(getPosts).mockResolvedValue(posts);
+  let pageUrl = '';
+  remote(deletePost).mockImplementation(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    // Without an `AsyncLocalStorage`, SvelteKit throws here: the shim provides one.
+    const { url } = getRequestEvent();
+    pageUrl = `${url.pathname}${url.search}`;
+  });
+  const screen = await render(PostList);
+
+  await screen.getByRole('button', { name: 'Delete First post' }).click();
+
+  await vi.waitFor(() => expect(pageUrl).toBe('/feed?tag=svelte'));
 });

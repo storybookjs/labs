@@ -1,12 +1,10 @@
 import * as kit from 'virtual:@storybookjs/vitest-plugin-sveltekit/kit';
 
-import { resetRemoteFunctions } from './registry.ts';
+import { resetGeneration, resetRemoteFunctions } from './registry.ts';
 import { handleRemoteRequest, isRemoteRequest } from './server.ts';
 
 /** What the host (Storybook or Vitest) provides in place of SvelteKit's router. */
-export interface RemoteHost {
-  page: { url: { pathname: string; search: string } };
-  navigating: { to: { url: { pathname: string; search: string } } | null } | null;
+export interface RemoteHost extends Pick<kit.RemoteEnv, 'page' | 'navigating'> {
   goto: (url: string, options?: { refreshAll?: boolean }) => unknown;
   /** Called after the remote queries refreshed, for example to log the call. */
   refreshAll?: () => unknown;
@@ -22,21 +20,18 @@ export function installRemoteEnv(host: RemoteHost): void {
     // Custom types from the `transport` hook are not supported yet.
     decoders: {},
     encoders: {},
-    get page() {
-      return host.page;
-    },
-    get navigating() {
-      return host.navigating;
-    },
+    // Mutable objects from the host: SvelteKit reads `url` from them on each request.
+    page: host.page,
+    navigating: host.navigating,
     goto: async (url, options) => {
       await host.goto(String(url), options);
     },
-    refreshAll: async () => {
+    refresh_all: async () => {
       await refreshAllQueries();
       await host.refreshAll?.();
     },
-    handleError,
-    notifyVersion: () => {},
+    handle_error: handleError,
+    notify_version: () => {},
   });
 }
 
@@ -53,10 +48,14 @@ async function remoteFetch(input: RequestInfo | URL, init?: RequestInit): Promis
     init
   );
   if (!isRemoteRequest(new URL(request.url))) return globalThis.fetch(input, init);
+  const generation = resetGeneration();
   // A real request leaves the page's event loop; this one would not. Without the hop, a loop of
   // requests with no await in between (SvelteKit reconnects a `query.live` at once when its
   // stream redirects) runs on microtasks alone and freezes the page.
   await new Promise<void>((resolve) => setTimeout(resolve));
+  // Sent by a story or test that has ended. SvelteKit's client drops the answer (PR A), and
+  // answering would call the spies of the next story or test. So it never gets an answer.
+  if (resetGeneration() !== generation) return new Promise<never>(() => {});
   return handleRemoteRequest(request);
 }
 

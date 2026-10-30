@@ -8,6 +8,7 @@ import {
   onRegister,
   registeredHashes,
   type RemoteEntry,
+  resetGeneration,
 } from './registry.ts';
 
 type RemoteModule = Record<string, unknown>;
@@ -24,12 +25,14 @@ let ready = false;
  */
 export function handleRemoteRequest(request: Request): Promise<Response> {
   setup();
+  const id = new URL(request.url).pathname.slice(remotePrefix().length);
 
-  const url = new URL(request.url);
-  const id = url.pathname.slice(remotePrefix().length);
-  const state = kit.create_request_state({ getClientAddress: () => '127.0.0.1' });
-
-  return kit.handle_remote_call(createEvent(request), state, id);
+  // `withRequestEvent` (sveltejs/kit PR B) builds the event and state as SvelteKit's server does.
+  // It takes `event.url` from the `x-sveltekit-pathname` header, like SvelteKit's server.
+  return kit.withRequestEvent({ request }, (event) =>
+    // `handle_remote_call` needs the state that `withRequestEvent` made for this request.
+    kit.handle_remote_call(event, kit.get_request_store().state, id)
+  );
 }
 
 export function isRemoteRequest(url: URL): boolean {
@@ -148,7 +151,8 @@ async function perArgument(handler: (...args: unknown[]) => unknown, args: unkno
  * runs again and the new value goes back in the same response.
  */
 function refreshingRequested(handler: (...args: unknown[]) => unknown) {
-  return (...args: unknown[]) => {
+  return async (...args: unknown[]) => {
+    const generation = resetGeneration();
     // The request store is sticky in the browser (see `async-local-storage.ts`), so it is only
     // this request's before the first `await`: any other request that starts in the meantime (a
     // second mutation, a live stream pulling its next value, a query, an error being serialised)
@@ -166,36 +170,15 @@ function refreshingRequested(handler: (...args: unknown[]) => unknown) {
       }
     }
 
-    return handler(...args);
+    // When the story or test ended while the mock ran, SvelteKit's client drops the answer
+    // (PR A), and the marked refreshes would call the spies of the next one. Never answer.
+    const ended = () => resetGeneration() !== generation;
+    try {
+      const result = await handler(...args);
+      return ended() ? new Promise<never>(() => {}) : result;
+    } catch (error) {
+      if (ended()) return new Promise<never>(() => {});
+      throw error;
+    }
   };
-}
-
-function createEvent(request: Request): RequestEvent {
-  const url = new URL(request.url);
-
-  // Like SvelteKit: `event.url` is the page URL the client sends, not the endpoint URL.
-  const pathname = request.headers.get('x-sveltekit-pathname');
-  if (pathname !== null) {
-    url.pathname = pathname;
-    url.search = request.headers.get('x-sveltekit-search') ?? '';
-  }
-
-  const { cookies } = kit.get_cookies(request, url);
-
-  return {
-    cookies,
-    fetch: globalThis.fetch.bind(globalThis),
-    getClientAddress: () => '127.0.0.1',
-    locals: {} as App.Locals,
-    params: {},
-    platform: undefined,
-    request,
-    route: { id: null },
-    setHeaders: () => {},
-    url,
-    isDataRequest: false,
-    isSubRequest: false,
-    isRemoteRequest: true,
-    tracing: { enabled: false, root: kit.noop_span, current: kit.noop_span },
-  } as unknown as RequestEvent;
 }
