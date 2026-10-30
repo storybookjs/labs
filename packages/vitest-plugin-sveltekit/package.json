@@ -1,0 +1,31 @@
+{
+  "name": "@storybookjs/vitest-plugin-sveltekit",
+  "version": "0.0.0",
+  "description": "Storybook and Vitest support for SvelteKit remote functions",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storybookjs/labs.git",
+    "directory": "packages/vitest-plugin-sveltekit"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "prepack": "vp pack",
+    "typecheck": "tsc --noEmit"
+  }
+}
