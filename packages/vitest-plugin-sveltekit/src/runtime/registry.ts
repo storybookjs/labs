@@ -105,6 +105,10 @@ export function registerRemoteModule(
   serverModules.set(hash, load);
 }
 
+export function getServerModuleLoaders(): Array<() => Promise<Record<string, unknown>>> {
+  return [...serverModules.values()];
+}
+
 export function getServerModuleLoader(
   hash: string
 ): (() => Promise<Record<string, unknown>>) | undefined {
