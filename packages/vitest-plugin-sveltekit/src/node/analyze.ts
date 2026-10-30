@@ -4,7 +4,10 @@ import { parseSync } from 'oxc-parser';
 export type RemoteKind = 'query' | 'query_batch' | 'query_live' | 'form' | 'command' | 'prerender';
 
 export interface RemoteExport {
+  /** The exported name. */
   name: string;
+  /** The name of the binding in the file (differs for `export { local as name }`). */
+  local: string;
   kind: RemoteKind;
 }
 
@@ -101,7 +104,7 @@ export function analyzeRemoteModule(code: string, file: string): RemoteExport[] 
                 );
               }
               const name = declarator.id.name;
-              result.push({ name, kind: kindOf(name, declarator.init) });
+              result.push({ name, local: name, kind: kindOf(name, declarator.init) });
             }
           } else if (!isTypeOnly(declaration)) {
             const name = declaration.id?.name ?? 'unknown';
@@ -136,7 +139,11 @@ export function analyzeRemoteModule(code: string, file: string): RemoteExport[] 
               `cannot find the declaration of \`${local}\`. Exported remote functions must be declared with \`const\` in the same file.`
             );
           }
-          result.push({ name: exported, kind: kindOf(exported, declarations.get(local)) });
+          result.push({
+            name: exported,
+            local,
+            kind: kindOf(exported, declarations.get(local)),
+          });
         }
         break;
       }
