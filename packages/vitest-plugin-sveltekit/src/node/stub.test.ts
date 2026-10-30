@@ -11,8 +11,8 @@ it('emits SvelteKit’s stub and registers each export', () => {
   expect(
     createClientStub(
       [
-        { name: 'getPosts', kind: 'query' },
-        { name: 'createPost', kind: 'form' },
+        { name: 'getPosts', local: 'getPosts', kind: 'query' },
+        { name: 'createPost', local: 'createPost', kind: 'form' },
       ],
       options
     )
@@ -32,9 +32,9 @@ it('emits SvelteKit’s stub and registers each export', () => {
 it('aliases reserved words and avoids name clashes, like SvelteKit', () => {
   const code = createClientStub(
     [
-      { name: 'delete', kind: 'command' },
-      { name: '__remote', kind: 'query' },
-      { name: '_0', kind: 'query' },
+      { name: 'delete', local: 'delete', kind: 'command' },
+      { name: '__remote', local: '__remote', kind: 'query' },
+      { name: '_0', local: '_0', kind: 'query' },
     ],
     options
   );
