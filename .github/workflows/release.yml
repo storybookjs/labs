@@ -41,6 +41,11 @@ jobs:
         env:
           NAME: ${{ steps.pkg.outputs.name }}
 
+      - name: Test
+        run: vp test run --project "$NAME"
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+
       - name: Publish to npm
         run: pnpm --filter "$NAME" publish --access public --no-git-checks --provenance
         env:

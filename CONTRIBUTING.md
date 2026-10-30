@@ -1,0 +1,112 @@
+# Contributing
+
+Thanks for helping out! This repository hosts experiments from the Storybook team. Packages here are
+early, published as `@storybookjs/<name>` and kept on `0.x` until they move into Storybook as an officail feature (or get retired).
+
+## Setup
+
+You need Node `>= 22.19` and pnpm. The pnpm version is pinned in the root `package.json`
+(`packageManager`), so with [Corepack](https://nodejs.org/api/corepack.html) enabled the right one
+is picked up automatically:
+
+```sh
+corepack enable
+git clone https://github.com/storybookjs/labs.git
+cd labs
+pnpm install
+```
+
+The repo's tooling is [Vite+](https://viteplus.dev) (`vp`), which wraps pnpm, Vitest, oxlint and
+the formatter.
+
+## Everyday commands
+
+Run these from the repo root:
+
+| Command                      | What it does                                           |
+| ---------------------------- | ------------------------------------------------------ |
+| `pnpm build`                 | Builds every package                                   |
+| `pnpm typecheck`             | Typechecks the root scripts and every package          |
+| `pnpm test`                  | Runs the unit tests of every package                   |
+| `pnpm lint` / `pnpm lint:fix`| Lints the repo (and fixes what it can)                 |
+| `pnpm fmt` / `pnpm fmt:check`| Formats the repo (or checks formatting)                |
+| `pnpm new`                   | Scaffolds a new package (see below)                    |
+
+To target a single package, use a pnpm filter, e.g. `pnpm vp run --filter @storybookjs/vite-plugin build`,
+or run the package's own scripts from its folder. Packages with examples expose them as
+`example:*` scripts in their `package.json`.
+
+## Repository layout
+
+- `packages/*` — the published packages. Each one owns its dependencies and versions; the root
+  `catalogs` in `pnpm-workspace.yaml` is only for shared tooling.
+- `packages/*/examples/*` — example apps used to try and e2e-test a package. They are workspace
+  packages but are never published and are excluded from the root `build`/`typecheck`.
+- `templates/*` — starting points for `pnpm new`.
+- `scripts/*` — repository tooling (`create-package.ts`, `resolve-release.ts`).
+
+## Adding a package
+
+```sh
+pnpm new
+```
+
+The script asks for a name (lowercase letters, digits and dashes; published as
+`@storybookjs/<name>`), a one-line description and a template, then copies
+`templates/<template>` to `packages/<name>`, fills in `package.json` and `README.md`, formats the
+result and runs `pnpm install`. Flags (`--name`, `--description`, `--template`, `--skip-install`) skip
+the prompts; `pnpm new -- --help` lists them.
+
+New packages start at `0.0.0` and must stay on `0.x` while they live in this repo.
+
+## Making changes
+
+Every change lands through a pull request that is **squash merged**. Because of that:
+
+- **The PR title is the commit message.** It must follow
+  [Conventional Commits](https://www.conventionalcommits.org/), with a lowercase subject, e.g.
+  `feat(vite-plugin): serve the manager from the host dev server` or `ci: pin action versions`. A
+  check on every PR enforces this; individual commits inside the PR can be anything.
+- Use `feat` / `fix` / `perf` for user-facing changes, since those are what end up in the release
+  notes, and `docs`, `chore`, `ci`, `refactor`, `test` otherwise. Scope with the package name
+  when a change is specific to one package. Add `!` (or a `BREAKING CHANGE:` footer in the PR
+  description) for breaking changes.
+- Write the PR description for the person reading the release notes later: what changed and why.
+
+### Checks
+
+CI runs on every PR and on `main`:
+
+- lint and format checks on the whole repo;
+- typecheck and build for the packages touched by the PR (plus their dependents), or every package
+  when something outside `packages/` changes;
+- unit tests for the affected packages (`vp test run --changed`);
+- a [zizmor](https://github.com/zizmorcore/zizmor) audit of the GitHub workflows;
+- the PR title check above.
+
+Run `pnpm lint`, `pnpm fmt:check`, `pnpm typecheck` and `pnpm test` locally before pushing
+to avoid round trips. All checks must be green before a PR can be merged.
+
+### Previews
+
+Every PR (and every push to `main`) publishes the packages to [pkg.pr.new](https://pkg.pr.new); a
+bot comment on the PR lists the install commands, of the form:
+
+```sh
+pnpm add https://pkg.pr.new/storybookjs/labs/@storybookjs/<name>@<sha>
+```
+
+Use this to try a change in a real project before it's released.
+
+## Releasing
+
+Each package is released on its own, by pushing a tag named `<package name>@<version>`, for
+example `@storybookjs/vite-plugin@0.2.0`. The release workflow then:
+
+1. checks that the tag names exactly one workspace package, that the version is canonical `0.x`
+   semver and matches the package's `package.json`;
+2. builds and publishes that package to npm
+3. creates a GitHub release with notes generated by
+   [changelogithub](https://github.com/antfu/changelogithub) from the conventional PR titles that
+   touched the package since its previous tag. Pre-release versions (`0.3.0-alpha.1`) are marked as
+   pre-releases.

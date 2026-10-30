@@ -77,7 +77,8 @@ if (!templates.includes(template)) {
 }
 
 const fullName = `${SCOPE}/${name}`;
-if (await isPublished(fullName)) {
+const published = await isPublished(fullName);
+if (published) {
   p.log.warn(`${fullName} already exists on npm, publishing will need a different name.`);
 }
 
@@ -118,6 +119,17 @@ if (!args['skip-install']) {
     spin.error('vp install failed');
     fail(`packages/${name} was created; run \`vp install\` once fixed:\n${errorMessage(error)}`);
   }
+}
+
+if (!published) {
+  p.note(
+    `npm only allows trusted publishing on packages that already exist, so the first version\n` +
+      `of ${fullName} must be published manually by a maintainer:\n\n` +
+      `  pnpm --filter ${fullName} publish --access public\n\n` +
+      `Then configure the trusted publisher on npmjs.com (storybookjs/labs, release.yml).\n` +
+      `Later releases go through the \`${fullName}@<version>\` tag. See CONTRIBUTING.md.`,
+    'Before the first release'
+  );
 }
 
 p.outro(`Created ${fullName} in packages/${name}`);
