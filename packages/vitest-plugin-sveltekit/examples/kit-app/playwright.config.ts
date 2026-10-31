@@ -28,12 +28,12 @@ export default defineConfig({
   projects: [
     {
       name: 'storybook-dev',
-      testMatch: /storybook\.spec\.ts/,
+      testMatch: /(storybook|live-panel)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:6106' },
     },
     {
       name: 'storybook-static',
-      testMatch: /storybook\.spec\.ts/,
+      testMatch: /(storybook|live-panel)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:6107' },
     },
     {
