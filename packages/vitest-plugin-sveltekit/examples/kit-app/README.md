@@ -1,20 +1,24 @@
-# SvelteKit example
+# Field Notes: the SvelteKit example
 
-A SvelteKit 3.1 app with remote functions (`src/lib/posts.remote.ts`): a `query` with a valibot
-schema, a `form` with validation and `invalid()`, a `command`, a `prerender`, a `query.batch` and a
-`query.live` that polls the database. The data layer is drizzle on PGlite (`src/lib/server/db.ts`),
-and `src/hooks.server.ts` reads a session cookie into `locals.user`.
+Field Notes is a small blog, built to show `@storybookjs/vitest-plugin-sveltekit` on an app that
+feels real. Readers browse posts (search, tag filter, sorting, pages), read a post (Markdown,
+reading stats, a view count) and see a "N new posts" banner when someone publishes. Writers create,
+edit and delete posts, with validation and drafts.
 
-Each component in `src/lib/components` has:
+It uses every kind of SvelteKit remote function (`src/lib/blog/blog.remote.ts`):
 
-- stories and Vitest browser tests that mock the remote functions with `remote()` (the default
-  mode);
-- in `server/`, stories and tests that run the real remote functions (server mode) on PGlite in
-  memory (`src/lib/server/__mocks__/db.ts`), seeded in `beforeEach`.
+| Function          | Kind          | Used for                                                    |
+| ----------------- | ------------- | ----------------------------------------------------------- |
+| `listPosts`       | `query`       | The post list with its filters, one page at a time          |
+| `readPost`        | `query`       | A whole post                                                |
+| `getReadingStats` | `query.batch` | Views and likes, one request for every card on the page     |
+| `watchNewPosts`   | `query.live`  | The "N new posts" banner                                    |
+| `publishPost`     | `form`        | New posts, with a valibot schema and `invalid()`            |
+| `editPost`        | `form`        | Edits, one form instance per post (`editPost.for(id)`)      |
+| `removePost`      | `command`     | Delete                                                      |
+| `countView`       | `command`     | A view per visit, which refreshes the stats in its response |
 
-Storybook runs in server mode (`.storybook/main.ts`), so it shows both kinds of stories. Vitest has
-three projects in `vite.config.ts`: `components` (mocks), `server` (server mode) and `storybook`
-(the stories).
+## Run the app
 
 Build the package first, from the repository root:
 
@@ -24,17 +28,86 @@ pnpm --filter @storybookjs/vitest-plugin-sveltekit build
 
 Then, from this folder:
 
-| Command                | Result                                                             |
-| ---------------------- | ------------------------------------------------------------------ |
-| `pnpm dev`             | The real app with the real remote functions, on `localhost:5173`   |
-| `pnpm storybook`       | Storybook on `localhost:6006`                                      |
-| `pnpm storybook:build` | Static Storybook in `storybook-static`                             |
-| `pnpm test`            | Vitest browser mode: the three projects                            |
-| `pnpm test:e2e`        | Playwright: `storybook dev`, the static build, and the Vitest runs |
-| `pnpm check`           | `svelte-check`                                                     |
+| Command        | Result                                                            |
+| -------------- | ----------------------------------------------------------------- |
+| `pnpm dev`     | The app with hot reload on `localhost:5173`                       |
+| `pnpm build`   | A production build in `.svelte-kit/output`                        |
+| `pnpm preview` | The production build on `localhost:4173` (run `pnpm build` first) |
 
-The tests need Playwright's Chromium (`pnpm exec playwright install chromium` from the repository
-root) and free ports 6106 and 6107.
+No service, no Docker and no network: the database runs in the Node process. The build prints
+"No adapter specified"; `pnpm preview` does not need one. To deploy the app somewhere, add a
+SvelteKit adapter.
+
+## The data
+
+The app keeps its posts in [PGlite](https://pglite.dev) (Postgres in WebAssembly) through drizzle,
+in the folder `.pglite` next to this README (`src/lib/server/db.ts`). Set `DATABASE_DIR` (in `.env`
+or the shell) to keep it elsewhere. A new database gets the twelve posts in
+`src/lib/server/seed.ts`, two of them drafts.
+
+The live queries (the "new posts" banner, the live count) poll the database every 3 seconds
+(`LIVE_POLL_MS` in `.env`). Vitest polls every 100 ms (`.env.test`) and Storybook every 250 ms
+(`.storybook/main.ts`), so tests and stories do not wait.
+
+To start over, stop the server and delete the folder:
+
+```sh
+rm -rf .pglite
+```
+
+Stories and tests never touch that folder: they replace `src/lib/server/db.ts` with
+`src/lib/server/__mocks__/db.ts`, PGlite in memory, seeded in `beforeEach`.
+
+## Where things are
+
+| Folder               | What                                                                     |
+| -------------------- | ------------------------------------------------------------------------ |
+| `src/lib/ui`         | The design system: tokens (`tokens.css`, light and dark) and components  |
+| `src/lib/blog`       | The product: remote functions, types, Markdown, and the post components  |
+| `src/lib/pages`      | The pages the routes render, so stories can show them                    |
+| `src/routes`         | The routes: `/`, `/posts/[id]`, `/posts/new`, `/posts/[id]/edit`, errors |
+| `src/lib/components` | Small demos of each remote function kind (`src/lib/posts.remote.ts`)     |
+| `src/lib/probes`     | Remote functions that pause at a gate, for the server mode overlap tests |
+
+## Stories
+
+Storybook runs in server mode (`.storybook/main.ts`): a remote function without a `remote(fn)` mock
+runs its real handler on the in-memory database. The sidebar:
+
+- `UI/…`: every design system component and its states. The toolbar's theme switch shows any story
+  in dark mode.
+- `Posts/…`: the product components, mocked (data, loading, empty, error, validation, long
+  content), with `play` functions for the interactions, and one "Server mode" story each.
+- `Pages/…`: Home, Post, Editor and the status pages inside the app shell, mocked and in server
+  mode, with mobile and dark variants.
+- `Remote functions/…`, `Server/…` and `Live/…`: the remote function demos, mocked and in server
+  mode, and the "Live feed" panel (below).
+
+Mocked stories also mock the commands they use: in server mode, an unmocked command runs for real.
+
+## Tests
+
+| Command         | What runs                                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test`     | Vitest browser mode, three projects: `components` (mocked tests), `server` (server mode tests), `storybook` (every story) |
+| `pnpm test:app` | Playwright against the app: a production build on a fresh database in a temporary folder                                  |
+| `pnpm test:e2e` | Playwright: the app, `storybook dev`, the static Storybook, the live panel and the Vitest runs                            |
+| `pnpm test:ci`  | `svelte-check`, `pnpm test`, then the app and Storybook Playwright projects (for a CI job)                                |
+| `pnpm check`    | `svelte-check`                                                                                                            |
+
+The `storybook` project (`@storybook/addon-vitest`) runs every story in `src/**/*.stories.*`, with
+its `play` function; no story is excluded. The app tests (`e2e-tests/app`) cover one flow per spec:
+browse, read, create, edit, delete, validation, the live banner and the 404s.
+
+`pnpm test:ci` is the script for the example's CI job, which is not in this repository yet: the
+workflow that calls it waits in a separate commit, and the repository's `ci-checks.yml` leaves the
+examples out.
+
+The tests need Playwright's Chromium: run `pnpm exec playwright install chromium` in this folder
+(the repository root has no Playwright). The Playwright servers use free ports, picked at the start
+of a run; set `E2E_APP_PORT`, `E2E_STORYBOOK_PORT` or `E2E_STORYBOOK_STATIC_PORT` to choose them.
+`--project` starts only that project's server (`pnpm test:app` is `--project app`). From the package
+folder, `pnpm test:ci` and `pnpm example:test:app` run the same.
 
 ## The "Live feed" panel
 
