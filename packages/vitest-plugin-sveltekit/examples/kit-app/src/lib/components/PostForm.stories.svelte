@@ -9,7 +9,8 @@
   import PostForm from './PostForm.svelte';
 
   const { Story } = defineMeta({
-    title: 'PostForm',
+    parameters: { demo: true },
+    title: 'Remote functions/PostForm',
     component: PostForm,
     beforeEach: () => {
       remote(createPost).mockImplementation(async (data, issue) => {

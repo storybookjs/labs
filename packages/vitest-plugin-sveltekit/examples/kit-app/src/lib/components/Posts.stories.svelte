@@ -9,7 +9,8 @@
   import Posts from './Posts.svelte';
 
   const { Story } = defineMeta({
-    title: 'Posts',
+    parameters: { demo: true },
+    title: 'Remote functions/Posts',
     component: Posts,
     beforeEach: () => {
       remote(getStats).mockResolvedValue({ views: 1, likes: 0 });

@@ -13,6 +13,7 @@
 
   // The real `createPost`: its valibot schema, its `invalid()` calls, its insert.
   const { Story } = defineMeta({
+    parameters: { demo: true },
     title: 'Server/Posts',
     component: Posts,
     beforeEach: async () => {

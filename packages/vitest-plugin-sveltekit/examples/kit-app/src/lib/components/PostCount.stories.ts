@@ -10,7 +10,11 @@ import { getPostCount } from '#lib/posts.remote.ts';
 import preview from '../../../.storybook/preview';
 import PostCount from './PostCount.svelte';
 
-const meta = preview.meta({ title: 'PostCount', component: PostCount });
+const meta = preview.meta({
+  parameters: { demo: true },
+  title: 'Remote functions/PostCount',
+  component: PostCount,
+});
 
 export const LiveGenerator = meta.story({
   beforeEach: () => {

@@ -13,6 +13,7 @@ import PostList from '../PostList.svelte';
 // No `remote()` mocks here: `getPosts`, `getStats` and `deletePost` run the code in
 // `posts.remote.ts`, on the in-memory database from `__mocks__/db.ts`.
 const meta = preview.meta({
+  parameters: { demo: true },
   title: 'Server/PostList',
   component: PostList,
   beforeEach: async () => {
