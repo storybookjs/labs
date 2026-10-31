@@ -8,9 +8,12 @@ import { db } from '#lib/server/db.ts';
 import { sleep } from '#lib/server/sleep.ts';
 import { posts, postStats } from '#lib/server/schema.ts';
 
+// The demo functions read the columns their components show, so their types stay small.
+const summary = { id: posts.id, title: posts.title, body: posts.body };
+
 export const getPosts = query(v.optional(v.picklist(['newest', 'oldest']), 'newest'), (order) =>
   db
-    .select()
+    .select(summary)
     .from(posts)
     .orderBy(order === 'newest' ? desc(posts.id) : asc(posts.id))
 );
@@ -26,7 +29,7 @@ export const createPost = form(
     const [duplicate] = await db.select().from(posts).where(eq(posts.title, title));
     if (duplicate) invalid(issue.title('A post with this title exists'));
 
-    const [post] = await db.insert(posts).values({ title, body }).returning();
+    const [post] = await db.insert(posts).values({ title, body }).returning(summary);
     return post!;
   }
 );
@@ -46,7 +49,7 @@ export const deletePost = command(v.number(), async (id) => {
 export const getPost = prerender(
   v.number(),
   async (id) => {
-    const [post] = await db.select().from(posts).where(eq(posts.id, id));
+    const [post] = await db.select(summary).from(posts).where(eq(posts.id, id));
     return post ?? error(404, `Post ${id} not found`);
   },
   {

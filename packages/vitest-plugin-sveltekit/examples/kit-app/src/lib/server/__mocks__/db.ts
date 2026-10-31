@@ -5,6 +5,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 
 import * as schema from '#lib/server/schema.ts';
+import { postRows, type SeedPost, statsRows } from '#lib/server/seed.ts';
 
 export type { NewPost, Post, PostStats } from '#lib/server/schema.ts';
 
@@ -36,23 +37,17 @@ export function queryCount(): number {
 }
 
 /** Empties the database and inserts `posts`, with stats when given. Ends a mocked outage. */
-export async function resetDb(
-  posts: Array<schema.NewPost & { views?: number; likes?: number }> = []
-): Promise<schema.Post[]> {
+export async function resetDb(posts: SeedPost[] = []): Promise<schema.Post[]> {
   down = false;
   await client.exec('TRUNCATE posts, post_stats RESTART IDENTITY CASCADE');
   if (posts.length === 0) return [];
 
-  const inserted = await db
-    .insert(schema.posts)
-    .values(posts.map(({ title, body }) => ({ title, body })))
-    .returning();
+  const inserted = await db.insert(schema.posts).values(postRows(posts)).returning();
   await db.insert(schema.postStats).values(
-    inserted.map((post, index) => ({
-      postId: post.id,
-      views: posts[index]?.views ?? 0,
-      likes: posts[index]?.likes ?? 0,
-    }))
+    statsRows(
+      inserted.map(({ id }) => id),
+      posts
+    )
   );
   return inserted;
 }
