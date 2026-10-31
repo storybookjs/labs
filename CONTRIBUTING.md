@@ -23,14 +23,14 @@ the formatter.
 
 Run these from the repo root:
 
-| Command                      | What it does                                           |
-| ---------------------------- | ------------------------------------------------------ |
-| `pnpm build`                 | Builds every package                                   |
-| `pnpm typecheck`             | Typechecks the root scripts and every package          |
-| `pnpm test`                  | Runs the unit tests of every package                   |
-| `pnpm lint` / `pnpm lint:fix`| Lints the repo (and fixes what it can)                 |
-| `pnpm fmt` / `pnpm fmt:check`| Formats the repo (or checks formatting)                |
-| `pnpm new`                   | Scaffolds a new package (see below)                    |
+| Command                       | What it does                                  |
+| ----------------------------- | --------------------------------------------- |
+| `pnpm build`                  | Builds every package                          |
+| `pnpm typecheck`              | Typechecks the root scripts and every package |
+| `pnpm test`                   | Runs the unit tests of every package          |
+| `pnpm lint` / `pnpm lint:fix` | Lints the repo (and fixes what it can)        |
+| `pnpm fmt` / `pnpm fmt:check` | Formats the repo (or checks formatting)       |
+| `pnpm new`                    | Scaffolds a new package (see below)           |
 
 To target a single package, use a pnpm filter, e.g. `pnpm vp run --filter @storybookjs/vite-plugin build`,
 or run the package's own scripts from its folder. Packages with examples expose them as

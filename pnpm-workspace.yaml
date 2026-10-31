@@ -59,9 +59,13 @@ minimumReleaseAgeExclude:
   - '@vue/server-renderer@3.5.43'
   - '@vue/shared@3.5.43'
   - vue@3.5.43
+  - '@sveltejs/kit@3.1.1'
 
 peerDependencyRules:
   # The Vite+ core alias reports its own version (1.x) to Vitest's `vite` peer.
   allowedVersions:
     'vitest>vite': '*'
     '@vitest/mocker>vite': '*'
+
+patchedDependencies:
+  '@sveltejs/kit@3.1.1': patches/@sveltejs__kit@3.1.1.patch

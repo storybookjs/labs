@@ -1,0 +1,48 @@
+{
+  "name": "@storybookjs/vitest-plugin-sveltekit-kit-app-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#lib": "./src/lib/index.ts",
+    "#lib/*": "./src/lib/*"
+  },
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "storybook": "storybook dev --port 6006 --ci",
+    "storybook:build": "storybook build",
+    "test": "vitest run",
+    "test:e2e": "playwright test -c playwright.config.ts",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@storybook/addon-vitest": "11.0.0-alpha.8",
+    "@storybook/svelte": "11.0.0-alpha.8",
+    "@storybook/sveltekit": "11.0.0-alpha.8",
+    "@storybookjs/vitest-plugin-sveltekit": "workspace:*",
+    "@sveltejs/kit": "3.1.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@vitest/browser": "5.0.5",
+    "@vitest/browser-playwright": "5.0.5",
+    "playwright": "1.64.1",
+    "storybook": "11.0.0-alpha.8",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.7",
+    "typescript": "^6.0.3",
+    "valibot": "^1.5.0",
+    "vite": "catalog:dev",
+    "vite-plus": "catalog:dev",
+    "vitest": "5.0.5",
+    "vitest-browser-svelte": "^3.1.0"
+  },
+  "dependenciesMeta": {
+    "@storybookjs/vitest-plugin-sveltekit": {
+      "injected": true
+    }
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
