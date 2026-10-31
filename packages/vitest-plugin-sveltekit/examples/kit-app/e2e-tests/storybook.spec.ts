@@ -11,64 +11,67 @@ type Preview = Pick<Frame, 'evaluate' | 'getByRole' | 'getByTestId' | 'getByText
 
 const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> = [
   [
-    'postlist--data',
+    'remote-functions-postlist--data',
     async (page) => {
       await expect(page.getByRole('link', { name: 'First post' })).toBeVisible();
       await expect(page.getByTestId('stats-1')).toHaveText('100 views, 1 likes');
     },
   ],
-  ['postlist--pending', (page) => expect(page.getByText('Loading posts…')).toBeVisible()],
   [
-    'postlist--http-error',
+    'remote-functions-postlist--pending',
+    (page) => expect(page.getByText('Loading posts…')).toBeVisible(),
+  ],
+  [
+    'remote-functions-postlist--http-error',
     (page) => expect(page.getByRole('alert')).toContainText('The database is asleep'),
   ],
   [
-    'postlist--rejected-value',
+    'remote-functions-postlist--rejected-value',
     (page) => expect(page.getByRole('alert')).toContainText('No posts here'),
   ],
   [
-    'postlist--batch',
+    'remote-functions-postlist--batch',
     (page) => expect(page.getByTestId('stats-2')).toHaveText('200 views, 2 likes'),
   ],
   [
-    'postlist--delete-with-command',
+    'remote-functions-postlist--delete-with-command',
     async (page) => {
       await expect(page.getByRole('link', { name: 'Second post' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'First post' })).toHaveCount(0);
     },
   ],
   [
-    'postlist--two-commands-in-flight',
+    'remote-functions-postlist--two-commands-in-flight',
     async (page) => {
       await expect(page.getByRole('link', { name: 'Third post' })).toBeVisible();
       await expect(page.getByRole('alert')).toHaveCount(0);
     },
   ],
   [
-    'postlist--query-redirect',
+    'remote-functions-postlist--query-redirect',
     (page) =>
       expect
         .poll(() => page.evaluate(() => (window as { navigations?: unknown[] }).navigations))
         .toContainEqual(['/elsewhere', undefined]),
   ],
   [
-    'postform--validation-issue',
+    'remote-functions-postform--validation-issue',
     (page) => expect(page.getByRole('alert')).toHaveText('Title must be at least 3 characters'),
   ],
   [
-    'postform--created',
+    'remote-functions-postform--created',
     (page) => expect(page.getByRole('status')).toHaveText('Created “A real title”'),
   ],
   [
-    'postform--submitting',
+    'remote-functions-postform--submitting',
     (page) => expect(page.getByRole('button', { name: 'Create' })).toBeDisabled(),
   ],
   [
-    'posts--refresh-after-submit',
+    'remote-functions-posts--refresh-after-submit',
     (page) => expect(page.getByRole('link', { name: 'Second post' })).toBeVisible(),
   ],
   [
-    'posts--redirect',
+    'remote-functions-posts--redirect',
     // `goto` from Storybook's `$app/navigation` mock dispatches `storybook:goto`.
     (page) =>
       expect
@@ -76,27 +79,33 @@ const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> =
         .toEqual([['/posts/42', expect.anything()]]),
   ],
   [
-    'postdetail--prerendered',
+    'remote-functions-postdetail--prerendered',
     (page) => expect(page.getByRole('heading', { name: 'Post 7' })).toBeVisible(),
   ],
   [
-    'postdetail--not-found',
+    'remote-functions-postdetail--not-found',
     (page) => expect(page.getByRole('alert')).toHaveText('Post 7 not found'),
   ],
   [
-    'postcount--live-generator',
+    'remote-functions-postcount--live-generator',
     async (page) => {
       await expect(page.locator('output')).toHaveText('2');
       await expect(page.getByTestId('live-status')).toHaveText('done');
     },
   ],
-  ['postcount--live-array', (page) => expect(page.locator('output')).toHaveText('4')],
+  [
+    'remote-functions-postcount--live-array',
+    (page) => expect(page.locator('output')).toHaveText('4'),
+  ],
   // Driven by the "Live feed" panel in `live-panel.spec.ts`; here they render on their own.
   ['live--mocked', (page) => expect(page.getByTestId('feed-count')).toHaveText('2')],
   ['live--server', (page) => expect(page.getByTestId('feed-count')).toHaveText('2')],
-  ['postcount--live-stream', (page) => expect(page.getByRole('alert')).toContainText('Feed down')],
   [
-    'postcount--live-stream-open',
+    'remote-functions-postcount--live-stream',
+    (page) => expect(page.getByRole('alert')).toContainText('Feed down'),
+  ],
+  [
+    'remote-functions-postcount--live-stream-open',
     async (page) => {
       await expect(page.locator('output')).toHaveText('7');
       await expect(page.getByTestId('live-status')).toHaveText('live');
@@ -223,7 +232,7 @@ test('serves the manager with the story index', async ({ page, request }) => {
   const index = await (await request.get('/index.json')).json();
   expect(Object.keys(index.entries)).toEqual(expect.arrayContaining(stories.map(([id]) => id)));
 
-  await page.goto('/?path=/story/postlist--data');
+  await page.goto('/?path=/story/remote-functions-postlist--data');
   const preview = page.frameLocator('#storybook-preview-iframe');
   await expect(preview.getByRole('link', { name: 'First post' })).toBeVisible();
 });
@@ -255,14 +264,14 @@ for (const [id, check] of stories) {
 // request or a stream open must not leak into the next one.
 const transitions: Array<[from: string, to: string, check: (frame: Preview) => Promise<void>]> = [
   [
-    'postform--submitting',
-    'postform--created',
+    'remote-functions-postform--submitting',
+    'remote-functions-postform--created',
     // The play function of `Created` clicks Create, which a pending submission would disable.
     (frame) => expect(frame.getByRole('status')).toHaveText('Created “A real title”'),
   ],
   [
-    'postcount--live-stream-open',
-    'postcount--live-generator',
+    'remote-functions-postcount--live-stream-open',
+    'remote-functions-postcount--live-generator',
     async (frame) => {
       await expect(frame.locator('output')).toHaveText('2');
       await expect(frame.getByTestId('live-status')).toHaveText('done');
@@ -277,7 +286,7 @@ const transitions: Array<[from: string, to: string, check: (frame: Preview) => P
   // Server mode: the real generator's stream ends with its story.
   [
     'server-postcount--live-polling',
-    'postcount--live-generator',
+    'remote-functions-postcount--live-generator',
     async (frame) => {
       await expect(frame.locator('output')).toHaveText('2');
       await expect(frame.getByTestId('live-status')).toHaveText('done');

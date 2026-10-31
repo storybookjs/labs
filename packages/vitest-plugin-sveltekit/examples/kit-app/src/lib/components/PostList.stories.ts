@@ -13,7 +13,8 @@ const posts = [
 ];
 
 const meta = preview.meta({
-  title: 'PostList',
+  parameters: { demo: true },
+  title: 'Remote functions/PostList',
   component: PostList,
   beforeEach: () => {
     mockRemote(getStats).mockImplementation(async (id) => ({ views: id * 100, likes: id }));

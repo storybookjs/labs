@@ -6,6 +6,7 @@ import preview from '../../../../.storybook/preview';
 import PostDetail from '../PostDetail.svelte';
 
 const meta = preview.meta({
+  parameters: { demo: true },
   title: 'Server/PostDetail',
   component: PostDetail,
   args: { id: 1 },

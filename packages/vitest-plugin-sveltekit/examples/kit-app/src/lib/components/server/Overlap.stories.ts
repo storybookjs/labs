@@ -20,6 +20,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 // The overlap probes of `overlap.server.test.ts`, in Storybook.
 const meta = preview.meta({
+  parameters: { demo: true },
   title: 'Server/Overlap',
   component: PostCount,
   beforeEach: async () => {

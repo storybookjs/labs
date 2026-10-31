@@ -8,6 +8,7 @@ import preview from '../../../../.storybook/preview';
 import PostCount from '../PostCount.svelte';
 
 const meta = preview.meta({
+  parameters: { demo: true },
   title: 'Server/PostCount',
   component: PostCount,
   beforeEach: async () => {

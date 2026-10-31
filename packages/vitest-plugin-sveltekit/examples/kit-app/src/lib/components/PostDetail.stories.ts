@@ -7,7 +7,12 @@ import { getPost } from '#lib/posts.remote.ts';
 import preview from '../../../.storybook/preview';
 import PostDetail from './PostDetail.svelte';
 
-const meta = preview.meta({ title: 'PostDetail', component: PostDetail, args: { id: 7 } });
+const meta = preview.meta({
+  parameters: { demo: true },
+  title: 'Remote functions/PostDetail',
+  component: PostDetail,
+  args: { id: 7 },
+});
 
 export const Prerendered = meta.story({
   beforeEach: () => {
