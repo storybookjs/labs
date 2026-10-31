@@ -34,7 +34,7 @@ export type ListParams = v.InferOutput<typeof listParamsSchema>;
 export const defaultListParams: ListParams = v.parse(listParamsSchema, {});
 
 /** The list parameters in a URL's search params; unknown or invalid values fall back. */
-export function parseListParams(search: URLSearchParams): ListParams {
+export function parseListParams(search: Pick<URLSearchParams, 'get'>): ListParams {
   const page = Number(search.get('page') ?? 1);
   const raw = {
     q: search.get('q') ?? undefined,
