@@ -91,6 +91,9 @@ const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> =
     },
   ],
   ['postcount--live-array', (page) => expect(page.locator('output')).toHaveText('4')],
+  // Driven by the "Live feed" panel in `live-panel.spec.ts`; here they render on their own.
+  ['live--mocked', (page) => expect(page.getByTestId('feed-count')).toHaveText('2')],
+  ['live--server', (page) => expect(page.getByTestId('feed-count')).toHaveText('2')],
   ['postcount--live-stream', (page) => expect(page.getByRole('alert')).toContainText('Feed down')],
   [
     'postcount--live-stream-open',
