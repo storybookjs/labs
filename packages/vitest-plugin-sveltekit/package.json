@@ -20,6 +20,7 @@
     "./storybook": "./dist/storybook.mjs",
     "./vitest": "./dist/vitest.mjs",
     "./remote.mock": "./dist/remote.mock.mjs",
+    "./server.mock": "./dist/server.mock.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -32,10 +33,12 @@
     "prepack": "vp pack",
     "typecheck": "tsc --noEmit",
     "test:e2e": "vp run --filter ./examples/kit-app test:e2e",
+    "test:ci": "vp run --filter ./examples/kit-app test:ci",
     "example:dev": "vp run --filter ./examples/kit-app dev",
     "example:storybook": "vp run --filter ./examples/kit-app storybook",
     "example:storybook:build": "vp run --filter ./examples/kit-app storybook:build",
     "example:test": "vp run --filter ./examples/kit-app test",
+    "example:test:app": "vp run --filter ./examples/kit-app test:app",
     "example:check": "vp run --filter ./examples/kit-app check"
   },
   "dependencies": {

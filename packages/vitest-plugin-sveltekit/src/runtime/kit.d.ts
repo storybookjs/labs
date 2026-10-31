@@ -84,3 +84,19 @@ declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
   }
   export function requested(query: unknown, limit: number): RequestedResult;
 }
+
+// App files that `vitestPluginSvelteKit()` finds: hooks and, in server mode, the env setup.
+declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/app' {
+  import type { Handle, HandleServerError, ServerInit, Transport } from '@sveltejs/kit/hooks';
+
+  export const serverMode: boolean;
+  /** The app's `src/hooks.ts`, or `{}`. */
+  export const universalHooks: { transport?: Transport };
+  /** The app's `src/hooks.server.ts`, or `{}` (and always `{}` outside server mode). */
+  export function loadServerHooks(): Promise<{
+    handle?: Handle;
+    handleError?: HandleServerError;
+    init?: ServerInit;
+  }>;
+  export function initEnv(): void;
+}

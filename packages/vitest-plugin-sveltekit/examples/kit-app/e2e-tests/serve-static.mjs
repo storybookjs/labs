@@ -15,6 +15,7 @@ const types = {
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
+  '.wasm': 'application/wasm',
 };
 
 http

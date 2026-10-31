@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { expect, type Frame, type Page, test } from '@playwright/test';
 
 // Runs against `storybook dev` and against the static `storybook build` (see the config). Each
@@ -8,64 +11,67 @@ type Preview = Pick<Frame, 'evaluate' | 'getByRole' | 'getByTestId' | 'getByText
 
 const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> = [
   [
-    'postlist--data',
+    'remote-functions-postlist--data',
     async (page) => {
       await expect(page.getByRole('link', { name: 'First post' })).toBeVisible();
       await expect(page.getByTestId('stats-1')).toHaveText('100 views, 1 likes');
     },
   ],
-  ['postlist--pending', (page) => expect(page.getByText('Loading posts…')).toBeVisible()],
   [
-    'postlist--http-error',
+    'remote-functions-postlist--pending',
+    (page) => expect(page.getByText('Loading posts…')).toBeVisible(),
+  ],
+  [
+    'remote-functions-postlist--http-error',
     (page) => expect(page.getByRole('alert')).toContainText('The database is asleep'),
   ],
   [
-    'postlist--rejected-value',
+    'remote-functions-postlist--rejected-value',
     (page) => expect(page.getByRole('alert')).toContainText('No posts here'),
   ],
   [
-    'postlist--batch',
+    'remote-functions-postlist--batch',
     (page) => expect(page.getByTestId('stats-2')).toHaveText('200 views, 2 likes'),
   ],
   [
-    'postlist--delete-with-command',
+    'remote-functions-postlist--delete-with-command',
     async (page) => {
       await expect(page.getByRole('link', { name: 'Second post' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'First post' })).toHaveCount(0);
     },
   ],
   [
-    'postlist--two-commands-in-flight',
+    'remote-functions-postlist--two-commands-in-flight',
     async (page) => {
       await expect(page.getByRole('link', { name: 'Third post' })).toBeVisible();
       await expect(page.getByRole('alert')).toHaveCount(0);
     },
   ],
   [
-    'postlist--query-redirect',
+    'remote-functions-postlist--query-redirect',
     (page) =>
       expect
         .poll(() => page.evaluate(() => (window as { navigations?: unknown[] }).navigations))
         .toContainEqual(['/elsewhere', undefined]),
   ],
   [
-    'postform--validation-issue',
+    'remote-functions-postform--validation-issue',
     (page) => expect(page.getByRole('alert')).toHaveText('Title must be at least 3 characters'),
   ],
   [
-    'postform--created',
+    'remote-functions-postform--created',
     (page) => expect(page.getByRole('status')).toHaveText('Created “A real title”'),
   ],
   [
-    'postform--submitting',
+    'remote-functions-postform--submitting',
     (page) => expect(page.getByRole('button', { name: 'Create' })).toBeDisabled(),
   ],
   [
-    'posts--refresh-after-submit',
+    'remote-functions-posts--refresh-after-submit',
     (page) => expect(page.getByRole('link', { name: 'Second post' })).toBeVisible(),
   ],
   [
-    'posts--redirect',
+    'remote-functions-posts--redirect',
     // `goto` from Storybook's `$app/navigation` mock dispatches `storybook:goto`.
     (page) =>
       expect
@@ -73,29 +79,100 @@ const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> =
         .toEqual([['/posts/42', expect.anything()]]),
   ],
   [
-    'postdetail--prerendered',
+    'remote-functions-postdetail--prerendered',
     (page) => expect(page.getByRole('heading', { name: 'Post 7' })).toBeVisible(),
   ],
   [
-    'postdetail--not-found',
+    'remote-functions-postdetail--not-found',
     (page) => expect(page.getByRole('alert')).toHaveText('Post 7 not found'),
   ],
   [
-    'postcount--live-generator',
+    'remote-functions-postcount--live-generator',
     async (page) => {
       await expect(page.locator('output')).toHaveText('2');
       await expect(page.getByTestId('live-status')).toHaveText('done');
     },
   ],
-  ['postcount--live-array', (page) => expect(page.locator('output')).toHaveText('4')],
-  ['postcount--live-stream', (page) => expect(page.getByRole('alert')).toContainText('Feed down')],
   [
-    'postcount--live-stream-open',
+    'remote-functions-postcount--live-array',
+    (page) => expect(page.locator('output')).toHaveText('4'),
+  ],
+  // Driven by the "Live feed" panel in `live-panel.spec.ts`; here they render on their own.
+  ['live--mocked', (page) => expect(page.getByTestId('feed-count')).toHaveText('2')],
+  ['live--server', (page) => expect(page.getByTestId('feed-count')).toHaveText('2')],
+  [
+    'remote-functions-postcount--live-stream',
+    (page) => expect(page.getByRole('alert')).toContainText('Feed down'),
+  ],
+  [
+    'remote-functions-postcount--live-stream-open',
     async (page) => {
       await expect(page.locator('output')).toHaveText('7');
       await expect(page.getByTestId('live-status')).toHaveText('live');
     },
   ],
+  // Server mode: the real remote functions, on the PGlite database from `__mocks__/db.ts`.
+  [
+    'server-postlist--real-query',
+    (page) => expect(page.getByTestId('stats-1')).toHaveText('7 views, 3 likes'),
+  ],
+  [
+    'server-postlist--mixed-with-mock',
+    (page) => expect(page.getByTestId('stats-1')).toHaveText('99 views, 9 likes'),
+  ],
+  [
+    'server-postlist--delete-signed-in',
+    async (page) => {
+      await expect(page.getByRole('link', { name: 'Also from the database' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'From the database', exact: true })).toHaveCount(
+        0
+      );
+    },
+  ],
+  [
+    'server-postlist--delete-forbidden',
+    (page) =>
+      expect(page.getByRole('alert')).toHaveText('Could not delete: Sign in to delete posts'),
+  ],
+  [
+    'server-posts--create-and-refresh',
+    (page) => expect(page.getByRole('link', { name: 'Second post' })).toBeVisible(),
+  ],
+  [
+    'server-posts--schema-issue',
+    (page) => expect(page.getByRole('alert')).toHaveText('Title is required'),
+  ],
+  [
+    'server-posts--handler-issue',
+    (page) => expect(page.getByRole('alert')).toHaveText('A post with this title exists'),
+  ],
+  // The overlap probes: their play functions check the results; the live count stays connected.
+  [
+    'server-overlap--live-then-command',
+    (page) => expect(page.getByTestId('live-status')).toHaveText('live'),
+  ],
+  [
+    'server-overlap--two-real-commands',
+    (page) => expect(page.getByTestId('live-status')).toHaveText('live'),
+  ],
+  [
+    'server-overlap--cookie-survives-slow-request',
+    (page) => expect(page.getByTestId('live-status')).toHaveText('live'),
+  ],
+  [
+    'server-posts--submitting',
+    (page) => expect(page.getByRole('button', { name: 'Create' })).toBeDisabled(),
+  ],
+  [
+    'server-postdetail--real-prerender',
+    (page) =>
+      expect(page.getByRole('heading', { name: 'Prerendered from the database' })).toBeVisible(),
+  ],
+  [
+    'server-postdetail--not-found',
+    (page) => expect(page.getByRole('alert')).toHaveText('Post 42 not found'),
+  ],
+  ['server-postcount--live-polling', (page) => expect(page.locator('output')).toHaveText('3')],
 ];
 
 /** Records the phases and play errors that the preview reports on its channel. */
@@ -155,9 +232,23 @@ test('serves the manager with the story index', async ({ page, request }) => {
   const index = await (await request.get('/index.json')).json();
   expect(Object.keys(index.entries)).toEqual(expect.arrayContaining(stories.map(([id]) => id)));
 
-  await page.goto('/?path=/story/postlist--data');
+  await page.goto('/?path=/story/remote-functions-postlist--data');
   const preview = page.frameLocator('#storybook-preview-iframe');
   await expect(preview.getByRole('link', { name: 'First post' })).toBeVisible();
+});
+
+test('the static build has the values of the declared private env variables only', () => {
+  test.skip(test.info().project.name !== 'storybook-static', 'Reads the `storybook build` output');
+  const dir = path.join(import.meta.dirname, '../storybook-static');
+  const code = readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((file) => file.endsWith('.js'))
+    .map((file) => readFileSync(path.join(dir, file), 'utf8'))
+    .join('\n');
+
+  // The value from `.storybook/main.ts`.
+  expect(code).toMatch(/LIVE_POLL_MS"?:["`]250["`]/);
+  expect(code).not.toContain('undeclared-canary-5e2a');
+  expect(code).not.toContain('shell-canary-8b3f');
 });
 
 for (const [id, check] of stories) {
@@ -173,14 +264,29 @@ for (const [id, check] of stories) {
 // request or a stream open must not leak into the next one.
 const transitions: Array<[from: string, to: string, check: (frame: Preview) => Promise<void>]> = [
   [
-    'postform--submitting',
-    'postform--created',
+    'remote-functions-postform--submitting',
+    'remote-functions-postform--created',
     // The play function of `Created` clicks Create, which a pending submission would disable.
     (frame) => expect(frame.getByRole('status')).toHaveText('Created “A real title”'),
   ],
   [
-    'postcount--live-stream-open',
-    'postcount--live-generator',
+    'remote-functions-postcount--live-stream-open',
+    'remote-functions-postcount--live-generator',
+    async (frame) => {
+      await expect(frame.locator('output')).toHaveText('2');
+      await expect(frame.getByTestId('live-status')).toHaveText('done');
+    },
+  ],
+  // Server mode: a pending submission does not leak into the next story.
+  [
+    'server-posts--submitting',
+    'server-posts--create-and-refresh',
+    (frame) => expect(frame.getByRole('link', { name: 'Second post' })).toBeVisible(),
+  ],
+  // Server mode: the real generator's stream ends with its story.
+  [
+    'server-postcount--live-polling',
+    'remote-functions-postcount--live-generator',
     async (frame) => {
       await expect(frame.locator('output')).toHaveText('2');
       await expect(frame.getByTestId('live-status')).toHaveText('done');
@@ -218,7 +324,11 @@ for (const [from, to, check] of transitions) {
       Object.assign(window, { phases, playErrors, samePreview: true });
     });
 
-    await page.locator(`[data-item-id="${to}"]`).click();
+    // Through the sidebar, as a person would. A story of another component needs its group open.
+    const item = page.locator(`[data-item-id="${to}"]`);
+    if (!(await item.isVisible()))
+      await page.locator(`[data-item-id="${to.split('--')[0]}"]`).click();
+    await item.click();
     await expect.poll(() => currentRender(preview)).toEqual({ id: to, phase: 'finished' });
     await expectPlayed(preview);
     await check(preview);

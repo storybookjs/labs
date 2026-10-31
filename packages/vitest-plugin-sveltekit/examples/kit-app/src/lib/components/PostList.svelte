@@ -5,6 +5,17 @@
   import PostStats from './PostStats.svelte';
 
   let { order = 'newest' }: { order?: 'newest' | 'oldest' } = $props();
+
+  let deleteError = $state<string>();
+
+  async function remove(id: number) {
+    deleteError = undefined;
+    try {
+      await deletePost(id).updates(getPosts(order));
+    } catch (error) {
+      deleteError = errorMessage(error);
+    }
+  }
 </script>
 
 <section aria-label="Posts">
@@ -14,7 +25,7 @@
         <li>
           <a href="/posts/{post.id}">{post.title}</a>
           <PostStats id={post.id} />
-          <button onclick={() => deletePost(post.id).updates(getPosts(order))}>
+          <button onclick={() => remove(post.id)}>
             Delete {post.title}
           </button>
         </li>
@@ -22,6 +33,10 @@
         <li>No posts yet</li>
       {/each}
     </ul>
+
+    {#if deleteError}
+      <p role="alert">Could not delete: {deleteError}</p>
+    {/if}
 
     {#snippet pending()}
       <p>Loading posts…</p>

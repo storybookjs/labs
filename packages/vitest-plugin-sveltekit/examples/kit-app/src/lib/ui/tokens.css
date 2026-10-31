@@ -1,0 +1,165 @@
+/* Field Notes design tokens. Every pair of text and background colours meets WCAG AA. */
+
+:root {
+  /* Follows the system; `data-theme` (below) forces a theme. */
+  /* Each colour is light-dark(light value, dark value). */
+  color-scheme: light dark;
+
+  --color-background: light-dark(#f8f4ec, #171411);
+  --color-surface: light-dark(#fffcf6, #1f1b17);
+  --color-surface-raised: light-dark(#ffffff, #29241f);
+  --color-surface-sunken: light-dark(#f1ebe0, #13110e);
+  --color-text: light-dark(#2b2520, #ede5d9);
+  --color-text-muted: light-dark(#675b50, #b3a796);
+  --color-border: light-dark(#e2d8c9, #3a332b);
+  /* Control borders: 3:1 against every surface. */
+  --color-border-strong: light-dark(#8f8070, #7d7061);
+  --color-accent: light-dark(#a8461f, #ec9a6f);
+  --color-accent-hover: light-dark(#8e3916, #f2b08c);
+  --color-accent-contrast: light-dark(#ffffff, #1f130c);
+  --color-accent-subtle: light-dark(#f6e6dc, #3a2519);
+  --color-success: light-dark(#2e6a3c, #86c995);
+  --color-success-subtle: light-dark(#e3f0e4, #1e3123);
+  --color-warning: light-dark(#8a5700, #e4b65a);
+  --color-warning-subtle: light-dark(#f8ecd2, #3a2e14);
+  --color-danger: light-dark(#b3261e, #f2948a);
+  --color-danger-hover: light-dark(#961e17, #f6ada5);
+  --color-danger-contrast: light-dark(#ffffff, #1f130c);
+  --color-danger-subtle: light-dark(#f9e2df, #3d201d);
+  --color-focus: light-dark(#2f5fb8, #8fb5ff);
+  --color-backdrop: light-dark(rgb(43 37 32 / 0.45), rgb(0 0 0 / 0.78));
+  --color-skeleton: light-dark(#ece4d7, #3a332b);
+  --color-skeleton-shine: light-dark(#f7f2ea, #4a4238);
+
+  /*
+   * Type: the serif is for the brand and for the words of a post (its title on the post page, its
+   * headings and paragraphs). Everything else, the UI around the posts, is sans: page and card
+   * titles, empty states, dialogs, forms. Code is mono.
+   */
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif;
+  --font-serif:
+    'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Charter, 'Bitstream Charter',
+    Georgia, 'Noto Serif', serif;
+  --font-mono:
+    ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 2.875rem;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.875rem;
+  --radius-full: 999px;
+
+  --color-shadow-1: light-dark(rgb(60 45 30 / 0.06), rgb(0 0 0 / 0.3));
+  --color-shadow-2: light-dark(rgb(60 45 30 / 0.08), rgb(0 0 0 / 0.38));
+  --color-shadow-3: light-dark(rgb(60 45 30 / 0.16), rgb(0 0 0 / 0.5));
+  --shadow-sm: 0 1px 2px var(--color-shadow-2);
+  --shadow-md: 0 2px 4px var(--color-shadow-1), 0 6px 16px var(--color-shadow-2);
+  --shadow-lg: 0 4px 8px var(--color-shadow-2), 0 16px 40px var(--color-shadow-3);
+
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /*
+   * Breakpoints, for `@media (max-width: …)`: 30rem (phones), 40rem (small tablets), 48rem
+   * (tablets). Media queries cannot read custom properties, so components repeat these values;
+   * `tokens.test.ts` checks that they use no others.
+   */
+  --width-narrow: 42rem;
+  --width-wide: 72rem;
+}
+
+/* An explicit choice: ThemeToggle, the inline script in `app.html`, Storybook's theme toolbar. */
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* A modal dialog keeps the page behind it still. */
+html:has(dialog[open]:modal) {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-accent-subtle);
+  color: var(--color-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}

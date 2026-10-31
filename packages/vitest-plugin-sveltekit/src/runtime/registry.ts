@@ -46,6 +46,8 @@ export function setSpyFactory(factory: () => unknown): void {
 const entries = new Map<string, RemoteEntry>();
 const byClient = new WeakMap<object, RemoteEntry>();
 const listeners = new Set<(hash: string) => void>();
+const serverModules = new Map<string, () => Promise<Record<string, unknown>>>();
+const defaults = new WeakMap<RemoteSpy, Handler>();
 
 /**
  * Called by the client stub of each remote file, once per export. Re-registration (after HMR)
@@ -91,8 +93,40 @@ export function getRemoteEntry(client: unknown): RemoteEntry {
   return entry;
 }
 
+/** The entry behind a request id, `<hash>/<name>` (a prerender id carries its argument too). */
+export function getRemoteEntryById(id: string): RemoteEntry | undefined {
+  const [hash, name] = id.split('/');
+  return entries.get(`${hash}/${name}`);
+}
+
 export function getRemoteEntries(hash: string): RemoteEntry[] {
   return [...entries.values()].filter((entry) => entry.hash === hash);
+}
+
+/** Server mode: called by the client stub with a loader for the module's server copy. */
+export function registerRemoteModule(
+  hash: string,
+  load: () => Promise<Record<string, unknown>>
+): void {
+  serverModules.set(hash, load);
+}
+
+export function getServerModuleLoaders(): Array<() => Promise<Record<string, unknown>>> {
+  return [...serverModules.values()];
+}
+
+export function getServerModuleLoader(
+  hash: string
+): (() => Promise<Record<string, unknown>>) | undefined {
+  return serverModules.get(hash);
+}
+
+/**
+ * Whether a story or test gave the spy a behaviour of its own (`mockResolvedValue`,
+ * `mockImplementation`, ...). In server mode, only these functions skip the real handler.
+ */
+export function isMocked(entry: RemoteEntry): boolean {
+  return entry.spy.getMockImplementation() !== defaults.get(entry.spy);
 }
 
 export function registeredHashes(): Set<string> {
@@ -164,24 +198,26 @@ function createSpy(name: string, kind: RemoteKind): RemoteSpy {
 }
 
 function applyDefaults(spy: RemoteSpy, name: string, kind: RemoteKind): void {
-  spy.mockName(name);
+  const implementation = defaultImplementation(name, kind);
+  defaults.set(spy, implementation);
+  spy.mockName(name).mockImplementation(implementation);
+}
 
+function defaultImplementation(name: string, kind: RemoteKind): Handler {
   switch (kind) {
     case 'query':
     case 'query_batch':
     case 'query_live':
     case 'prerender':
-      spy.mockImplementation(() => {
+      return () => {
         error(
           500,
           `\`${name}\` has no mock. Call \`remote(${name}).mockResolvedValue(...)\` in \`beforeEach\`.`
         );
-      });
-      break;
+      };
     case 'form':
     case 'command':
-      spy.mockImplementation(() => undefined);
-      break;
+      return () => undefined;
     default: {
       const unknownKind: never = kind;
       throw new Error(`Unknown remote function kind: ${String(unknownKind)}`);

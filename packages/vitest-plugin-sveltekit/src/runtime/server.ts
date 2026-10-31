@@ -1,38 +1,130 @@
-import type { RequestEvent } from '@sveltejs/kit';
+import type { Handle, Transport } from '@sveltejs/kit/hooks';
+import * as app from 'virtual:@storybookjs/vitest-plugin-sveltekit/app';
 import * as kit from 'virtual:@storybookjs/vitest-plugin-sveltekit/kit';
 
 import type { RemoteKind } from '../node/analyze.ts';
+import { pinRequest, unpinRequest } from './async-local-storage.ts';
+import { requestEvent } from './request-event.ts';
 import {
   getRemoteEntries,
+  getRemoteEntryById,
+  getServerModuleLoader,
+  getServerModuleLoaders,
   hasRemoteModule,
+  isMocked,
   onRegister,
-  registeredHashes,
   type RemoteEntry,
   resetGeneration,
 } from './registry.ts';
 
 type RemoteModule = Record<string, unknown>;
+type RemoteFunction = { __: { type: string } };
 
-const modules = new Map<string, RemoteModule>();
-onRegister((hash) => modules.delete(hash));
+/** What a request needs from the app's server hooks, with SvelteKit's defaults filled in. */
+interface ServerHooks {
+  handle: Handle;
+}
 
-let ready = false;
+/** The fake (mock-backed) module of each remote file. */
+const fakes = new Map<string, RemoteModule>();
+/** The module each remote file served last, real or fake, for `refreshingRequested`. */
+const served = new Map<string, RemoteModule>();
+onRegister((hash) => {
+  fakes.delete(hash);
+  served.delete(hash);
+});
+
+let setupPromise: Promise<ServerHooks> | undefined;
+
+/** The transport from the app's `src/hooks.ts`, for the client side of the runtime. */
+export const transport: Transport = app.universalHooks.transport ?? {};
 
 /**
  * Answers a request for `/_app/remote/<hash>/<name>` in the page, with SvelteKit's own server
  * runtime: `handle_remote_call` runs the remote function and builds the same `Response` a
- * SvelteKit server sends.
+ * SvelteKit server sends. The app's `handle` hook runs around it, as on a server.
  */
-export function handleRemoteRequest(request: Request): Promise<Response> {
-  setup();
+export async function handleRemoteRequest(request: Request, alone = false): Promise<Response> {
+  // The cookie jar of the story or test that sends the request (`resetRequestEvent` replaces it).
+  const generation = resetGeneration();
+  const jar = requestEvent.cookies;
+  const { handle } = await (setupPromise ??= setup());
   const id = new URL(request.url).pathname.slice(remotePrefix().length);
 
-  // `withRequestEvent` (sveltejs/kit PR B) builds the event and state as SvelteKit's server does.
-  // It takes `event.url` from the `x-sveltekit-pathname` header, like SvelteKit's server.
-  return kit.withRequestEvent({ request }, (event) =>
-    // `handle_remote_call` needs the state that `withRequestEvent` made for this request.
-    kit.handle_remote_call(event, kit.get_request_store().state, id)
+  return kit.withRequestEvent(
+    {
+      request,
+      // Without `url`, `withRequestEvent` takes `event.url` from the `x-sveltekit-pathname` header,
+      // like SvelteKit's server.
+      url: requestEvent.url,
+      locals: { ...requestEvent.locals },
+      params: { ...requestEvent.params },
+      route: { ...requestEvent.route },
+      platform: requestEvent.platform,
+    },
+    async (event) => {
+      // `handle_remote_call` needs the state that `withRequestEvent` made for this request.
+      const { state } = kit.get_request_store();
+      // A mock or a `query.live` pull may run in between: this request keeps its store.
+      if (alone) pinRequest(state.remote);
+
+      try {
+        // Not `withRequestEvent({ cookies })`: that puts them on a `cookie` header, which browsers
+        // drop from a `Request` they construct.
+        const sent = cookieMap(jar.getAll());
+        for (const [name, value] of sent) event.cookies.set(name, value, { path: '/' });
+
+        const response = await handle({
+          event,
+          resolve: (event) => kit.handle_remote_call(event, state, id),
+        });
+
+        // Apply what the remote function (or `handle`) set or deleted, as a browser applies
+        // `set-cookie`: not the whole jar, another request may have changed it in the meantime.
+        // Not at all when the story or test ended meanwhile: it would land in the next one.
+        if (resetGeneration() === generation) {
+          const received = cookieMap(event.cookies.getAll());
+          for (const name of sent.keys()) if (!received.has(name)) jar.delete(name);
+          for (const [name, value] of received) if (sent.get(name) !== value) jar.set(name, value);
+        }
+
+        return response;
+      } finally {
+        if (alone) unpinRequest(state.remote);
+      }
+    }
   );
+}
+
+/** Name to value, without deleted cookies (SvelteKit reports those with an empty value). */
+function cookieMap(cookies: Array<{ name: string; value: string }>): Map<string, string> {
+  return new Map(
+    cookies.filter(({ value }) => value !== '').map(({ name, value }) => [name, value])
+  );
+}
+
+/**
+ * Server mode: loads the server hooks and the server copy of every remote file the story or test
+ * imports, so the first request does not pay for it (and time out a `findBy`).
+ */
+export async function prepareServer(): Promise<void> {
+  await (setupPromise ??= setup());
+  if (app.serverMode) await Promise.all(getServerModuleLoaders().map((load) => load()));
+}
+
+/**
+ * Server mode runs real remote functions one at a time, as SvelteKit's server does in a
+ * webcontainer (`serialise` in `runtime/server/instance.js`). Browsers have no async context, so a
+ * request that resumes after an `await` would see the request store of the request that started
+ * last (see `async-local-storage.ts`), and its refreshes would go into that request's response.
+ * Mocks are not queued: they read the store before their first `await`, and may stay pending on
+ * purpose. `query.live` streams stay open, so they do not wait either; the running request is
+ * pinned instead, so their pulls do not take its store.
+ */
+export function runsAlone(request: Request): boolean {
+  if (!app.serverMode || request.headers.get('accept')?.includes('text/event-stream')) return false;
+  const entry = getRemoteEntryById(new URL(request.url).pathname.slice(remotePrefix().length));
+  return entry !== undefined && !isMocked(entry);
 }
 
 export function isRemoteRequest(url: URL): boolean {
@@ -43,29 +135,28 @@ function remotePrefix(): string {
   return `${kit.base}/${kit.app_dir}/remote/`;
 }
 
-function setup(): void {
-  if (ready) return;
-  ready = true;
+async function setup(): Promise<ServerHooks> {
+  kit.init_transport(transport);
 
-  kit.init_transport({});
+  // Before the server hooks load: they may import `$app/env/private`.
+  app.initEnv();
+  const hooks = await app.loadServerHooks();
+  const handle: Handle = hooks.handle ?? (({ event, resolve }) => resolve(event));
+
   kit.set_hooks({
-    handle: ({
-      event,
-      resolve,
-    }: {
-      event: RequestEvent;
-      resolve: (event: RequestEvent) => unknown;
-    }) => resolve(event),
-    handleError: ({ kind, error }: { kind: string; error: unknown }) => {
-      // Same as SvelteKit's default: expected errors (`error(404)`) are not logged.
-      if (kind === 'unknown') console.error(error);
-    },
+    handle,
+    handleError:
+      hooks.handleError ??
+      (({ kind, error }: { kind: string; error: unknown }) => {
+        // Same as SvelteKit's default: expected errors (`error(404)`) are not logged.
+        if (kind === 'unknown') console.error(error);
+      }),
     handleFetch: ({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) =>
       fetch(request),
     reroute: () => {},
   });
 
-  const loader = (hash: string) => () => Promise.resolve({ default: getRemoteModule(hash) });
+  const loader = (hash: string) => async () => ({ default: await loadRemoteModule(hash) });
   kit.set_manifest({
     // A proxy, so remote files registered later (lazy imports, HMR) are found too.
     remotes: new Proxy({} as Record<string, () => Promise<{ default: RemoteModule }>>, {
@@ -78,19 +169,39 @@ function setup(): void {
         typeof hash === 'string' && hasRemoteModule(hash) ? loader(hash) : undefined,
     }),
   });
+
+  await hooks.init?.();
+  return { handle };
 }
 
 /**
- * The server module behind a remote file. Today every export is a fake built from its spy; the
- * real module (tier 2) can be returned from here instead.
+ * The server module behind a remote file, per request. Functions mocked with `remote(fn)` are
+ * fakes built from their spies. In server mode, the others are the real functions from the
+ * remote file; otherwise they are fakes too, which fail with a hint.
  */
-function getRemoteModule(hash: string): RemoteModule {
-  let module = modules.get(hash);
+async function loadRemoteModule(hash: string): Promise<RemoteModule> {
+  const fake = getFakeModule(hash);
+  const load = app.serverMode ? getServerModuleLoader(hash) : undefined;
+
+  let module = fake;
+  if (load) {
+    module = { ...(await load()) };
+    for (const entry of getRemoteEntries(hash)) {
+      if (isMocked(entry)) module[entry.name] = fake[entry.name];
+    }
+  }
+
+  served.set(hash, module);
+  return module;
+}
+
+function getFakeModule(hash: string): RemoteModule {
+  let module = fakes.get(hash);
   if (!module) {
     module = Object.fromEntries(
       getRemoteEntries(hash).map((entry) => [entry.name, fakeServerExport(entry)])
     );
-    modules.set(hash, module);
+    fakes.set(hash, module);
   }
   return module;
 }
@@ -146,8 +257,8 @@ async function perArgument(handler: (...args: unknown[]) => unknown, args: unkno
 
 /**
  * A real form or command handler refreshes the queries the client passed to `.updates(...)`
- * (with `getPosts().refresh()` or `requested(...)`), or SvelteKit fails them. A mock cannot reach
- * the server-side queries, so after it resolves, every requested query is refreshed: its mock
+ * (with `getPosts().refresh()` or `requested(...)`), or SvelteKit fails them. A mock cannot do
+ * that, so after it resolves, every requested query is refreshed: its mock or its real handler
  * runs again and the new value goes back in the same response.
  */
 function refreshingRequested(handler: (...args: unknown[]) => unknown) {
@@ -159,9 +270,10 @@ function refreshingRequested(handler: (...args: unknown[]) => unknown) {
     // replaces it. So every requested query is bound and marked for refresh synchronously, here,
     // not after the handler. SvelteKit runs the marked refreshes at the end of the request, after
     // the handler, so they see what the handler changed.
-    for (const hash of registeredHashes()) {
-      for (const fn of Object.values(getRemoteModule(hash)) as Array<{ __: { type: string } }>) {
-        const { type } = fn.__;
+    for (const hash of new Set([...fakes.keys(), ...served.keys()])) {
+      const module = served.get(hash) ?? getFakeModule(hash);
+      for (const fn of Object.values(module) as RemoteFunction[]) {
+        const type = fn?.__?.type;
         if (type === 'query' || type === 'query_batch') {
           for (const { query } of kit.requested(fn, Infinity)) void query.refresh();
         } else if (type === 'query_live') {
