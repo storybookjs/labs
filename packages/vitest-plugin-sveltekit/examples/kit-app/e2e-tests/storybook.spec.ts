@@ -236,7 +236,8 @@ test('the static build has the values of the declared private env variables only
     .map((file) => readFileSync(path.join(dir, file), 'utf8'))
     .join('\n');
 
-  expect(code).toMatch(/LIVE_POLL_MS"?:["`]100["`]/);
+  // The value from `.storybook/main.ts`.
+  expect(code).toMatch(/LIVE_POLL_MS"?:["`]250["`]/);
   expect(code).not.toContain('undeclared-canary-5e2a');
   expect(code).not.toContain('shell-canary-8b3f');
 });

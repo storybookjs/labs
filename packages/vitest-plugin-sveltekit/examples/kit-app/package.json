@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.13",
-    "drizzle-orm": "^0.45.4"
+    "drizzle-orm": "^0.45.4",
+    "markdown-it": "^15.0.3"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
