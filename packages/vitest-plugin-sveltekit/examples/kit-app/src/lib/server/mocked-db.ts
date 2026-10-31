@@ -4,4 +4,4 @@
 import type * as MockDb from './__mocks__/db.ts';
 import * as db from './db.ts';
 
-export const { resetDb, queryCount } = db as unknown as typeof MockDb;
+export const { resetDb, queryCount, setDatabaseDown } = db as unknown as typeof MockDb;
