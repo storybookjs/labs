@@ -96,8 +96,11 @@ CI runs on every PR and on `main`:
 - a [zizmor](https://github.com/zizmorcore/zizmor) audit of the GitHub workflows;
 - the PR title check above.
 
-Run `pnpm lint`, `pnpm fmt:check`, `pnpm typecheck` and `pnpm test` locally before pushing
-to avoid round trips. All checks must be green before a PR can be merged.
+A pre-commit hook (installed by `pnpm install` through [`vp config`](https://viteplus.dev/guide/commit-hooks))
+runs `vp staged`, which lints and formats the staged files so lint and format failures never
+reach CI. Run `vp hooks enable` if the hook isn't installed, or skip it once with
+`VP_GIT_HOOKS=0 git commit`. Run `pnpm typecheck` and `pnpm test` locally before pushing to avoid
+round trips. All checks must be green before a PR can be merged.
 
 ### Previews
 
