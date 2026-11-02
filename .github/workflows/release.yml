@@ -34,7 +34,7 @@ jobs:
 
       - name: Select changesets mode
         id: select-mode
-        uses: changesets/action/select-mode@66d7d1ddafddf1ef45f98ee51a7496f9cdadb2f4 # v2.1.2
+        uses: changesets/action/select-mode@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
 
   version:
     name: Update version PR
@@ -58,7 +58,7 @@ jobs:
         run: vp run changeset:check
 
       - name: Version packages
-        uses: changesets/action/version@66d7d1ddafddf1ef45f98ee51a7496f9cdadb2f4 # v2.1.2
+        uses: changesets/action/version@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           commit-message: 'chore: version packages'
           pr-title: 'chore: version packages'
@@ -93,7 +93,7 @@ jobs:
 
       - name: Pack packages
         id: pack
-        uses: changesets/action/pack@66d7d1ddafddf1ef45f98ee51a7496f9cdadb2f4 # v2.1.2
+        uses: changesets/action/pack@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           publish-plan-artifact-id: ${{ needs.select-mode.outputs.publish-plan-artifact-id }}
 
@@ -116,6 +116,6 @@ jobs:
 
       # Publishes the tarballs packed above, so nothing is rebuilt with publish permissions.
       - name: Publish to npm
-        uses: changesets/action/publish@66d7d1ddafddf1ef45f98ee51a7496f9cdadb2f4 # v2.1.2
+        uses: changesets/action/publish@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           pack-dir-artifact-id: ${{ needs.pack.outputs.pack-dir-artifact-id }}
