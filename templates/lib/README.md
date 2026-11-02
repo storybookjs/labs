@@ -1,3 +1,3 @@
-# @storybookjs/{{name}}
+# @storybook/{{name}}
 
 {{description}}

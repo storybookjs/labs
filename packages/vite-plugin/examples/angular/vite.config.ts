@@ -1,4 +1,4 @@
-import { experimental_vitePlugin } from '@storybookjs/vite-plugin';
+import { experimental_vitePlugin } from '@storybook/vite-plugin';
 import { defineConfig } from 'vite';
 
 import { STORYBOOK_BASE, STORYBOOK_CONFIG_DIR } from './tools/builders/storybook-middleware.js';

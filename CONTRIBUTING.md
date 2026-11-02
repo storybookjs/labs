@@ -1,7 +1,7 @@
 # Contributing
 
 Thanks for helping out! This repository hosts experiments from the Storybook team. Packages here are
-early, published as `@storybookjs/<name>` and kept on `0.x` until they move into Storybook as an officail feature (or get retired).
+early, published as `@storybook/<name>` and kept on `0.x` until they move into Storybook as an officail feature (or get retired).
 
 ## Setup
 
@@ -23,16 +23,16 @@ the formatter.
 
 Run these from the repo root:
 
-| Command                      | What it does                                           |
-| ---------------------------- | ------------------------------------------------------ |
-| `pnpm build`                 | Builds every package                                   |
-| `pnpm typecheck`             | Typechecks the root scripts and every package          |
-| `pnpm test`                  | Runs the unit tests of every package                   |
-| `pnpm lint` / `pnpm lint:fix`| Lints the repo (and fixes what it can)                 |
-| `pnpm fmt` / `pnpm fmt:check`| Formats the repo (or checks formatting)                |
-| `pnpm new`                   | Scaffolds a new package (see below)                    |
+| Command                       | What it does                                  |
+| ----------------------------- | --------------------------------------------- |
+| `pnpm build`                  | Builds every package                          |
+| `pnpm typecheck`              | Typechecks the root scripts and every package |
+| `pnpm test`                   | Runs the unit tests of every package          |
+| `pnpm lint` / `pnpm lint:fix` | Lints the repo (and fixes what it can)        |
+| `pnpm fmt` / `pnpm fmt:check` | Formats the repo (or checks formatting)       |
+| `pnpm new`                    | Scaffolds a new package (see below)           |
 
-To target a single package, use a pnpm filter, e.g. `pnpm vp run --filter @storybookjs/vite-plugin build`,
+To target a single package, use a pnpm filter, e.g. `pnpm vp run --filter @storybook/vite-plugin build`,
 or run the package's own scripts from its folder. Packages with examples expose them as
 `example:*` scripts in their `package.json`.
 
@@ -53,7 +53,7 @@ pnpm new
 ```
 
 The script asks for a name (lowercase letters, digits and dashes; published as
-`@storybookjs/<name>`), a one-line description and a template, then copies
+`@storybook/<name>`), a one-line description and a template, then copies
 `templates/<template>` to `packages/<name>`, fills in `package.json` and `README.md`, formats the
 result and runs `pnpm install`. Flags (`--name`, `--description`, `--template`, `--skip-install`) skip
 the prompts; `pnpm new -- --help` lists them.
@@ -105,7 +105,7 @@ Every PR (and every push to `main`) publishes the packages to [pkg.pr.new](https
 bot comment on the PR lists the install commands, of the form:
 
 ```sh
-pnpm add https://pkg.pr.new/storybookjs/labs/@storybookjs/<name>@<sha>
+pnpm add https://pkg.pr.new/storybookjs/labs/@storybook/<name>@<sha>
 ```
 
 Use this to try a change in a real project before it's released.
@@ -121,7 +121,7 @@ Releases are automated with [Changesets](https://github.com/changesets/changeset
    changesets. It accumulates until a maintainer decides to release.
 3. Merging that PR publishes every bumped package to npm through
    [trusted publishing](https://docs.npmjs.com/trusted-publishers) (no npm token), tags each
-   one as `<package name>@<version>` (e.g. `@storybookjs/vite-plugin@0.2.0`) and creates a GitHub
+   one as `<package name>@<version>` (e.g. `@storybook/vite-plugin@0.2.0`) and creates a GitHub
    release per package from its changelog entry.
 
 Packages are released independently; only those with changesets get a new version. A package's

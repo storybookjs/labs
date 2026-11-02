@@ -1,11 +1,11 @@
-# @storybookjs/vite-plugin
+# @storybook/vite-plugin
 
 An experimental vite plugin to run Storybook and expose it through your vite server.
 
 ## Installation
 
 ```
-pnpm i @storybookjs/vite-plugin
+pnpm i @storybook/vite-plugin
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ import { defineConfig } from 'vite';
 import {
   experimental_vitePlugin,
   type experimental_VitePluginUserOptions,
-} from '@storybookjs/vite-plugin';
+} from '@storybook/vite-plugin';
 
 // default values
 const storybookOptions: experimental_VitePluginUserOptions = {
