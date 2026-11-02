@@ -1,6 +1,6 @@
 # Vue example
 
-A small Vue 3 + TypeScript app using `experimental_vitePlugin` from `@storybookjs/vite-plugin`.
+A small Vue 3 + TypeScript app using `experimental_vitePlugin` from `@storybook/vite-plugin`.
 The same typed button powers the reactive counter and two Storybook stories.
 
 ## Run from the repository root
@@ -10,12 +10,12 @@ Playwright, the repository root supplies TypeScript and Node types; this workspa
 
 | Root command                                                             | Result                                                                                          |
 | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `pnpm --filter @storybookjs/vite-plugin-vue-example run dev`             | App at <http://localhost:5183/> and embedded Storybook at <http://localhost:5183/__storybook/>. |
-| `pnpm --filter @storybookjs/vite-plugin-vue-example run storybook`       | Dedicated Storybook at <http://localhost:5185/>; no host app.                                   |
-| `pnpm --filter @storybookjs/vite-plugin-vue-example run typecheck`       | Check TypeScript, Vue templates, stories, configurations, and browser tests with `vue-tsc`.     |
-| `pnpm --filter @storybookjs/vite-plugin-vue-example run build`           | Typecheck and build the host app only.                                                          |
-| `pnpm --filter @storybookjs/vite-plugin-vue-example run storybook:build` | Build static Storybook only.                                                                    |
-| `pnpm --filter @storybookjs/vite-plugin-vue-example run test:e2e`        | Run the Chromium integration tests.                                                             |
+| `pnpm --filter @storybook/vite-plugin-vue-example run dev`             | App at <http://localhost:5183/> and embedded Storybook at <http://localhost:5183/__storybook/>. |
+| `pnpm --filter @storybook/vite-plugin-vue-example run storybook`       | Dedicated Storybook at <http://localhost:5185/>; no host app.                                   |
+| `pnpm --filter @storybook/vite-plugin-vue-example run typecheck`       | Check TypeScript, Vue templates, stories, configurations, and browser tests with `vue-tsc`.     |
+| `pnpm --filter @storybook/vite-plugin-vue-example run build`           | Typecheck and build the host app only.                                                          |
+| `pnpm --filter @storybook/vite-plugin-vue-example run storybook:build` | Build static Storybook only.                                                                    |
+| `pnpm --filter @storybook/vite-plugin-vue-example run test:e2e`        | Run the Chromium integration tests.                                                             |
 
 Both Storybook dependencies use the **5170f92** canary: `storybook` and `@storybook/vue3-vite`.
 The framework pulls the matching builder and Vue renderer. Do not substitute a stable release,
@@ -49,7 +49,7 @@ and templates.
 ## Browser coverage
 
 Install Chromium once from the root with `pnpm exec playwright install chromium`, then build the
-plugin and run `pnpm --filter @storybookjs/vite-plugin-vue-example run test:e2e`.
+plugin and run `pnpm --filter @storybook/vite-plugin-vue-example run test:e2e`.
 
 The suite starts fresh embedded and dedicated Vite processes on **5183** and **5185**. Stop
 manual servers on those ports first: server reuse is disabled. Storybook telemetry is disabled
@@ -63,9 +63,9 @@ example and restores those exact contents in `finally`; do not edit the fixture 
 ### Static build check
 
 Static output is a separate validation step, not part of the dev-server browser suite. From
-the repository root, run `STORYBOOK_DISABLE_TELEMETRY=1 pnpm --filter @storybookjs/vite-plugin-vue-example run storybook:build`,
+the repository root, run `STORYBOOK_DISABLE_TELEMETRY=1 pnpm --filter @storybook/vite-plugin-vue-example run storybook:build`,
 then serve the output explicitly with
-`pnpm --filter @storybookjs/vite-plugin-vue-example exec vite preview --outDir storybook-static --host 127.0.0.1 --port 5187 --strictPort`.
+`pnpm --filter @storybook/vite-plugin-vue-example exec vite preview --outDir storybook-static --host 127.0.0.1 --port 5187 --strictPort`.
 
 Check the manager at <http://127.0.0.1:5187/?path=/story/example-button--primary>, the index at
 <http://127.0.0.1:5187/index.json>, and the standalone story at

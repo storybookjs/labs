@@ -17,7 +17,7 @@ Use Node.js >=22.19.0. Install dependencies from the repository root, not from t
 
 ```sh
 pnpm install
-pnpm --filter @storybookjs/vite-plugin-nuxt-example run dev
+pnpm --filter @storybook/vite-plugin-nuxt-example run dev
 ```
 
 | URL                                                                                             | Content                        |
@@ -81,12 +81,12 @@ Run these from the repository root:
 
 | Command                                                                   | Purpose                                                 |
 | ------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `pnpm --filter @storybookjs/vite-plugin-nuxt-example run dev`             | `nuxt dev` with embedded Storybook, port 5213           |
-| `pnpm --filter @storybookjs/vite-plugin-nuxt-example run storybook`       | `storybook dev` at http://127.0.0.1:5215/               |
-| `pnpm --filter @storybookjs/vite-plugin-nuxt-example run typecheck`       | `nuxt typecheck`: app, server, Nuxt config, and tooling |
-| `pnpm --filter @storybookjs/vite-plugin-nuxt-example run build`           | Typecheck and production `nuxt build`                   |
-| `pnpm --filter @storybookjs/vite-plugin-nuxt-example run storybook:build` | `storybook build`: static Storybook                     |
-| `pnpm --filter @storybookjs/vite-plugin-nuxt-example run test:e2e`        | Chromium `nuxt dev` and dedicated-mode tests            |
+| `pnpm --filter @storybook/vite-plugin-nuxt-example run dev`             | `nuxt dev` with embedded Storybook, port 5213           |
+| `pnpm --filter @storybook/vite-plugin-nuxt-example run storybook`       | `storybook dev` at http://127.0.0.1:5215/               |
+| `pnpm --filter @storybook/vite-plugin-nuxt-example run typecheck`       | `nuxt typecheck`: app, server, Nuxt config, and tooling |
+| `pnpm --filter @storybook/vite-plugin-nuxt-example run build`           | Typecheck and production `nuxt build`                   |
+| `pnpm --filter @storybook/vite-plugin-nuxt-example run storybook:build` | `storybook build`: static Storybook                     |
+| `pnpm --filter @storybook/vite-plugin-nuxt-example run test:e2e`        | Chromium `nuxt dev` and dedicated-mode tests            |
 
 Install the shared Playwright Chromium browser with `pnpm exec playwright install chromium` before
 E2E tests. Tests use one worker, disable telemetry, refuse to reuse existing servers, and
@@ -165,8 +165,8 @@ type rather than comparing two copies of Vite's plugin types.
   and `@storybook/vue3-vite`, which npm would satisfy with a second Storybook. The root
   [pnpm-workspace.yaml](../../../../pnpm-workspace.yaml) overrides those three, for
   `@storybook-vue/nuxt` only, to the same canary.
-- The plugin is the workspace's `@storybookjs/vite-plugin`, consumed as a build. Run
-  `pnpm --filter @storybookjs/vite-plugin run dev` while editing it; see the plugin README.
+- The plugin is the workspace's `@storybook/vite-plugin`, consumed as a build. Run
+  `pnpm --filter @storybook/vite-plugin run dev` while editing it; see the plugin README.
 - The preview corrections in `.storybook/main.ts` match plugins by name and depend on
   `@nuxt/vite-builder` 4.6.2 behavior. Recheck them when upgrading Nuxt or nuxt-storybook.
 - `vite:extendConfig` is a public Nuxt hook. The plugin relies on Nuxt's client Vite server

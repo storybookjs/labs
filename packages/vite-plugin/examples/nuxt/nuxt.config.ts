@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { experimental_vitePlugin } from '@storybookjs/vite-plugin';
+import { experimental_vitePlugin } from '@storybook/vite-plugin';
 
 const STORYBOOK_BASE = '/__storybook';
 

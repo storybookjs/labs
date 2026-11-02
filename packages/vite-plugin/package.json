@@ -1,5 +1,5 @@
 {
-  "name": "@storybookjs/vite-plugin",
+  "name": "@storybook/vite-plugin",
   "version": "0.0.0",
   "description": "Experimental Storybook integration for Vite",
   "license": "MIT",
