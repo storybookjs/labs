@@ -127,7 +127,7 @@ if (!published) {
       `of ${fullName} must be published manually by a maintainer:\n\n` +
       `  pnpm --filter ${fullName} publish --access public\n\n` +
       `Then configure the trusted publisher on npmjs.com (storybookjs/labs, release.yml).\n` +
-      `Later releases go through the \`${fullName}@<version>\` tag. See CONTRIBUTING.md.`,
+      `Later releases go through changesets and the version PR. See CONTRIBUTING.md.`,
     'Before the first release'
   );
 }
