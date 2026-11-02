@@ -23,13 +23,16 @@
     "lint": "vp lint --no-error-on-unmatched-pattern",
     "lint:fix": "vp lint --fix --no-error-on-unmatched-pattern",
     "fmt": "vp fmt",
-    "fmt:check": "vp fmt --check"
+    "fmt:check": "vp fmt --check",
+    "changeset": "changeset",
+    "changeset:check": "node scripts/check-changesets.ts"
   },
   "devDependencies": {
     "@clack/prompts": "catalog:dev",
     "@types/node": "catalog:dev",
     "@types/semver": "catalog:dev",
-    "changelogithub": "catalog:dev",
+    "@changesets/changelog-github": "catalog:dev",
+    "@changesets/cli": "catalog:dev",
     "pkg-pr-new": "catalog:dev",
     "semver": "catalog:dev",
     "typescript": "catalog:dev",
