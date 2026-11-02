@@ -79,8 +79,8 @@ server. The suite does not cover restarts; see the root README's canary restart 
 
 Run these from the repository root:
 
-| Command                                                                   | Purpose                                                 |
-| ------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Command                                                                 | Purpose                                                 |
+| ----------------------------------------------------------------------- | ------------------------------------------------------- |
 | `pnpm --filter @storybook/vite-plugin-nuxt-example run dev`             | `nuxt dev` with embedded Storybook, port 5213           |
 | `pnpm --filter @storybook/vite-plugin-nuxt-example run storybook`       | `storybook dev` at http://127.0.0.1:5215/               |
 | `pnpm --filter @storybook/vite-plugin-nuxt-example run typecheck`       | `nuxt typecheck`: app, server, Nuxt config, and tooling |

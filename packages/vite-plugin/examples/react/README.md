@@ -8,8 +8,8 @@ TypeScript, Node types, and Playwright are provided by the root workspace.
 
 Run these commands from the repository root:
 
-| Command                                                                    | Result                                                                     |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Command                                                                  | Result                                                                     |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | `pnpm --filter @storybook/vite-plugin-react-example run dev`             | App at `http://localhost:5173/`, Storybook at `/__storybook/`              |
 | `pnpm --filter @storybook/vite-plugin-react-example run dev:middleware`  | Custom HTTP host on `http://127.0.0.1:5176/`, Storybook at `/__storybook/` |
 | `pnpm --filter @storybook/vite-plugin-react-example run storybook`       | Storybook at the Vite server root                                          |

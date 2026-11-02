@@ -8,8 +8,8 @@ The same typed button powers the reactive counter and two Storybook stories.
 Requires Node.js **22.19.0 or newer**. Install all workspaces together with `pnpm install`. The plugin package supplies Vite and
 Playwright, the repository root supplies TypeScript and Node types; this workspace adds the Vue-specific tools.
 
-| Root command                                                             | Result                                                                                          |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Root command                                                           | Result                                                                                          |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `pnpm --filter @storybook/vite-plugin-vue-example run dev`             | App at <http://localhost:5183/> and embedded Storybook at <http://localhost:5183/__storybook/>. |
 | `pnpm --filter @storybook/vite-plugin-vue-example run storybook`       | Dedicated Storybook at <http://localhost:5185/>; no host app.                                   |
 | `pnpm --filter @storybook/vite-plugin-vue-example run typecheck`       | Check TypeScript, Vue templates, stories, configurations, and browser tests with `vue-tsc`.     |

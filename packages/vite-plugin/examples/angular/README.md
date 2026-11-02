@@ -69,8 +69,8 @@ TypeScript configuration.**
 
 Run these from the repository root:
 
-| Command                                                                      | Purpose                                                               |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Command                                                                    | Purpose                                                               |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | `pnpm --filter @storybook/vite-plugin-angular-example run dev`             | `ng serve` with embedded Storybook, port 5203                         |
 | `pnpm --filter @storybook/vite-plugin-angular-example run storybook`       | Dedicated Storybook at http://127.0.0.1:5205/                         |
 | `pnpm --filter @storybook/vite-plugin-angular-example run typecheck`       | Angular app/template and story checks, then tooling TypeScript checks |
