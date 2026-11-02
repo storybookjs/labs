@@ -16,6 +16,7 @@
   "type": "module",
   "scripts": {
     "new": "node scripts/create-package.ts",
+    "prepare": "vp config --no-agent",
     "build": "vp run --filter \"./packages/*\" build",
     "typecheck": "vp run typecheck:root && vp run --filter \"./packages/*\" typecheck",
     "typecheck:root": "tsc --noEmit",
