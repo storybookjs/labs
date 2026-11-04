@@ -1,6 +1,10 @@
 import { configDefaults, defineConfig } from 'vite-plus';
 
 export default defineConfig({
+  staged: {
+    '*.{js,jsx,cjs,mjs,ts,tsx,cts,mts,vue}': 'vp lint --fix --no-error-on-unmatched-pattern',
+    '*': 'vp fmt',
+  },
   fmt: {
     tabWidth: 2,
     useTabs: false,
@@ -28,6 +32,9 @@ export default defineConfig({
       {
         files: ['**/*.test.ts'],
         plugins: ['vitest'],
+        rules: {
+          'vitest/no-conditional-expect': 'off',
+        },
       },
       {
         files: [

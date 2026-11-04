@@ -39,7 +39,9 @@ try {
     if (release.type === 'none') return [];
     const problems: string[] = [];
     if (release.type === 'major') {
-      problems.push(`${release.name} has a major changeset; use minor for breaking changes on 0.x.`);
+      problems.push(
+        `${release.name} has a major changeset; use minor for breaking changes on 0.x.`
+      );
     }
     if (semver.major(release.newVersion) !== 0) {
       problems.push(

@@ -2,7 +2,7 @@ import vue from '@vitejs/plugin-vue';
 import {
   experimental_vitePlugin,
   type experimental_VitePluginUserOptions,
-} from '@storybookjs/vite-plugin';
+} from '@storybook/vite-plugin';
 import { defineConfig } from 'vite';
 
 const STORYBOOK_OPTIONS = {

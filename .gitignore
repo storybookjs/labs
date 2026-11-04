@@ -21,3 +21,5 @@ test-results/
 *.log
 .DS_Store
 .omc/
+# Generated Vite+ git hook dispatcher; `.vite-hooks/pre-commit` itself is committed.
+.vite-hooks/_

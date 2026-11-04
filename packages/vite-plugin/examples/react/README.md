@@ -1,6 +1,6 @@
 # React example
 
-A React 19 + TypeScript app using `experimental_vitePlugin` from `@storybookjs/vite-plugin`.
+A React 19 + TypeScript app using `experimental_vitePlugin` from `@storybook/vite-plugin`.
 There are no source aliases or links to a Storybook checkout.
 
 Install dependencies from the repository root first. Vite,
@@ -8,14 +8,14 @@ TypeScript, Node types, and Playwright are provided by the root workspace.
 
 Run these commands from the repository root:
 
-| Command                                                                    | Result                                                                     |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `pnpm --filter @storybookjs/vite-plugin-react-example run dev`             | App at `http://localhost:5173/`, Storybook at `/__storybook/`              |
-| `pnpm --filter @storybookjs/vite-plugin-react-example run dev:middleware`  | Custom HTTP host on `http://127.0.0.1:5176/`, Storybook at `/__storybook/` |
-| `pnpm --filter @storybookjs/vite-plugin-react-example run storybook`       | Storybook at the Vite server root                                          |
-| `pnpm --filter @storybookjs/vite-plugin-react-example run build`           | Typecheck the app, configuration, and tests; build the app                 |
-| `pnpm --filter @storybookjs/vite-plugin-react-example run storybook:build` | Static Storybook build                                                     |
-| `pnpm --filter @storybookjs/vite-plugin-react-example run test:e2e`        | All 18 Playwright tests                                                    |
+| Command                                                                  | Result                                                                     |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| `pnpm --filter @storybook/vite-plugin-react-example run dev`             | App at `http://localhost:5173/`, Storybook at `/__storybook/`              |
+| `pnpm --filter @storybook/vite-plugin-react-example run dev:middleware`  | Custom HTTP host on `http://127.0.0.1:5176/`, Storybook at `/__storybook/` |
+| `pnpm --filter @storybook/vite-plugin-react-example run storybook`       | Storybook at the Vite server root                                          |
+| `pnpm --filter @storybook/vite-plugin-react-example run build`           | Typecheck the app, configuration, and tests; build the app                 |
+| `pnpm --filter @storybook/vite-plugin-react-example run storybook:build` | Static Storybook build                                                     |
+| `pnpm --filter @storybook/vite-plugin-react-example run test:e2e`        | All 18 Playwright tests                                                    |
 
 The tests require Playwright's Chromium browser and free ports 5173, 5175, and 5176. They run one worker across embedded Storybook, Storybook-only mode, and a
 custom middleware host. Coverage includes preview rendering, indexing, HMR

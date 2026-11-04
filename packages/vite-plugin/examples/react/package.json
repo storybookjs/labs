@@ -1,5 +1,5 @@
 {
-  "name": "@storybookjs/vite-plugin-react-example",
+  "name": "@storybook/vite-plugin-react-example",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -18,7 +18,7 @@
   "devDependencies": {
     "@playwright/test": "1.58.2",
     "@storybook/react-vite": "https://pkg.pr.new/@storybook/react-vite@5170f92",
-    "@storybookjs/vite-plugin": "workspace:*",
+    "@storybook/vite-plugin": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.7.0",
@@ -27,7 +27,7 @@
     "vite": "^7.3.1"
   },
   "dependenciesMeta": {
-    "@storybookjs/vite-plugin": {
+    "@storybook/vite-plugin": {
       "injected": true
     }
   }

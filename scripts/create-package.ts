@@ -24,7 +24,7 @@ type CliArgs = {
 const ROOT_DIR = join(import.meta.dirname, '..');
 const PACKAGES_DIR = join(ROOT_DIR, 'packages');
 const TEMPLATES_DIR = join(ROOT_DIR, 'templates');
-const SCOPE = '@storybookjs';
+const SCOPE = '@storybook';
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const PLACEHOLDER_FILES = ['README.md'];
 

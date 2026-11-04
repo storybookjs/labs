@@ -1,5 +1,5 @@
 {
-  "name": "@storybookjs/vite-plugin-nuxt-example",
+  "name": "@storybook/vite-plugin-nuxt-example",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -24,7 +24,7 @@
     "@playwright/test": "1.58.2",
     "@storybook-vue/nuxt": "https://pkg.pr.new/@storybook-vue/nuxt@abd2784",
     "@storybook/vue3-vite": "https://pkg.pr.new/@storybook/vue3-vite@5170f92",
-    "@storybookjs/vite-plugin": "workspace:*",
+    "@storybook/vite-plugin": "workspace:*",
     "@types/node": "^22.19.1",
     "storybook": "https://pkg.pr.new/storybook@5170f92",
     "typescript": "5.9.3",
@@ -32,7 +32,7 @@
     "vue-tsc": "^3.3.13"
   },
   "dependenciesMeta": {
-    "@storybookjs/vite-plugin": {
+    "@storybook/vite-plugin": {
       "injected": true
     }
   }

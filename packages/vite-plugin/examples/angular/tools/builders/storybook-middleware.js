@@ -85,7 +85,7 @@ export function createStorybookMiddleware({ root, configDir, base, logger }) {
 async function start({ root, configDir, base, httpServer }) {
   const [{ createServer }, { experimental_vitePlugin }] = await Promise.all([
     import('vite'),
-    import('@storybookjs/vite-plugin'),
+    import('@storybook/vite-plugin'),
   ]);
 
   return createServer({

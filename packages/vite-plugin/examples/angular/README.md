@@ -14,7 +14,7 @@ Use Node.js >=22.19.0. Install dependencies from the repository root, not from t
 
 ```sh
 pnpm install
-pnpm --filter @storybookjs/vite-plugin-angular-example run dev
+pnpm --filter @storybook/vite-plugin-angular-example run dev
 ```
 
 | URL                                                                                     | Content                           |
@@ -69,14 +69,14 @@ TypeScript configuration.**
 
 Run these from the repository root:
 
-| Command                                                                      | Purpose                                                               |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `pnpm --filter @storybookjs/vite-plugin-angular-example run dev`             | `ng serve` with embedded Storybook, port 5203                         |
-| `pnpm --filter @storybookjs/vite-plugin-angular-example run storybook`       | Dedicated Storybook at http://127.0.0.1:5205/                         |
-| `pnpm --filter @storybookjs/vite-plugin-angular-example run typecheck`       | Angular app/template and story checks, then tooling TypeScript checks |
-| `pnpm --filter @storybookjs/vite-plugin-angular-example run build`           | Typecheck and production `ng build`                                   |
-| `pnpm --filter @storybookjs/vite-plugin-angular-example run storybook:build` | Static Storybook build                                                |
-| `pnpm --filter @storybookjs/vite-plugin-angular-example run test:e2e`        | Chromium Angular-CLI-host and dedicated-mode tests                    |
+| Command                                                                    | Purpose                                                               |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `pnpm --filter @storybook/vite-plugin-angular-example run dev`             | `ng serve` with embedded Storybook, port 5203                         |
+| `pnpm --filter @storybook/vite-plugin-angular-example run storybook`       | Dedicated Storybook at http://127.0.0.1:5205/                         |
+| `pnpm --filter @storybook/vite-plugin-angular-example run typecheck`       | Angular app/template and story checks, then tooling TypeScript checks |
+| `pnpm --filter @storybook/vite-plugin-angular-example run build`           | Typecheck and production `ng build`                                   |
+| `pnpm --filter @storybook/vite-plugin-angular-example run storybook:build` | Static Storybook build                                                |
+| `pnpm --filter @storybook/vite-plugin-angular-example run test:e2e`        | Chromium Angular-CLI-host and dedicated-mode tests                    |
 
 Install the shared Playwright Chromium browser with `pnpm exec playwright install chromium` before
 E2E tests. Tests use one worker, disable telemetry, refuse to reuse existing servers, and
