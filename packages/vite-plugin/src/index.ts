@@ -5,6 +5,7 @@ import type { Duplex } from 'node:stream';
 
 import { SERVER_CHANNEL_PATH, type Channel } from 'storybook/internal/channels';
 import {
+  loadMainConfig,
   normalizeStories,
   optionalEnvToBoolean,
   resolvePathInStorybookCache,
@@ -23,6 +24,7 @@ import {
   useStatics,
   withTelemetry,
 } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
 import type { Builder, CoreConfig, Options, Presets } from 'storybook/internal/types';
 
 import polka, { type Polka } from 'polka';
@@ -36,6 +38,12 @@ import type {
   ViteBuilder,
 } from 'vite';
 
+import {
+  createRuntimeInstanceRecord,
+  getMcpMetadataFromMainConfig,
+  registerRuntimeInstance,
+  type RuntimeInstanceRegistration,
+} from './instance-registry.ts';
 import { createPrefixGuard } from './prefix-guard.ts';
 import type { VitePluginPresetOptions } from './preset.ts';
 import { startPreview } from './preview-lifecycle.ts';
@@ -99,6 +107,8 @@ function main(options?: UserOptions): PluginOption {
   let storybookPromise: Promise<StorybookApp> | undefined;
   // The preview server is bound to the host HTTP server and must be replaced on restart.
   let previewApp = polka();
+  // One registry record per host server; a Vite restart replaces it.
+  let registration: Promise<RuntimeInstanceRegistration | undefined> = Promise.resolve(undefined);
 
   const loadStorybookApp = (
     channel: Channel,
@@ -215,16 +225,37 @@ function main(options?: UserOptions): PluginOption {
           channelPath,
           allowedHosts: host.config.server.allowedHosts,
         });
-        const reportPort = (): void => {
+        const onListening = (): void => {
           const address = upgradeServer.address();
-          if (address && typeof address === 'object') {
-            storybook.options.port = address.port;
+          if (!address || typeof address !== 'object') {
+            return;
           }
+          storybook.options.port = address.port;
+          const protocol = host.config.server.https ? 'https' : 'http';
+          registration = registration
+            .then((previous) => previous?.cleanup())
+            .then(async () => {
+              const mainConfig = await loadMainConfig({ configDir: finalOptions.configDir });
+              return registerRuntimeInstance(
+                createRuntimeInstanceRecord({
+                  address: `${protocol}://127.0.0.1:${address.port}${basePath}`,
+                  configDir: finalOptions.configDir,
+                  mcp: getMcpMetadataFromMainConfig(mainConfig),
+                  port: address.port,
+                  token: getWebSocketToken(),
+                })
+              );
+            })
+            .catch((error: unknown) => {
+              logger.warn('Storybook failed to write its runtime instance registry record.');
+              logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+              return undefined;
+            });
         };
         if (upgradeServer.listening) {
-          reportPort();
+          onListening();
         } else {
-          upgradeServer.once('listening', reportPort);
+          upgradeServer.once('listening', onListening);
         }
 
         previewApp = polka();
@@ -238,7 +269,12 @@ function main(options?: UserOptions): PluginOption {
           })
         );
         upgradeServer.once('close', () => {
+          upgradeServer.off('listening', onListening);
           void closePreview();
+          registration = registration.then(async (current) => {
+            await current?.cleanup();
+            return undefined;
+          });
         });
         host.middlewares.use(
           createPrefixGuard(basePath, (req, res) => handlePolkaApp(storybook.app, req, res))
@@ -265,8 +301,13 @@ function getOrCreateServerChannel(
   }
   return (GLOBAL_WITH_CHANNEL.__SB_CHANNEL__ ??= getServerChannel(getSharedUpgradeEmitter(), {
     ...options,
-    token: (GLOBAL_WITH_CHANNEL.STORYBOOK_WEBSOCKET_TOKEN ??= randomUUID()),
+    token: getWebSocketToken(),
   }));
+}
+
+/** The channel token, shared with Storybook's own `getWsToken` through the same global. */
+function getWebSocketToken(): string {
+  return (GLOBAL_WITH_CHANNEL.STORYBOOK_WEBSOCKET_TOKEN ??= randomUUID());
 }
 
 function initializeServerChannelOnce(channel: Channel, presets: Presets): Promise<void> {

@@ -32,6 +32,9 @@ export default defineConfig({
       {
         files: ['**/*.test.ts'],
         plugins: ['vitest'],
+        rules: {
+          'vitest/no-conditional-expect': 'off',
+        },
       },
       {
         files: [
