@@ -3,7 +3,6 @@ import { addToGlobalContext } from 'storybook/internal/telemetry';
 export type VitePluginTelemetryContext = {
   version: string;
   mode: 'embedded' | 'standalone';
-  command: 'serve' | 'build';
 };
 
 export function getPluginVersion(): string {

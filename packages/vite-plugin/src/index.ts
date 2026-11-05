@@ -179,7 +179,7 @@ function main(options?: UserOptions): PluginOption {
         basePath = '/';
       }
       // Runs before `withTelemetry` sends `boot`, so every event carries the plugin context.
-      markPluginTelemetry({ command, mode: mode === 'storybook' ? 'standalone' : 'embedded' });
+      markPluginTelemetry({ mode: mode === 'storybook' ? 'standalone' : 'embedded' });
       if (!(command === 'build' && mode === 'storybook')) {
         return {};
       }
