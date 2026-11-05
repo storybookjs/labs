@@ -50,6 +50,7 @@ import type { VitePluginPresetOptions } from './preset.ts';
 import { startPreview } from './preview-lifecycle.ts';
 import { isPluginDisabled, withPluginDisabled } from './self-guard.ts';
 import { getSocketPaths } from './socket-paths.ts';
+import { markPluginTelemetry } from './telemetry.ts';
 import type { UserOptions } from './types.ts';
 
 export type { UserOptions as experimental_VitePluginUserOptions } from './types.ts';
@@ -177,6 +178,8 @@ function main(options?: UserOptions): PluginOption {
       if (mode === 'storybook') {
         basePath = '/';
       }
+      // Runs before `withTelemetry` sends `boot`, so every event carries the plugin context.
+      markPluginTelemetry({ mode: mode === 'storybook' ? 'standalone' : 'embedded' });
       if (!(command === 'build' && mode === 'storybook')) {
         return {};
       }
