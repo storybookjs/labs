@@ -38,6 +38,7 @@ import type {
   ViteBuilder,
 } from 'vite';
 
+import { startChangeDetection } from './change-detection.ts';
 import {
   createRuntimeInstanceRecord,
   getMcpMetadataFromMainConfig,
@@ -57,6 +58,7 @@ type StorybookApp = {
   options: Options;
   app: Polka;
   previewBuilder: Builder<unknown>;
+  storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
 };
 
 type ServerChannelOptions = Parameters<typeof getServerChannel>[1];
@@ -153,7 +155,7 @@ function main(options?: UserOptions): PluginOption {
       const core = await sb.presets.apply<CoreConfig>('core', {});
       void doTelemetry(app, core, storyIndexGeneratorPromise, sb);
 
-      return { options: sb, app, previewBuilder };
+      return { options: sb, app, previewBuilder, storyIndexGeneratorPromise };
     }));
 
   const applyToStorybookOnly = (_: unknown, env: ConfigEnv): boolean => {
@@ -268,8 +270,15 @@ function main(options?: UserOptions): PluginOption {
             channel,
           })
         );
+        // The Vite builder's adapter needs the preview server `startPreview` just created.
+        const stopChangeDetection = startChangeDetection({
+          previewBuilder: storybook.previewBuilder,
+          storyIndexGeneratorPromise: storybook.storyIndexGeneratorPromise,
+          workingDir: process.cwd(),
+        });
         upgradeServer.once('close', () => {
           upgradeServer.off('listening', onListening);
+          void stopChangeDetection();
           void closePreview();
           registration = registration.then(async (current) => {
             await current?.cleanup();
