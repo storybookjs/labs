@@ -5,5 +5,5 @@ export {
   type StorybookMiddleware,
   type StorybookMiddlewareHandler,
   type StorybookMiddlewareOptions,
-} from './middleware.ts';
+} from '../storybook-middleware.ts';
 export type { StorybookDevServerOptions } from './builder.ts';

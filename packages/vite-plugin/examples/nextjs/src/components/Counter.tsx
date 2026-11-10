@@ -16,7 +16,7 @@ export function Counter({ label = 'Shared counter', initialCount = 0 }: CounterP
 
   return (
     <section className="counter" aria-label={label}>
-      <span className="eyebrow">Client component</span>
+      <span className="eyebrow">Client componen daz daz d az dazt</span>
       <h2>{label}</h2>
       <output className="counter-value" data-testid="count" aria-live="polite">
         {count}

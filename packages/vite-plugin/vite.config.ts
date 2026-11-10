@@ -61,7 +61,13 @@ async function writeAngularBuilderSchema(outDir: string): Promise<void> {
 export default defineConfig({
   define,
   pack: {
-    entry: ['src/index.ts', 'src/preset.ts', 'src/angular/index.ts', 'src/angular/builder.ts'],
+    entry: [
+      'src/index.ts',
+      'src/preset.ts',
+      'src/angular/index.ts',
+      'src/angular/builder.ts',
+      'src/nextjs/index.ts',
+    ],
     dts: true,
     // Optional peers of the Angular entry; never inline their code or types.
     deps: { neverBundle: [/^@angular\//, /^@angular-devkit\//] },

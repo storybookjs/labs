@@ -87,6 +87,30 @@ and Storybook share one port; Storybook starts on the first request under its mo
 For a custom builder, `createStorybookMiddleware` from `@storybook/vite-plugin/angular` returns
 the same handler to pass through `executeDevServerBuilder`'s `middleware` extension.
 
+### Next.js
+
+Next.js has no dev-server plugin API, so Storybook is embedded through a custom development
+server that replaces `next dev`. Use `@storybook/nextjs-vite` as the Storybook framework, then add
+a `server.mjs` next to `next.config.*`:
+
+```js
+import { startNextDevServer } from '@storybook/vite-plugin/nextjs';
+
+await startNextDevServer();
+```
+
+```json
+"scripts": {
+  "dev": "node server.mjs",
+  "build": "next build",
+  "start": "next start"
+}
+```
+
+If you already run a Next.js custom server, use `createStorybookMiddleware({ root })` from the
+same entry instead: call its `middleware` before Next's request handler, leave upgrade requests
+for which `ownsUpgrade(pathname)` is true to Storybook, and `close()` it on shutdown.
+
 ### Options
 
 | Option      | Default              | Meaning                                                                                                                                                                                                                  |
@@ -110,7 +134,7 @@ workspace separately. The examples are pnpm workspace packages under `examples/*
 | ------------------ | ------------------------------------------------------------------- | ---------------------------------- |
 | `examples/react`   | Vite (`vite`, plus a middleware-mode variant)                       | http://localhost:5173/__storybook/ |
 | `examples/vue`     | Vite                                                                | http://localhost:5183/__storybook/ |
-| `examples/nextjs`  | Next.js with Turbopack, custom Node server                          | http://127.0.0.1:5193/__storybook/ |
+| `examples/nextjs`  | Next.js with Turbopack, `startNextDevServer`                        | http://127.0.0.1:5193/__storybook/ |
 | `examples/angular` | Angular CLI `ng serve`, `@storybook/vite-plugin/angular:dev-server` | http://127.0.0.1:5203/__storybook/ |
 | `examples/nuxt`    | Nuxt 4 `nuxt dev`, local Nuxt module                                | http://127.0.0.1:5213/__storybook/ |
 
