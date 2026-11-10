@@ -49,6 +49,7 @@ import { createPrefixGuard } from './prefix-guard.ts';
 import type { VitePluginPresetOptions } from './preset.ts';
 import { startPreview } from './preview-lifecycle.ts';
 import { isPluginDisabled, withPluginDisabled } from './self-guard.ts';
+import { normalizeBase } from './base-path.ts';
 import { getSocketPaths } from './socket-paths.ts';
 import { markPluginTelemetry } from './telemetry.ts';
 import type { UserOptions } from './types.ts';
@@ -85,12 +86,6 @@ export function experimental_vitePlugin(options?: UserOptions): PluginOption {
     return [];
   }
   return main(options);
-}
-
-function normalizeBase(base: string): string {
-  const trimmed = base.trim();
-  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-  return withLeadingSlash.replace(/\/+$/, '') || '/';
 }
 
 function main(options?: UserOptions): PluginOption {

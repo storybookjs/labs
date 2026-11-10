@@ -26,12 +26,6 @@
     "strictInputAccessModifiers": true,
     "strictTemplates": true
   },
-  "include": [
-    "src/**/*.ts",
-    ".storybook/*.ts",
-    "e2e-tests/**/*.ts",
-    "*.config.ts",
-    "tools/builders/**/*.js"
-  ],
+  "include": ["src/**/*.ts", ".storybook/*.ts", "e2e-tests/**/*.ts", "*.config.ts"],
   "exclude": ["node_modules", "dist", "storybook-static", "test-results"]
 }

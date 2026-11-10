@@ -40,7 +40,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "./tools/builders:dev-server",
+          "builder": "@storybook/vite-plugin/angular:dev-server",
           "options": {
             "buildTarget": "angular-example:build:development",
             "host": "127.0.0.1",
