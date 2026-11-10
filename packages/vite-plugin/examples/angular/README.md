@@ -29,16 +29,21 @@ left to Angular. `ng serve --port <n>` overrides the port.
 
 ## How the middleware is mounted
 
-Angular CLI has no configuration flag for extra middleware, so this example ships a local
-builder in [tools/builders](tools/builders) and points the workspace's `serve` target at it
-in [angular.json](angular.json). The builder wraps `executeDevServerBuilder` from
-`@angular/build` and passes the Storybook handler through its `middleware` extension, which
-Angular installs in its own Vite server ahead of the application's HTML fallback.
+Angular CLI has no configuration flag for extra middleware or Vite plugins, so the workspace's
+`serve` target in [angular.json](angular.json) uses the builder shipped by the plugin:
 
-Its [schema](tools/builders/dev-server-schema.json) mirrors the `@angular/build:dev-server`
-options, so `ng serve` flags such as `--port`, `--watch`, and `--hmr` behave normally. Two
-optional options are added, `storybookConfigDir` and `storybookBase`; without them the
-mount comes from the constants the middleware exports.
+```json
+"serve": {
+  "builder": "@storybook/vite-plugin/angular:dev-server"
+}
+```
+
+The builder wraps `executeDevServerBuilder` from `@angular/build` and passes the Storybook
+handler through its `middleware` extension, which Angular installs in its own Vite server ahead
+of the application's HTML fallback. Its schema is `@angular/build:dev-server`'s, copied when the
+plugin is packed, so `ng serve` flags such as `--port`, `--watch`, and `--hmr` behave normally.
+Two optional options are added, `storybookConfigDir` (default `.storybook`, relative to the
+project root) and `storybookBase` (default `/__storybook`).
 
 The plugin needs the listening HTTP server in order to attach its WebSockets, and the
 Angular dev-server builder never hands one out. The middleware therefore takes the server
@@ -55,14 +60,14 @@ WebSocket ownership is separated by path on the one listener:
 | `/storybook-server-channel`    | Storybook manager/server channel       |
 | `/__host-vite-hmr`             | Storybook's host Vite; normally unused |
 
-[tools/builders/storybook-middleware.js](tools/builders/storybook-middleware.js) creates
-the Storybook Vite dev server itself rather than loading a Vite config, so the mount is
-defined in one place. The host Vite server runs with no watcher and no dependency discovery:
+The middleware (also exported from `@storybook/vite-plugin/angular` as
+`createStorybookMiddleware`, for custom builders) creates a dedicated Storybook Vite dev server
+rather than loading a Vite config. That server runs with no watcher and no dependency discovery:
 Angular CLI compiles and watches the application, and Storybook's preview server watches
 stories and components. The host applies `@angular/build`'s template HMR; the preview uses
 Storybook's own Vite HMR (see the note on component edits below).
 
-**Restart `ng serve` after editing `angular.json`, the local builder, Storybook, or
+**Restart `ng serve` after editing `angular.json`, Storybook, or
 TypeScript configuration.**
 
 ## Commands
@@ -101,8 +106,7 @@ not guaranteed to preserve component state.
 [vite.config.ts](vite.config.ts) is not used by `ng serve` at all. It exists only for the
 Vite-driven modes, `vite --mode storybook` and `vite build --mode storybook`, where Angular
 CLI is not involved and the Storybook framework supplies the Angular compilation for the
-preview. Both entry points import `STORYBOOK_BASE` and `STORYBOOK_CONFIG_DIR` from the
-middleware, so there is a single source of truth for the mount.
+preview. Both entry points use the plugin's default mount, `/__storybook`, and `.storybook`.
 
 [tsconfig.app.json](tsconfig.app.json) excludes stories from the host compiler;
 [.storybook/tsconfig.json](.storybook/tsconfig.json) includes them in a separate preview

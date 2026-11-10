@@ -67,6 +67,26 @@ For `appType: 'custom'`, the host remains responsible for its application HTML a
 routes. Close both Vite and the custom HTTP server during shutdown. Omitting the HTTP server
 in middleware mode produces an explicit error rather than silently breaking HMR.
 
+### Angular CLI
+
+`ng serve` runs its own Vite server without loading a Vite configuration, so the plugin cannot be
+added to it. Instead, point the `serve` target in `angular.json` at the builder this package
+ships:
+
+```json
+"serve": {
+  "builder": "@storybook/vite-plugin/angular:dev-server"
+}
+```
+
+It accepts every `@angular/build:dev-server` option, plus `storybookConfigDir` (default
+`.storybook`, relative to the project root) and `storybookBase` (default `/__storybook`). The app
+and Storybook share one port; Storybook starts on the first request under its mount. Use
+`@storybook/angular-vite` as the Storybook framework. Requires `@angular/build` 21.
+
+For a custom builder, `createStorybookMiddleware` from `@storybook/vite-plugin/angular` returns
+the same handler to pass through `executeDevServerBuilder`'s `middleware` extension.
+
 ### Options
 
 | Option      | Default              | Meaning                                                                                                                                                                                                                  |
@@ -86,13 +106,13 @@ does not activate under Vitest or when the Storybook CLI drives Vite.
 Install dependencies once at the labs repository root with `pnpm install`; do not install each
 workspace separately. The examples are pnpm workspace packages under `examples/*`:
 
-| Example            | Host                                          | Embedded Storybook                 |
-| ------------------ | --------------------------------------------- | ---------------------------------- |
-| `examples/react`   | Vite (`vite`, plus a middleware-mode variant) | http://localhost:5173/__storybook/ |
-| `examples/vue`     | Vite                                          | http://localhost:5183/__storybook/ |
-| `examples/nextjs`  | Next.js with Turbopack, custom Node server    | http://127.0.0.1:5193/__storybook/ |
-| `examples/angular` | Angular CLI `ng serve`, local `serve` builder | http://127.0.0.1:5203/__storybook/ |
-| `examples/nuxt`    | Nuxt 4 `nuxt dev`, local Nuxt module          | http://127.0.0.1:5213/__storybook/ |
+| Example            | Host                                                                | Embedded Storybook                 |
+| ------------------ | ------------------------------------------------------------------- | ---------------------------------- |
+| `examples/react`   | Vite (`vite`, plus a middleware-mode variant)                       | http://localhost:5173/__storybook/ |
+| `examples/vue`     | Vite                                                                | http://localhost:5183/__storybook/ |
+| `examples/nextjs`  | Next.js with Turbopack, custom Node server                          | http://127.0.0.1:5193/__storybook/ |
+| `examples/angular` | Angular CLI `ng serve`, `@storybook/vite-plugin/angular:dev-server` | http://127.0.0.1:5203/__storybook/ |
+| `examples/nuxt`    | Nuxt 4 `nuxt dev`, local Nuxt module                                | http://127.0.0.1:5213/__storybook/ |
 
 The Next.js, Angular, and Nuxt examples keep Vite in middleware mode behind the framework's own
 development server, so the application toolchain, not Vite, compiles and serves the app.
@@ -100,17 +120,17 @@ development server, so the application toolchain, not Vite, compiles and serves 
 Lint, formatting, typechecking, and unit tests run from the labs repository root (`pnpm lint`,
 `pnpm fmt`, `pnpm typecheck`, `pnpm test`). Run these from `packages/vite-plugin`:
 
-| Package command                | Purpose                                                                     |
-| ------------------------------ | --------------------------------------------------------------------------- |
-| `pnpm build`                   | Bundle the public entry and private preset with tsdown.                     |
-| `pnpm dev`                     | Rebuild `dist` on change; the examples pick up each rebuild.                |
-| `pnpm typecheck`               | Check package source with TypeScript.                                       |
-| `pnpm example:dev`             | Start the embedded React example.                                           |
-| `pnpm example:storybook`       | Start the example in dedicated mode.                                        |
-| `pnpm example:build`           | Build the normal example app.                                               |
-| `pnpm example:storybook:build` | Build the example's static Storybook.                                       |
-| `pnpm test:e2e`                | Run every example's Playwright suite.                                       |
-| `pnpm test:e2e:react`          | Run only the React suite (`:vue`, `:nextjs`, `:angular`, `:nuxt` likewise). |
+| Package command                | Purpose                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| `pnpm build`                   | Bundle the entries and private preset with tsdown; write the Angular builder manifest. |
+| `pnpm dev`                     | Rebuild `dist` on change; the examples pick up each rebuild.                           |
+| `pnpm typecheck`               | Check package source with TypeScript.                                                  |
+| `pnpm example:dev`             | Start the embedded React example.                                                      |
+| `pnpm example:storybook`       | Start the example in dedicated mode.                                                   |
+| `pnpm example:build`           | Build the normal example app.                                                          |
+| `pnpm example:storybook:build` | Build the example's static Storybook.                                                  |
+| `pnpm test:e2e`                | Run every example's Playwright suite.                                                  |
+| `pnpm test:e2e:react`          | Run only the React suite (`:vue`, `:nextjs`, `:angular`, `:nuxt` likewise).            |
 
 The example commands above target React; `example:vue:*`, `example:nextjs:*`,
 `example:angular:*`, and `example:nuxt:*` are the equivalents for the other workspaces. The Next.js example
