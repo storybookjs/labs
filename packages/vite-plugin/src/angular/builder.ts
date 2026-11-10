@@ -3,6 +3,7 @@ import type { JsonObject } from '@angular-devkit/core';
 import { executeDevServerBuilder, type DevServerBuilderOptions } from '@angular/build';
 import { join } from 'pathe';
 
+import { normalizeBase, trimTrailingSlashes } from '../base-path.ts';
 import { DEFAULT_STORYBOOK_BASE, createStorybookMiddleware } from './middleware.ts';
 
 export type StorybookDevServerOptions = JsonObject & {
@@ -22,7 +23,7 @@ export type StorybookDevServerOptions = JsonObject & {
 const devServer: Builder<StorybookDevServerOptions> = createBuilder<StorybookDevServerOptions>(
   async function* (options, context) {
     const { storybookConfigDir, storybookBase, ...devServerOptions } = options;
-    const base = storybookBase ?? DEFAULT_STORYBOOK_BASE;
+    const base = normalizeBase(storybookBase ?? DEFAULT_STORYBOOK_BASE);
     const storybook = createStorybookMiddleware({
       root: await resolveProjectRoot(context),
       configDir: storybookConfigDir,
@@ -43,7 +44,9 @@ const devServer: Builder<StorybookDevServerOptions> = createBuilder<StorybookDev
     )) {
       if (!announced && result.success && result.baseUrl) {
         announced = true;
-        context.logger.info(`Embedded Storybook: ${result.baseUrl.replace(/\/+$/, '')}${base}/`);
+        context.logger.info(
+          `Embedded Storybook: ${trimTrailingSlashes(result.baseUrl)}${base === '/' ? '' : base}/`
+        );
       }
       yield result;
     }

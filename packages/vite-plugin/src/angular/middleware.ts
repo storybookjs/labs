@@ -3,6 +3,8 @@ import type { IncomingMessage, Server as HttpServer, ServerResponse } from 'node
 import { resolve } from 'pathe';
 import type { ViteDevServer } from 'vite';
 
+import { normalizeBase } from '../base-path.ts';
+
 /** Default mount path of the embedded Storybook. */
 export const DEFAULT_STORYBOOK_BASE = '/__storybook';
 /** Default Storybook configuration directory, relative to the project root. */
@@ -132,10 +134,4 @@ async function start(
       hmr: { server: httpServer, path: HOST_HMR_PATH },
     },
   });
-}
-
-function normalizeBase(base: string): string {
-  const trimmed = base.trim();
-  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-  return withLeadingSlash.replace(/\/+$/, '') || '/';
 }
