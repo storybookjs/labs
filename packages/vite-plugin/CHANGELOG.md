@@ -1,5 +1,13 @@
 # @storybook/vite-plugin
 
+## 0.2.0
+
+### Minor Changes
+
+- [#17](https://github.com/storybookjs/labs/pull/17) [`a9e0ac4`](https://github.com/storybookjs/labs/commit/a9e0ac4879ee61c6329844f583f95099a3b1ea79) Thanks [@huang-julien](https://github.com/huang-julien)! - Add an Angular CLI `dev-server` builder (`"builder": "@storybook/vite-plugin/angular:dev-server"`) and a `@storybook/vite-plugin/angular` entry exporting `createStorybookMiddleware`, so `ng serve` hosts Storybook on the same port.
+
+- [#19](https://github.com/storybookjs/labs/pull/19) [`d43d431`](https://github.com/storybookjs/labs/commit/d43d43188e0e610ae992f17a9d8d4e58cd8343ef) Thanks [@huang-julien](https://github.com/huang-julien)! - Add a `@storybook/vite-plugin/nextjs` entry exporting `startNextDevServer`, which replaces `next dev` with a custom server that hosts Storybook on the same port, and `createStorybookMiddleware` for existing Next.js custom servers. The middleware from `@storybook/vite-plugin/angular` now also exposes `ownsUpgrade` and accepts an explicit `httpServer`.
+
 ## 0.1.0
 
 ### Minor Changes
