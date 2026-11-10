@@ -35,7 +35,6 @@ test.beforeAll(async () => {
     'package.json',
     'next.config.mjs',
     'server.mjs',
-    'storybook-middleware.mjs',
     'tsconfig.json',
   ]) {
     await cp(path.join(EXAMPLE, entry), path.join(fixture, entry), { recursive: true });

@@ -40,16 +40,15 @@ Styles use system fonts and do not fetch fonts from a network service.
 
 ## Development adapter
 
-[storybook-middleware.mjs](storybook-middleware.mjs) owns the Storybook Vite dev server.
-It creates it with `configFile: false` and passes the listening HTTP server through
-`server.hmr.server`, so the mount is defined in one place instead of a Vite config.
-[server.mjs](server.mjs) only owns the listener, the upgrade routing, and shutdown: it
-hands every request to that middleware, which claims `/__storybook` and `/__storybook/…`
-and calls `next()` for everything else, so other routes reach Next without URL rewriting.
-The Storybook link is an ordinary development-only anchor, not a prefetched Next Link.
+[server.mjs](server.mjs) is the whole integration: it calls `startNextDevServer` from
+`@storybook/vite-plugin/nextjs`, which replaces `next dev` with a custom server. One Node HTTP
+listener hands requests under `/__storybook` to a Storybook Vite server in middleware mode and
+everything else to Next, without URL rewriting. There is no `vite.config.ts`; the adapter creates
+the Vite server with `configFile: false`. The Storybook link is an ordinary development-only
+anchor, not a prefetched Next Link.
 
-The Vite server starts on the first request to the mount, so `next dev` start-up does not
-wait for Storybook and a failed start-up is retried rather than cached.
+The Vite server starts on the first request to the mount, so Next start-up does not wait for
+Storybook and a failed start-up is retried rather than cached.
 
 WebSocket ownership is deliberately separate:
 
@@ -60,25 +59,12 @@ WebSocket ownership is deliberately separate:
 | `/storybook-server-channel`    | Storybook manager/server channel   |
 | `/__host-vite-hmr`             | Outer Vite server; normally unused |
 
-[server.mjs](server.mjs) routes `/_next/…` upgrades and rejects anything neither side
-claims, but it does not know the Storybook paths: it asks the middleware through
-`ownsUpgrade()`, so the three Storybook sockets are declared once, next to the server
-that serves them.
-
-Next receives a second **non-listening** Node HTTP server as its `httpServer`
-option. Its first request automatically attaches the real router-level HMR listener
-there. Only `/_next/…` upgrades are forwarded to that target. Vite and Storybook
-attach their own listeners to the actual server and never receive a forwarded socket
-twice. The adapter does not use `getUpgradeHandler()`, whose underlying implementation
-does not provide custom-server development HMR in this pinned Next version.
-
-The outer Vite watcher is disabled and dependency discovery is off. Next watches
-the application; Storybook's separate preview server watches stories and components.
-The framework supplies its own React/Next Vite plugins: do not add another instance.
-
-There is no `vite.config.ts`. The middleware creates the Vite server with
-`configFile: false` and owns every setting the mount needs, so the whole Storybook
-integration for this example is one file that `server.mjs` imports.
+Next receives a second **non-listening** Node HTTP server as its `httpServer` option, and only
+`/_next/…` upgrades are forwarded there. Vite and Storybook attach their own listeners to the
+real server; anything neither side claims is rejected. The adapter does not use
+`getUpgradeHandler()`, whose underlying implementation does not provide custom-server
+development HMR in this pinned Next version. Next watches the application; Storybook's preview
+server watches stories and components.
 
 **Restart the Node process after editing Next, Vite, Storybook, TypeScript, or host
 server configuration.** Automatic outer-Vite restarts are not supported here and can

@@ -4,7 +4,7 @@ import { executeDevServerBuilder, type DevServerBuilderOptions } from '@angular/
 import { join } from 'pathe';
 
 import { normalizeBase, trimTrailingSlashes } from '../base-path.ts';
-import { DEFAULT_STORYBOOK_BASE, createStorybookMiddleware } from './middleware.ts';
+import { DEFAULT_STORYBOOK_BASE, createStorybookMiddleware } from '../storybook-middleware.ts';
 
 export type StorybookDevServerOptions = JsonObject & {
   /** Storybook configuration directory, relative to the project root. */
