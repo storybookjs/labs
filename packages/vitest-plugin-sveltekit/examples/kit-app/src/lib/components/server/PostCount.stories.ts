@@ -16,7 +16,7 @@ const meta = preview.meta({
   },
 });
 
-export const LivePolling = meta.story({
+export const LiveUpdates = meta.story({
   play: async ({ canvas, step }) => {
     await expect(await canvas.findByText('2')).toBeVisible();
     await expect(await canvas.findByText('live')).toBeVisible();
@@ -24,7 +24,7 @@ export const LivePolling = meta.story({
     await step('A third post lands in the database', async () => {
       await db.insert(posts).values({ title: 'Three' });
     });
-    // The real `getPostCount` polls the database (every `LIVE_POLL_MS` from `.env`).
+    // The real `getPostCount` hears the insert (a Postgres NOTIFY) and counts again.
     await expect(await canvas.findByText('3')).toBeVisible();
   },
 });

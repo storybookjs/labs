@@ -34,6 +34,9 @@ export type PostStats = Pick<typeof postStats.$inferSelect, 'views' | 'likes'>;
  * `ADD COLUMN IF NOT EXISTS` lines bring a database from an earlier version of the example up to
  * date.
  */
+/** The channel of the `NOTIFY` that every write to `posts` sends (see `changes.ts`). */
+export const POSTS_CHANGED = 'posts_changed';
+
 export const createTables = `
   CREATE TABLE IF NOT EXISTS posts (
     id serial PRIMARY KEY,
@@ -47,6 +50,14 @@ export const createTables = `
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS published_at timestamptz;
   UPDATE posts SET published_at = created_at WHERE published AND published_at IS NULL;
+  -- Tells the live queries (changes.ts) that the posts changed, after each write that commits.
+  CREATE OR REPLACE FUNCTION notify_posts_changed() RETURNS trigger LANGUAGE plpgsql AS $$
+  BEGIN
+    PERFORM pg_notify('${POSTS_CHANGED}', '');
+    RETURN NULL;
+  END $$;
+  CREATE OR REPLACE TRIGGER ${POSTS_CHANGED} AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE ON posts
+    FOR EACH STATEMENT EXECUTE FUNCTION notify_posts_changed();
   CREATE TABLE IF NOT EXISTS post_stats (
     post_id integer PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
     views integer NOT NULL DEFAULT 0,

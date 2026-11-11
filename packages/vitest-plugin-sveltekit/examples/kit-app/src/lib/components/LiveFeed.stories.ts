@@ -60,7 +60,7 @@ export const Mocked = meta.story({
   },
 });
 
-/** The real `getFeed` polls the mocked database; the panel changes the database. */
+/** The real `getFeed` follows the mocked database; the panel changes the database. */
 export const Server = meta.story({
   beforeEach: async () => {
     await resetDb([{ title: 'First post' }, { title: 'Second post' }]);

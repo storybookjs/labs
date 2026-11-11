@@ -3,7 +3,8 @@ import { afterEach, beforeEach, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
 import { createPost } from '#lib/posts.remote.ts';
-import { queryCount, resetDb } from '#lib/server/mocked-db.ts';
+import { openSubscriptions } from '#lib/server/changes.ts';
+import { resetDb } from '#lib/server/mocked-db.ts';
 
 import PostCount from '../PostCount.svelte';
 import PostList from '../PostList.svelte';
@@ -20,7 +21,7 @@ afterEach(() => resetGates());
 
 /** What a story can leave behind. Each returns nothing; the next test checks the slate is clean. */
 const scenarios = {
-  // A live generator polling the database, still mounted when the test ends.
+  // A live generator following the database, still mounted when the test ends.
   live: async () => {
     const screen = await render(PostCount);
     await expect.element(screen.getByText('1', { exact: true })).toBeVisible();
@@ -56,10 +57,9 @@ type Scenario = keyof typeof scenarios;
 
 /** What the next story or test can see of the previous one. */
 async function leftovers(previous: Scenario | undefined) {
-  // After a live test: does a generator keep polling the database? Nothing else queries meanwhile.
-  const queries = queryCount();
+  // After a live test: does a generator still wait for changes? The reset closed its stream.
   if (previous === 'live') await wait(350);
-  const polling = queryCount() - queries;
+  const listening = openSubscriptions();
   return {
     cookies: requestEvent.cookies.getAll(),
     locals: requestEvent.locals,
@@ -68,7 +68,7 @@ async function leftovers(previous: Scenario | undefined) {
     issues: createPost.fields.title.issues() ?? [],
     request: await whoAmI(),
     titles: await getTitles(),
-    polling,
+    listening,
   };
 }
 
@@ -80,7 +80,7 @@ const clean = {
   issues: [],
   request: { user: null, session: null },
   titles: ['seed'],
-  polling: 0,
+  listening: 0,
 };
 
 function permutations<T>(items: T[]): T[][] {
@@ -99,7 +99,7 @@ for (const order of permutations(['live', 'forbidden', 'cookie'] as Scenario[]))
   });
 }
 
-test('I-live-throws: a live generator that fails mid-poll', async () => {
+test('I-live-throws: a live generator that fails while it streams', async () => {
   const live = faulty();
   await expect.poll(() => live.current).toBe('ok');
   open('fault');

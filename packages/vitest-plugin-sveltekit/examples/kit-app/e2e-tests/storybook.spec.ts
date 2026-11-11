@@ -172,7 +172,7 @@ const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> =
     'server-postdetail--not-found',
     (page) => expect(page.getByRole('alert')).toHaveText('Post 42 not found'),
   ],
-  ['server-postcount--live-polling', (page) => expect(page.locator('output')).toHaveText('3')],
+  ['server-postcount--live-updates', (page) => expect(page.locator('output')).toHaveText('3')],
 ];
 
 /** Records the phases and play errors that the preview reports on its channel. */
@@ -245,8 +245,6 @@ test('the static build has the values of the declared private env variables only
     .map((file) => readFileSync(path.join(dir, file), 'utf8'))
     .join('\n');
 
-  // The value from `.storybook/main.ts`.
-  expect(code).toMatch(/LIVE_POLL_MS"?:["`]250["`]/);
   expect(code).not.toContain('undeclared-canary-5e2a');
   expect(code).not.toContain('shell-canary-8b3f');
 });
@@ -285,7 +283,7 @@ const transitions: Array<[from: string, to: string, check: (frame: Preview) => P
   ],
   // Server mode: the real generator's stream ends with its story.
   [
-    'server-postcount--live-polling',
+    'server-postcount--live-updates',
     'remote-functions-postcount--live-generator',
     async (frame) => {
       await expect(frame.locator('output')).toHaveText('2');

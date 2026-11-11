@@ -2,24 +2,21 @@ import { getRequestEvent, query } from '$app/server';
 import { error } from '@sveltejs/kit';
 import { desc } from 'drizzle-orm';
 
-import { LIVE_POLL_MS } from '$app/env/private';
 import { checkFeed, type Feed } from '#lib/feed.ts';
+import { postsChanges } from '#lib/server/changes.ts';
 import { db } from '#lib/server/db.ts';
-import { sleep } from '#lib/server/sleep.ts';
 import { posts } from '#lib/server/schema.ts';
 
 /** The post count and the latest three posts, sent again whenever they change. */
 export const getFeed = query.live(async function* () {
-  const { signal } = getRequestEvent().request;
   let last = '';
-  while (!signal.aborted) {
+  for await (const _ of postsChanges(getRequestEvent().request.signal)) {
     const feed = await readFeed();
     const json = JSON.stringify(feed);
     if (json !== last) {
       last = json;
       yield feed;
     }
-    await sleep(LIVE_POLL_MS, signal);
   }
 });
 

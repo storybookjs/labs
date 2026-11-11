@@ -3,9 +3,8 @@ import { error, invalid } from '@sveltejs/kit';
 import { asc, count, desc, eq, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 
-import { LIVE_POLL_MS } from '$app/env/private';
+import { postsChanges } from '#lib/server/changes.ts';
 import { db } from '#lib/server/db.ts';
-import { sleep } from '#lib/server/sleep.ts';
 import { posts, postStats } from '#lib/server/schema.ts';
 
 // The demo functions read the columns their components show, so their types stay small.
@@ -65,10 +64,8 @@ export const getStats = query.batch(v.number(), async (ids) => {
 });
 
 export const getPostCount = query.live(async function* () {
-  const { signal } = getRequestEvent().request;
-  while (!signal.aborted) {
+  for await (const _ of postsChanges(getRequestEvent().request.signal)) {
     const [row] = await db.select({ value: count() }).from(posts);
     yield row?.value ?? 0;
-    await sleep(LIVE_POLL_MS, signal);
   }
 });

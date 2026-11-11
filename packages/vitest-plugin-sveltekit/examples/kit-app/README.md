@@ -45,9 +45,10 @@ in the folder `.pglite` next to this README (`src/lib/server/db.ts`). Set `DATAB
 or the shell) to keep it elsewhere. A new database gets the twelve posts in
 `src/lib/server/seed.ts`, two of them drafts.
 
-The live queries (the "new posts" banner, the live count) poll the database every 3 seconds
-(`LIVE_POLL_MS` in `.env`). Vitest polls every 100 ms (`.env.test`) and Storybook every 250 ms
-(`.storybook/main.ts`), so tests and stories do not wait.
+The live queries (the "new posts" banner, the live count, the live feed) do not poll. A trigger
+in `src/lib/server/schema.ts` sends a Postgres `NOTIFY` after every write to `posts`, and the
+generators read again when it comes (`src/lib/server/changes.ts`). Stories and tests get the new
+value as soon as the write commits.
 
 To start over, stop the server and delete the folder:
 
@@ -119,15 +120,15 @@ Open one of the stories, open the panel, pick a template, edit the JSON and pres
 shows what was sent, what the story did, and what the component shows afterwards. The panel shows
 which mode the story is in, and offers the templates of that mode:
 
-| Story         | `getFeed`                                                                                        | Send                                            | Templates                                                                                                                                                                            |
-| ------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Live/Mocked` | `mockRemote(getFeed).mockStream()`                                                               | Emits the value to the open stream              | Good data; Invalid data (fails `checkFeed`, like the real handler, so the stream fails with 422); Error (`httpError(status, message)`); End stream                                   |
-| `Live/Server` | The real generator in `src/lib/feed.remote.ts`, polling the mocked database every `LIVE_POLL_MS` | Changes the database; the next poll sends it on | Insert post; Delete latest post; Set count to N; Invalid data (a post without a title fails the handler's check: 422); Error (the mocked database goes down: 503); Database up again |
+| Story         | `getFeed`                                                                                               | Send                                            | Templates                                                                                                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Live/Mocked` | `mockRemote(getFeed).mockStream()`                                                                      | Emits the value to the open stream              | Good data; Invalid data (fails `checkFeed`, like the real handler, so the stream fails with 422); Error (`httpError(status, message)`); End stream                                   |
+| `Live/Server` | The real generator in `src/lib/feed.remote.ts`, which reads the mocked database again after each change | Changes the database; the generator sends it on | Insert post; Delete latest post; Set count to N; Invalid data (a post without a title fails the handler's check: 422); Error (the mocked database goes down: 503); Database up again |
 
 After an error or the end, the stream is closed. In `Live/Server`, fix the data (delete the post,
 or bring the database up) and press Reconnect in the component. In `Live/Mocked`, `mockStream`
 also fails or ends the later connections, so open another story and come back to start over. "End
-stream" exists only in mocked mode: the real generator polls until the client disconnects.
+stream" exists only in mocked mode: the real generator runs until the client disconnects.
 
 The panel is built into `.storybook/`:
 

@@ -87,7 +87,7 @@ test('O3: a cookie set by a command survives a slower (mocked) request already i
   expect(requestEvent.cookies.get('session')).toBe('svelty');
 });
 
-test('O4: deleting posts while PostCount polls (the example as is)', async () => {
+test('O4: deleting posts while PostCount follows the count (the example as is)', async () => {
   requestEvent.cookies.set('session', 'svelty');
   const rows = await resetDb(Array.from({ length: 100 }, (_, i) => ({ title: `Post ${i}` })));
   const screen = await render(PostCount);

@@ -77,7 +77,7 @@ export const ServerMode = meta.story({
         .insert(posts)
         .values({ title: 'Published elsewhere', body: 'Hello', publishedAt: new Date() });
     });
-    // The real `watchNewPosts` polls the database and sees the new row.
+    // The real `watchNewPosts` hears the insert (a Postgres NOTIFY) and counts again.
     await expect(await canvas.findByText(/1 new post since/, {}, { timeout: 5000 })).toBeVisible();
   },
 });

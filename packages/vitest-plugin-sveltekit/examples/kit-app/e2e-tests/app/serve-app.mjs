@@ -13,7 +13,7 @@ const preview = spawn(
   ['exec', 'vp', 'preview', '--host', '127.0.0.1', '--port', port, '--strictPort'],
   {
     cwd: path.resolve(import.meta.dirname, '../..'),
-    env: { ...process.env, DATABASE_DIR: path.join(dir, 'db'), LIVE_POLL_MS: '250' },
+    env: { ...process.env, DATABASE_DIR: path.join(dir, 'db') },
     // Same process group: Playwright stops a web server by signalling its whole group, the
     // preview included. In a group of its own, the preview outlived the run and kept it open.
     stdio: 'inherit',

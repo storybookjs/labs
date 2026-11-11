@@ -17,7 +17,6 @@ import {
 } from 'drizzle-orm';
 import * as v from 'valibot';
 
-import { LIVE_POLL_MS } from '$app/env/private';
 import {
   listParamsSchema,
   PAGE_SIZE,
@@ -28,8 +27,8 @@ import {
   type TagCount,
   toSummary,
 } from '#lib/blog/posts.ts';
+import { postsChanges } from '#lib/server/changes.ts';
 import { db } from '#lib/server/db.ts';
-import { sleep } from '#lib/server/sleep.ts';
 import { posts, postStats } from '#lib/server/schema.ts';
 
 /** One page of posts, with the filters of the home page. */
@@ -137,9 +136,8 @@ export const removePost = command(v.number(), async (id) => {
  * It counts publications, not new rows: a draft written earlier and published now counts too.
  */
 export const watchNewPosts = query.live(v.number(), async function* (since) {
-  const { signal } = getRequestEvent().request;
   let last = -1;
-  while (!signal.aborted) {
+  for await (const _ of postsChanges(getRequestEvent().request.signal)) {
     const [{ value } = { value: 0 }] = await db
       .select({ value: count() })
       .from(posts)
@@ -154,7 +152,6 @@ export const watchNewPosts = query.live(v.number(), async function* (since) {
       last = value;
       yield value;
     }
-    await sleep(LIVE_POLL_MS, signal);
   }
 });
 

@@ -384,8 +384,8 @@ build gets no values and the plugin prints a warning.
 The request's `signal` is the signal of the client's `fetch`, so a real `query.live` generator that
 watches `getRequestEvent().request.signal` stops when SvelteKit closes the stream: on `reconnect()`,
 when the query's proxy is garbage collected (SvelteKit does not close it at unmount), and before
-each story and test, when the package resets SvelteKit's caches. The example checks that nothing
-keeps polling between tests.
+each story and test, when the package resets SvelteKit's caches. The example checks that no
+generator still waits for changes between tests.
 
 Before each story and test, the package also clears the request store and loads the server code of
 the remote files the story imports, so the first request does not time out a `findBy`.

@@ -29,6 +29,9 @@ export const db = drizzle(client, {
 /** Makes every query fail until it is turned off again, like a database that is down. */
 export function setDatabaseDown(value: boolean): void {
   down = value;
+  // Nothing was written, so the live queries would not look. Wake them (through the client, which
+  // the outage does not stop): they read again, and fail or work.
+  client.exec(`NOTIFY ${schema.POSTS_CHANGED}`).catch(() => {});
 }
 
 /** How many queries ran, to check that nothing keeps polling after a story or test. */
