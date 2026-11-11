@@ -119,7 +119,8 @@ function resolveSubpathImport(
     const suffix = key.slice(star + 1);
     if (specifier.startsWith(prefix) && specifier.endsWith(suffix)) {
       const match = specifier.slice(prefix.length, specifier.length - suffix.length);
-      return path.resolve(root, value.replace('*', match));
+      // Like Node: every `*` in the target.
+      return path.resolve(root, value.replaceAll('*', match));
     }
   }
   return null;

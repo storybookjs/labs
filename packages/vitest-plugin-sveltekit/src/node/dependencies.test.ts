@@ -23,6 +23,8 @@ it('follows relative and subpath imports to the packages, skipping types, node: 
     'pkg-b/sub',
     'pkg-d/count',
     'pkg-e',
+    // Through `#feature/*`, whose target has two `*`.
+    'pkg-f',
     'pkg-hooks',
   ]);
 });
