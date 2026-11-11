@@ -75,7 +75,7 @@
       {@render header_()}
     {/snippet}
     <article class="article">
-      <p class="meta">Ada Lovelace · 31 October 2026</p>
+      <p class="meta">Svelty McSvelteface · 31 October 2026</p>
       <h1>A calm palette for a reading app</h1>
       {#each { length: 4 } as _, index (index)}
         <p>

@@ -37,10 +37,10 @@ const scenarios = {
   // A handler that set a cookie; the jar now has it.
   cookie: async () => {
     open('signIn');
-    await signIn('ada');
-    expect(requestEvent.cookies.get('session')).toBe('ada');
+    await signIn('svelty');
+    expect(requestEvent.cookies.get('session')).toBe('svelty');
     await whoAmI().refresh();
-    expect(await whoAmI()).toEqual({ user: { name: 'ada' }, session: 'ada' });
+    expect(await whoAmI()).toEqual({ user: { name: 'svelty' }, session: 'svelty' });
   },
   // A form left with issues and a touched field.
   issue: async () => {

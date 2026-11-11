@@ -31,7 +31,7 @@ const meta = preview.meta({
 
 export const LiveThenCommand = meta.story({
   play: async () => {
-    requestEvent.cookies.set('session', 'ada');
+    requestEvent.cookies.set('session', 'svelty');
     const live = ticker();
     await waitFor(() => expect(live.current?.n).toBe(0));
     const pending = probeCommand('A');
@@ -43,7 +43,7 @@ export const LiveThenCommand = meta.story({
     await expect(await pending).toEqual({
       name: 'A',
       sameRequest: true,
-      user: { name: 'ada' },
+      user: { name: 'svelty' },
       url: '/',
       cookieSet: true,
     });
@@ -78,12 +78,12 @@ export const CookieSurvivesSlowRequest = meta.story({
       () => {}
     );
     await tick();
-    const signedIn = signIn('ada');
+    const signedIn = signIn('svelty');
     await tick();
     open('signIn');
     await signedIn;
     open('slow');
     await slow;
-    await expect(requestEvent.cookies.get('session')).toBe('ada');
+    await expect(requestEvent.cookies.get('session')).toBe('svelty');
   },
 });

@@ -35,7 +35,7 @@ test('a field loses its issue as soon as it is fixed', async () => {
   await screen.getByRole('button', { name: 'Publish' }).click();
   await expect.element(screen.getByText('Say who wrote this')).toBeVisible();
 
-  await screen.getByRole('textbox', { name: 'Author' }).fill('Ada');
+  await screen.getByRole('textbox', { name: 'Author' }).fill('Svelty');
 
   await expect.element(screen.getByText('Say who wrote this')).not.toBeInTheDocument();
   await expect

@@ -4,7 +4,7 @@ import { requestEvent, resetRequestEvent } from './server.mock.ts';
 
 it('resets the request event', () => {
   const cookies = requestEvent.cookies;
-  requestEvent.locals = { user: 'ada' } as unknown as App.Locals;
+  requestEvent.locals = { user: 'svelty' } as unknown as App.Locals;
   requestEvent.cookies.set('session', 'abc');
   requestEvent.params = { id: '1' };
   requestEvent.url = new URL('http://localhost/posts');

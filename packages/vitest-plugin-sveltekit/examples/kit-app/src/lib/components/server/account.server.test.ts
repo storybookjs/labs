@@ -21,8 +21,8 @@ beforeEach(async () => {
 
 test('a real command sets a cookie in requestEvent.cookies', async () => {
   vi.mocked(checkPassword).mockResolvedValue(true);
-  await signIn({ name: 'ada', password: 'ada-secret' });
-  expect(requestEvent.cookies.get('session')).toBe('ada');
+  await signIn({ name: 'svelty', password: 'svelty-secret' });
+  expect(requestEvent.cookies.get('session')).toBe('svelty');
 });
 
 test('a real command refreshes a query through a helper module, in its own response', async () => {
@@ -30,14 +30,14 @@ test('a real command refreshes a query through a helper module, in its own respo
   let requests = 0;
   Object.defineProperty(requestEvent.locals, 'user', {
     enumerable: true,
-    get: () => (requests++, { name: 'ada' }),
+    get: () => (requests++, { name: 'svelty' }),
   });
   const screen = await render(PostList);
   await expect.element(screen.getByRole('link', { name: 'From the database' })).toBeVisible();
   requests = 0;
 
   vi.mocked(checkPassword).mockResolvedValue(true);
-  await clearPosts('ada-secret');
+  await clearPosts('svelty-secret');
 
   // One request: the new list came with the command's response, as on SvelteKit's server. With
   // the client stub in the helper, the list would come from a second request.
@@ -50,11 +50,11 @@ test('a query that runs while a real command waits does not take its refresh', a
   vi.mocked(checkPassword).mockImplementation(
     () => new Promise<boolean>((resolve) => (allowClear = resolve))
   );
-  requestEvent.cookies.set('session', 'ada');
+  requestEvent.cookies.set('session', 'svelty');
   const screen = await render(PostList);
   await expect.element(screen.getByRole('link', { name: 'From the database' })).toBeVisible();
 
-  const cleared = clearPosts('ada-secret');
+  const cleared = clearPosts('svelty-secret');
   await expect.poll(() => vi.mocked(checkPassword).mock.calls.length).toBe(1);
   // A query while the command waits. The command's refresh afterwards must still go into the
   // command's own response.
@@ -74,7 +74,7 @@ test('a slow sign-in, 1/2: the password check is still running when the test end
   vi.mocked(checkPassword).mockImplementation(
     () => new Promise<boolean>((resolve) => (allowSignIn = resolve))
   );
-  signedIn = signIn({ name: 'ada', password: 'ada-secret' }).catch(() => {});
+  signedIn = signIn({ name: 'svelty', password: 'svelty-secret' }).catch(() => {});
   await expect.poll(() => vi.mocked(checkPassword).mock.calls.length).toBe(1);
 });
 

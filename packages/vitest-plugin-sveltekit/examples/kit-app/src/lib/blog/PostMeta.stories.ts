@@ -18,5 +18,7 @@ export const Edited = meta.story({
 export const Draft = meta.story({ args: { post: postSummaries.find((post) => !post.published)! } });
 
 export const LongName = meta.story({
-  args: { post: { ...published[0]!, author: 'Maria Antonia Fernández de la Torre y Villalobos' } },
+  args: {
+    post: { ...published[0]!, author: 'Professor Hydration von Rehydrate-Smithington the Third' },
+  },
 });

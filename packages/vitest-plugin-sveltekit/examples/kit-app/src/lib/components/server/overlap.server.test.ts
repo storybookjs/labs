@@ -28,11 +28,11 @@ beforeEach(async () => {
 afterEach(() => resetGates());
 
 test('O1: a command keeps its own event while a live query pulls', async () => {
-  requestEvent.cookies.set('session', 'ada');
+  requestEvent.cookies.set('session', 'svelty');
   const live = ticker();
   await expect.poll(() => live.current?.n).toBe(0);
   // `handle` ran for the live request: the user comes from the session cookie.
-  expect(live.current?.user).toBe('ada');
+  expect(live.current?.user).toBe('svelty');
 
   const pending = probeCommand('A');
   await tick();
@@ -46,7 +46,7 @@ test('O1: a command keeps its own event while a live query pulls', async () => {
   expect(result).toEqual({
     name: 'A',
     sameRequest: true,
-    user: { name: 'ada' },
+    user: { name: 'svelty' },
     url: '/',
     cookieSet: true,
   });
@@ -76,19 +76,19 @@ test('O3: a cookie set by a command survives a slower (mocked) request already i
     () => {}
   );
   await tick();
-  const signedIn = signIn('ada');
+  const signedIn = signIn('svelty');
   await tick();
   open('signIn');
   await signedIn;
-  expect(requestEvent.cookies.get('session')).toBe('ada');
+  expect(requestEvent.cookies.get('session')).toBe('svelty');
 
   open('slow');
   await slow;
-  expect(requestEvent.cookies.get('session')).toBe('ada');
+  expect(requestEvent.cookies.get('session')).toBe('svelty');
 });
 
 test('O4: deleting posts while PostCount polls (the example as is)', async () => {
-  requestEvent.cookies.set('session', 'ada');
+  requestEvent.cookies.set('session', 'svelty');
   const rows = await resetDb(Array.from({ length: 100 }, (_, i) => ({ title: `Post ${i}` })));
   const screen = await render(PostCount);
   await expect.element(screen.getByText('100', { exact: true })).toBeVisible();

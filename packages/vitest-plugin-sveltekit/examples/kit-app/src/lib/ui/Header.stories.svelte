@@ -64,7 +64,7 @@
     {/snippet}
     {#snippet actions()}
       <Button size="sm" href="/posts/new">Write</Button>
-      <Avatar name="Ada Lovelace" size="sm" />
+      <Avatar name="Svelty McSvelteface" size="sm" />
     {/snippet}
   </Header>
 {/snippet}

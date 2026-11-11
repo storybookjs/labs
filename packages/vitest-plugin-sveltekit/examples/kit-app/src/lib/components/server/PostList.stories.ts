@@ -46,7 +46,7 @@ export const MixedWithMock = meta.story({
 export const DeleteSignedIn = meta.story({
   beforeEach: () => {
     // `hooks.server.ts` reads the session cookie into `locals.user`.
-    requestEvent.cookies.set('session', 'ada');
+    requestEvent.cookies.set('session', 'svelty');
   },
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(await canvas.findByRole('button', { name: 'Delete From the database' }));

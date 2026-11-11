@@ -46,7 +46,7 @@ test('a once mock serves one call, then the real handler runs again', async () =
 });
 
 test('runs the real command with the session cookie from requestEvent', async () => {
-  requestEvent.cookies.set('session', 'ada');
+  requestEvent.cookies.set('session', 'svelty');
   const screen = await render(PostList);
 
   await screen.getByRole('button', { name: 'Delete From the database' }).click();

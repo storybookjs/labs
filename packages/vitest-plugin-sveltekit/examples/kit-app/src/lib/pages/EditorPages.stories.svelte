@@ -51,7 +51,7 @@
     // A form that passes the preflight, so the (mocked) handler reports the issue.
     await userEvent.type(canvas.getByLabelText('Title'), 'A calmer colour palette');
     await userEvent.type(canvas.getByLabelText('Body'), 'Fewer colours.');
-    await userEvent.type(canvas.getByLabelText('Author'), 'Sanna');
+    await userEvent.type(canvas.getByLabelText('Author'), 'Hydra');
     await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
     await expect(await canvas.findByText('A post with this title exists')).toBeVisible();
   }}

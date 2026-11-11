@@ -7,24 +7,26 @@ const meta = preview.meta({
   title: 'UI/Avatar',
   component: Avatar,
   parameters: { layout: 'centered' },
-  args: { name: 'Ada Lovelace' },
+  args: { name: 'Svelty McSvelteface' },
 });
 
 export const Default = meta.story({
   play: async ({ canvas }) => {
-    const avatar = canvas.getByRole('img', { name: 'Ada Lovelace' });
-    await expect(avatar).toHaveTextContent('AL');
+    const avatar = canvas.getByRole('img', { name: 'Svelty McSvelteface' });
+    await expect(avatar).toHaveTextContent('SM');
   },
 });
 
 export const Small = meta.story({ args: { size: 'sm' } });
 
-export const Large = meta.story({ args: { size: 'lg', name: 'Grace Brewster Murray Hopper' } });
+export const Large = meta.story({
+  args: { size: 'lg', name: 'Null Pointer McException the Second' },
+});
 
 export const SingleName = meta.story({
-  args: { name: 'Hypatia' },
+  args: { name: 'Undefinedia' },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole('img', { name: 'Hypatia' })).toHaveTextContent('H');
+    await expect(canvas.getByRole('img', { name: 'Undefinedia' })).toHaveTextContent('U');
   },
 });
 
@@ -36,6 +38,6 @@ export const WithImage = meta.story({
     )}`,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole('img', { name: 'Ada Lovelace' }).tagName).toBe('IMG');
+    await expect(canvas.getByRole('img', { name: 'Svelty McSvelteface' }).tagName).toBe('IMG');
   },
 });

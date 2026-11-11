@@ -35,8 +35,10 @@ test('F2: handle wraps a form post, and the cookie the form sets reaches the jar
   requestEvent.cookies.set('session', 'old');
   open('login');
   const screen = await render(LoginForm);
-  await screen.getByLabelText('Name').fill('ada');
+  await screen.getByLabelText('Name').fill('svelty');
   await screen.getByRole('button', { name: 'Sign in' }).click();
-  await expect.element(screen.getByRole('status')).toHaveTextContent('signed in as ada, was old');
-  expect(requestEvent.cookies.get('session')).toBe('ada');
+  await expect
+    .element(screen.getByRole('status'))
+    .toHaveTextContent('signed in as svelty, was old');
+  expect(requestEvent.cookies.get('session')).toBe('svelty');
 });

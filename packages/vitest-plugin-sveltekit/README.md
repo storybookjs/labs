@@ -348,8 +348,8 @@ before each story and test:
 import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
 
 beforeEach(() => {
-  requestEvent.cookies.set('session', 'ada'); // sent with each request; `set-cookie` updates it
-  requestEvent.locals.user = { name: 'Ada' }; // copied into `event.locals`
+  requestEvent.cookies.set('session', 'svelty'); // sent with each request; `set-cookie` updates it
+  requestEvent.locals.user = { name: 'Svelty' }; // copied into `event.locals`
   requestEvent.params = { id: '1' };
   requestEvent.url = new URL('http://localhost/posts/1'); // default: the page URL
 });

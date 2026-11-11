@@ -6,7 +6,7 @@ test('opens a post from the list and renders its Markdown', async ({ page }) => 
   await page.getByRole('link', { name: 'Typography for long reads' }).click();
   await expect(page).toHaveURL(/\/posts\/\d+$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Typography for long reads');
-  await expect(page.getByText('Sanna Virtanen').first()).toBeVisible();
+  await expect(page.getByText('Hydra Tion').first()).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'The settings we use' })).toBeVisible();
   await expect(page.getByRole('table')).toBeVisible();
   await expect(page.getByRole('link', { name: 'design', exact: true })).toBeVisible();

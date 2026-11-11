@@ -55,7 +55,7 @@ function initialRequestEvent(): MockRequestEvent {
  * import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
  *
  * beforeEach(() => {
- *   requestEvent.locals.user = { id: 1, name: 'Ada' };
+ *   requestEvent.locals.user = { id: 1, name: 'Svelty' };
  *   requestEvent.cookies.set('session', 'abc');
  * });
  * ```
