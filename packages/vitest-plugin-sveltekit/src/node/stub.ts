@@ -63,6 +63,8 @@ export interface StubOptions {
   registry: string;
   /** Server mode: the id of the module's server copy, loaded when a request needs it. */
   serverModule?: string;
+  /** Server mode, for a file the `server` filter leaves out: its path, for the error hint. */
+  excludedFile?: string;
 }
 
 /**
@@ -75,6 +77,7 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
   const namespace = freeName('__remote', names);
   const registry = freeName('__register', names);
   const registerModule = freeName('__registerModule', names);
+  const registerExcluded = freeName('__registerExcluded', names);
 
   const aliases = new Map<string, string>();
   let aliasIndex = 0;
@@ -106,6 +109,7 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
 
   const registryImports = [`registerRemoteFunction as ${registry}`];
   if (options.serverModule) registryImports.push(`registerRemoteModule as ${registerModule}`);
+  if (options.excludedFile) registryImports.push(`registerExcludedModule as ${registerExcluded}`);
 
   let code = `import * as ${namespace} from ${JSON.stringify(options.kitClientRuntime)};\n`;
   code += `import { ${registryImports.join(', ')} } from ${JSON.stringify(options.registry)};\n\n`;
@@ -115,6 +119,9 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
 
   if (options.serverModule) {
     code += `${registerModule}(${JSON.stringify(options.hash)}, () => import(${JSON.stringify(options.serverModule)}));\n`;
+  }
+  if (options.excludedFile) {
+    code += `${registerExcluded}(${JSON.stringify(options.hash)}, ${JSON.stringify(options.excludedFile)});\n`;
   }
 
   return code;

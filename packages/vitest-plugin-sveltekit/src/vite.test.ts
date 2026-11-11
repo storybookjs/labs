@@ -175,6 +175,28 @@ describe('vitestPluginSvelteKit', () => {
       );
     });
 
+    it('gives server code the client stub of a remote file that the filter leaves out', async () => {
+      const { plugin } = setup([], {
+        enabled: true,
+        server: { include: ['src/lib/posts.remote.ts'] },
+      });
+      const { handler } = plugin.resolveId as {
+        handler: (id: string, importer?: string, options?: object) => Promise<unknown>;
+      };
+      const context = {
+        environment: { config: { consumer: 'client' } },
+        resolve: async () => ({ id: `${root}/src/lib/other.remote.ts` }),
+      };
+
+      await expect(
+        handler.call(context, './other.remote.ts', `${root}/src/lib/posts.remote.ts?server`, {})
+      ).resolves.toEqual({ id: `${root}/src/lib/other.remote.ts` });
+      // An excluded file's stub names it, for the error when a function has no mock.
+      const stub = transform(plugin, remoteCode, `${root}/src/lib/other.remote.ts`)?.code;
+      expect(stub).toContain('"src/lib/other.remote.ts"');
+      expect(stub).not.toContain('?server');
+    });
+
     it('gives server code a server copy of a helper that imports a remote module', async () => {
       const { plugin } = setup([], { enabled: true, server: true });
       const { handler } = plugin.resolveId as {

@@ -48,6 +48,8 @@ const byClient = new WeakMap<object, RemoteEntry>();
 const listeners = new Set<(hash: string) => void>();
 const serverModules = new Map<string, () => Promise<Record<string, unknown>>>();
 const defaults = new WeakMap<RemoteSpy, Handler>();
+/** Server mode: the remote files that `server.include` / `exclude` leave out, by hash. */
+const excludedFiles = new Map<string, string>();
 
 /**
  * Called by the client stub of each remote file, once per export. Re-registration (after HMR)
@@ -68,7 +70,7 @@ export function registerRemoteFunction(client: object, id: string, kind: RemoteK
       name,
       kind,
       get spy() {
-        return (spy ??= createSpy(this.name, this.kind));
+        return (spy ??= createSpy(this.name, this.kind, this.hash));
       },
     };
     entries.set(id, entry);
@@ -101,6 +103,14 @@ export function getRemoteEntryById(id: string): RemoteEntry | undefined {
 
 export function getRemoteEntries(hash: string): RemoteEntry[] {
   return [...entries.values()].filter((entry) => entry.hash === hash);
+}
+
+/**
+ * Server mode: called by the client stub of a remote file that the `server` filter leaves out. Its
+ * functions have no server code, so without a mock each one fails with a hint, whatever its kind.
+ */
+export function registerExcludedModule(hash: string, file: string): void {
+  excludedFiles.set(hash, file);
 }
 
 /** Server mode: called by the client stub with a loader for the module's server copy. */
@@ -158,11 +168,11 @@ export function resetRemoteFunctions(): void {
   generation++;
   for (const entry of entries.values()) {
     entry.spy.mockReset();
-    applyDefaults(entry.spy, entry.name, entry.kind);
+    applyDefaults(entry.spy, entry.name, entry.kind, entry.hash);
   }
 }
 
-function createSpy(name: string, kind: RemoteKind): RemoteSpy {
+function createSpy(name: string, kind: RemoteKind, hash: string): RemoteSpy {
   if (!spyFactory) {
     throw new Error(
       '[vitest-plugin-sveltekit] remote functions have no spies yet. Add `vitest-plugin-sveltekit/vitest` to `test.setupFiles` (Vitest), or the preview annotations from `vitest-plugin-sveltekit/storybook` (Storybook).'
@@ -193,14 +203,28 @@ function createSpy(name: string, kind: RemoteKind): RemoteSpy {
     return stream.controls;
   };
 
-  applyDefaults(spy, name, kind);
+  applyDefaults(spy, name, kind, hash);
   return spy;
 }
 
-function applyDefaults(spy: RemoteSpy, name: string, kind: RemoteKind): void {
-  const implementation = defaultImplementation(name, kind);
+function applyDefaults(spy: RemoteSpy, name: string, kind: RemoteKind, hash: string): void {
+  const implementation = excludedOr(hash, name, defaultImplementation(name, kind));
   defaults.set(spy, implementation);
   spy.mockName(name).mockImplementation(implementation);
+}
+
+/** The default of a function in an excluded file: an error that names the file. */
+function excludedOr(hash: string, name: string, fallback: Handler): Handler {
+  return (...args) => {
+    const file = excludedFiles.get(hash);
+    if (file) {
+      error(
+        500,
+        `\`${name}\` has no mock, and server mode leaves ${file} out. Mock it with \`mockRemote(${name})\`, or add ${file} to \`server.include\`.`
+      );
+    }
+    return fallback(...args);
+  };
 }
 
 function defaultImplementation(name: string, kind: RemoteKind): Handler {

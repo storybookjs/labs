@@ -318,6 +318,46 @@ What server mode costs:
 
 You can mix both: a function mocked with `mockRemote(fn)` stays a mock in server mode.
 
+#### Pick the files
+
+`server: true` takes every remote file, with its imports, into the page and into the build, even
+when every function is mocked. To choose, pass `include` and `exclude` instead. They match the
+remote files as in `@sveltejs/vite-plugin-svelte` (picomatch globs relative to the project root,
+or regular expressions); `include` defaults to every remote file:
+
+```ts
+vitestPluginSvelteKit({
+  server: { include: ['src/lib/blog/**'], exclude: ['src/lib/blog/admin.remote.ts'] },
+});
+```
+
+A file that the filter leaves out is a client stub only: its server code and its imports never
+reach the bundle. Mock its functions with `mockRemote(fn)`; without a mock, a call fails with an
+error that names the file. The server hooks, the lifting of Storybook's guard against server
+modules and the pre-bundling of server packages only happen when the filter takes at least one remote file, so `server: { include: [] }`
+is mock mode.
+
+#### What `storybook build` puts into the output
+
+With server mode on, `storybook build` prints what server code went into the static Storybook:
+
+```text
+[vitest-plugin-sveltekit] Server code in this build (server mode):
+  Remote files with their server code (2):
+    src/lib/blog/blog.remote.ts
+    src/lib/posts.remote.ts
+  Server hooks: src/hooks.server.ts
+  Other server-only modules (2):
+    src/lib/server/db.ts
+    src/lib/server/schema.ts
+  Private env keys with a value: none
+```
+
+"Other server-only modules" are the project's `src/lib/server/**` and `*.server.*` modules in the
+build. A module that `sb.mock` replaces is listed under its own path, though the build has the
+mock. Packages (a database driver, for example) are not listed. The env keys are names only, never
+values.
+
 ### Replace the data layer
 
 Your server code now runs in the browser, so replace the modules that talk to a database or to

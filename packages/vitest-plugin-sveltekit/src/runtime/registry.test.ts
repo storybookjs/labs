@@ -5,6 +5,7 @@ import {
   getRemoteEntry,
   hasRemoteModule,
   onRegister,
+  registerExcludedModule,
   registerRemoteFunction,
   resetGeneration,
   resetRemoteFunctions,
@@ -78,6 +79,26 @@ describe('registry', () => {
         '`getPosts` has no mock. Call `mockRemote(getPosts).mockResolvedValue(...)` in `beforeEach`.',
     });
     expect(getRemoteEntry(createPost).spy({})).toBeUndefined();
+  });
+
+  it('fails every kind in a file the server filter leaves out, with a hint that names it', () => {
+    const adminQuery = () => {};
+    const adminCommand = () => {};
+    registerRemoteFunction(adminQuery, 'h9/listUsers', 'query');
+    registerRemoteFunction(adminCommand, 'h9/banUser', 'command');
+    registerExcludedModule('h9', 'src/lib/admin.remote.ts');
+
+    expect(thrownBody(() => getRemoteEntry(adminCommand).spy(1))).toEqual({
+      status: 500,
+      message:
+        '`banUser` has no mock, and server mode leaves src/lib/admin.remote.ts out. Mock it with `mockRemote(banUser)`, or add src/lib/admin.remote.ts to `server.include`.',
+    });
+    expect(thrownBody(() => getRemoteEntry(adminQuery).spy())).toMatchObject({
+      message: expect.stringContaining('`listUsers` has no mock, and server mode leaves'),
+    });
+    // A mock still answers.
+    getRemoteEntry(adminCommand).spy.mockReturnValue('ok');
+    expect(getRemoteEntry(adminCommand).spy(1)).toBe('ok');
   });
 
   it('resets mocks and calls to the defaults', () => {

@@ -18,8 +18,10 @@ import {
 } from './node/env.ts';
 import { REMOTE_MODULE, resolveModule } from './node/files.ts';
 import { hash } from './node/hash.ts';
+import { formatServerBuildReport, serverBuildReport } from './node/report.ts';
 import { isProjectScript, isRemoteModule, reachesRemoteModule } from './node/server-context.ts';
 import { createServerModule, SERVER_QUERY } from './node/server-module.ts';
+import { type ServerOption, serverFilter } from './node/server-option.ts';
 import { createClientStub } from './node/stub.ts';
 
 export interface VitestPluginSvelteKitOptions {
@@ -32,10 +34,20 @@ export interface VitestPluginSvelteKitOptions {
    * Runs the real `.remote.ts` handlers in the page ("server mode"). Remote functions without a
    * `mockRemote(fn)` mock call your server code, with its `$app/server`, `#lib/server/*` and
    * `$app/env/private` imports. Replace the data layer with `sb.mock` (Storybook) or `vi.mock`
-   * (Vitest). Off by default: every remote function is a mock. See "Mock mode or server mode?" in
-   * the README.
+   * (Vitest). Off by default: every remote function is a mock.
+   *
+   * `true` runs every remote file. `{ include, exclude }` picks the files that bring their server
+   * code along (picomatch, relative to the project root, as in `@sveltejs/vite-plugin-svelte`); the
+   * others stay mocks, and their server code never reaches the bundle:
+   *
+   * ```ts
+   * vitestPluginSvelteKit({ server: { include: ['src/lib/blog/**'], exclude: [/admin/] } });
+   * ```
+   *
+   * `storybook build` prints what server code went into the output. See "Mock mode or server mode?"
+   * in the README.
    */
-  server?: boolean;
+  server?: ServerOption;
   /**
    * The private env values that `$app/env/private` gives server code in stories and tests. Real
    * `.env` values never reach the browser: a private variable that is not here gets its schema's
@@ -70,7 +82,11 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
   let enabled = false;
   let root = '';
   let kitDir = '';
-  const server = options.server ?? false;
+  let command: 'build' | 'serve' = 'serve';
+  /** Server mode: which remote files bring their server code along. */
+  let filter: ((file: string) => boolean) | null = null;
+  /** Server mode with at least one remote file included. Otherwise the plugin is in mock mode. */
+  let server = false;
   let app: AppFiles | undefined;
   let env: BrowserEnv | undefined;
   let warnedMissingEnv = false;
@@ -100,17 +116,16 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         `${PACKAGE_NAME} > storybook/internal/csf`,
       ];
 
-      if (server && enabled) {
+      const projectRoot = path.resolve(userConfig.root ?? process.cwd());
+      const included = enabled ? includedRemoteFiles(options.server, projectRoot) : [];
+      if (included.length > 0) {
         // The server code loads on the first request; pre-bundle its packages up front.
-        const projectRoot = path.resolve(userConfig.root ?? process.cwd());
-        const src = path.join(projectRoot, 'src');
-        const hooks = resolveModule(path.join(src, 'hooks.server'));
+        const hooks = resolveModule(path.join(projectRoot, 'src', 'hooks.server'));
         const exclude = new Set(userConfig.optimizeDeps?.exclude ?? []);
         include.push(
-          ...findServerDependencies(projectRoot, [
-            ...findRemoteFiles(src),
-            ...(hooks ? [hooks] : []),
-          ]).filter((dependency) => !exclude.has(packageName(dependency)))
+          ...findServerDependencies(projectRoot, [...included, ...(hooks ? [hooks] : [])]).filter(
+            (dependency) => !exclude.has(packageName(dependency))
+          )
         );
       }
 
@@ -129,7 +144,11 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
       if (!enabled) return;
 
       root = config.root;
+      command = config.command;
       kitDir = resolveKitDir(root);
+      filter = serverFilter(options.server, root);
+      // Server hooks, the server guard and the request queue only when some server code runs.
+      server = includedRemoteFiles(options.server, root).length > 0;
       app = findAppFiles(config, server);
       env = browserEnv({
         entry: app.envEntry,
@@ -152,7 +171,7 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
 
     resolveId: {
       // Server mode looks at every import of server code, so it has no filter.
-      ...(!server && {
+      ...(!options.server && {
         filter: {
           id: /^(virtual:vitest-plugin-sveltekit\/(kit|app)|node:async_hooks|#app\/env\/server|@storybook\/sveltekit\/.*)$/,
         },
@@ -191,6 +210,8 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
           const resolved = await this.resolve(id, importer, { ...resolveOptions, skipSelf: true });
           if (!resolved || resolved.external) return resolved;
           const file = cleanId(resolved.id);
+          // A remote file that the filter leaves out stays the client stub, also here.
+          if (isRemoteModule(file) && !filter?.(file)) return resolved;
           if (
             isRemoteModule(file) ||
             (isProjectScript(file) && (await leadsToRemote(file, this)))
@@ -240,8 +261,9 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         // Remote files in packages need SvelteKit's per-package opt-in check; not supported yet.
         if (!REMOTE_MODULE.test(file) || file.includes('node_modules')) return;
 
+        const included = server && !!filter?.(source);
         if (id.endsWith(SERVER_QUERY)) {
-          if (!server) return;
+          if (!included) return;
           const exports = analyzeRemoteModule(code, file);
           return { code: createServerModule(code, exports, file, kitDir), map: null };
         }
@@ -250,14 +272,42 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         let stub = createClientStub(exports, {
           hash: hash(file),
           registry: runtimeFile('registry'),
-          serverModule: server ? source + SERVER_QUERY : undefined,
+          serverModule: included ? source + SERVER_QUERY : undefined,
+          excludedFile: server && !included ? file : undefined,
         });
         if (this.environment.mode === 'dev') stub += '\nimport.meta.hot?.accept();\n';
 
         return { code: stub, map: null };
       },
     },
+
+    // So a published Storybook can be audited: what server code went into it.
+    generateBundle(_options, bundle) {
+      if (!enabled || !options.server || command !== 'build' || !app || !env) return;
+      if (this.environment.config.consumer !== 'client') return;
+      const outDir = app.outDir;
+      const report = serverBuildReport(
+        Object.values(bundle).flatMap((output) =>
+          output.type === 'chunk' ? output.moduleIds : []
+        ),
+        {
+          root,
+          serverHooks: app.serverHooks,
+          isEnvConfig: (file) => generatedEnvModule(file, outDir) === 'config',
+          privateEnvKeys: env.variables
+            .filter((variable) => !variable.public && variable.name in env!.values)
+            .map((variable) => variable.name),
+        }
+      );
+      console.log(formatServerBuildReport(report));
+    },
   };
+}
+
+/** The remote files under `root/src` whose server code the `server` option takes along. */
+function includedRemoteFiles(option: ServerOption | undefined, root: string): string[] {
+  const filter = serverFilter(option, root);
+  return filter ? findRemoteFiles(path.join(root, 'src')).filter(filter) : [];
 }
 
 /**

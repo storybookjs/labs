@@ -237,6 +237,29 @@ test('serves the manager with the story index', async ({ page, request }) => {
   await expect(preview.getByRole('link', { name: 'First post' })).toBeVisible();
 });
 
+test('`storybook build` reports the server code it put into the output', () => {
+  test.skip(test.info().project.name !== 'storybook-static', 'Reads the `storybook build` output');
+  const log = readFileSync(path.join(import.meta.dirname, '../storybook-build.log'), 'utf8');
+
+  // `.storybook/main.ts` sets `server: true`: the remote files the stories import, the hooks, and
+  // the server modules they import. No private env value (main.ts passes no `env`).
+  expect(log).toContain(
+    [
+      '[vitest-plugin-sveltekit] Server code in this build (server mode):',
+      '  Remote files with their server code (4):',
+      '    src/lib/blog/blog.remote.ts',
+      '    src/lib/feed.remote.ts',
+      '    src/lib/posts.remote.ts',
+      '    src/lib/probes/probes.remote.ts',
+      '  Server hooks: src/hooks.server.ts',
+    ].join('\n')
+  );
+  expect(log).toMatch(
+    /Other server-only modules \(\d+\):\n(    .+\n)*    src\/lib\/server\/db\.ts\n/
+  );
+  expect(log).toContain('  Private env keys with a value: none');
+});
+
 test('the static build has no value from `.env` files or the shell', () => {
   test.skip(test.info().project.name !== 'storybook-static', 'Reads the `storybook build` output');
   const dir = path.join(import.meta.dirname, '../storybook-static');
