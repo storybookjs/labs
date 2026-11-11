@@ -260,8 +260,6 @@ resolves `undefined`.
 - **Which files are remote.** The same files as in SvelteKit: a name that contains `.remote.` or
   starts with `remote.` (`posts.remote.ts`, `count.remote.svelte.ts`). Remote files inside
   `node_modules` are not handled yet.
-- **No `parameters`.** Mocks are set in `beforeEach` (or in the test), not with
-  `parameters.sveltekit`.
 - **Your schemas do not run.** A mock gets the input as sent, before validation, defaults and
   transforms (see [What the spy gets](#what-the-spy-gets)).
 - **Your handlers do not run.** This package mocks remote functions. Running the real handlers
