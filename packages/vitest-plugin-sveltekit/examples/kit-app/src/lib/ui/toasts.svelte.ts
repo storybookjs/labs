@@ -54,6 +54,9 @@ export function clearToasts() {
   for (const timer of timers.values()) clearTimeout(timer.handle);
   timers.clear();
   toasts.length = 0;
+  // A pause outlives the region that started it: Firefox fires `mouseenter` when a new region
+  // renders under a resting pointer, and no `mouseleave` comes when that region goes away.
+  paused = false;
 }
 
 /** Stops the timeouts while the reader hovers or focuses the toasts (WCAG 2.2.1). */
