@@ -48,8 +48,8 @@ export default defineConfig({
         },
       },
       {
-        // Examples are plain Vite apps, so their configs import `vite` and `vitest` directly.
-        files: ['packages/*/examples/**'],
+        // Examples and test fixtures are plain Vite apps, so they import `vite` and `vitest` directly.
+        files: ['packages/*/examples/**', 'packages/*/test/fixtures/**'],
         rules: {
           'vite-plus/prefer-vite-plus-imports': 'off',
         },

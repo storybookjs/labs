@@ -68,7 +68,7 @@ export const requestEvent: MockRequestEvent = initialRequestEvent();
 
 /**
  * Sets up the request that remote functions run in, for `getRequestEvent()` in your server code
- * (server mode), and returns it. Each field you pass replaces the current value; fields you leave
+ * (server mode in the browser, and direct calls in Vitest's Node mode), and returns it. Each field you pass replaces the current value; fields you leave
  * out keep theirs. It is reset before each story and test.
  *
  * The result is the live event, with the cookie jar, for assertions on what your server code
@@ -86,6 +86,7 @@ export const requestEvent: MockRequestEvent = initialRequestEvent();
  * ```
  */
 export function mockRequestEvent(partial: MockRequestEventInit = {}): MockRequestEvent {
+  for (const hook of readHooks) hook();
   const has = (key: keyof MockRequestEventInit) => Object.hasOwn(partial, key);
   if (has('locals')) requestEvent.locals = partial.locals ?? ({} as App.Locals);
   if (has('cookies')) {
@@ -100,6 +101,13 @@ export function mockRequestEvent(partial: MockRequestEventInit = {}): MockReques
   if (has('url')) requestEvent.url = partial.url;
   if (has('platform')) requestEvent.platform = partial.platform;
   return requestEvent;
+}
+
+const readHooks: Array<() => void> = [];
+
+/** Runs `hook` each time `mockRequestEvent()` is called, before it applies `partial`. */
+export function onMockRequestEventRead(hook: () => void): void {
+  readHooks.push(hook);
 }
 
 /** Restores the defaults, with a new cookie jar. Called before each story and test. */

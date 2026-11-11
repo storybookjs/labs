@@ -318,6 +318,9 @@ What server mode costs:
 
 You can mix both: a function mocked with `mockRemote(fn)` stays a mock in server mode.
 
+To test the handlers themselves, without a component or a browser, see
+[Unit testing remote functions in Node](#unit-testing-remote-functions-in-node).
+
 #### Pick the files
 
 `server: true` takes every remote file, with its imports, into the page and into the build, even
@@ -511,6 +514,87 @@ the remote files the story imports, so the first request does not time out a `fi
   page once; add it to `optimizeDeps.include`.
 - **Not run:** `reroute`, `handleFetch`, CSRF checks and non-JavaScript form posts. `event.fetch` is
   the browser's `fetch`.
+
+## Unit testing remote functions in Node
+
+Stories and browser tests render components: their remote functions are mocks, or in server mode
+the real handlers behind SvelteKit's client. A unit test in Vitest's Node mode tests the handlers
+themselves, without a component or a browser: call a remote function and check what it returns,
+throws or writes. It is the fastest way to test validation, auth branches and database effects.
+
+Add a Node project next to the browser ones, with the same plugin and setup file, and replace the
+data layer with `vi.mock`:
+
+```ts
+// vite.config.ts, in `test.projects`
+{
+  extends: true,
+  plugins: [vitestPluginSvelteKit()],
+  test: {
+    name: 'unit',
+    environment: 'node',
+    include: ['src/**/*.unit.test.ts'],
+    setupFiles: ['vitest-plugin-sveltekit/vitest', './src/unit.setup.ts'], // vi.mock('$lib/server/db')
+  },
+}
+```
+
+In Node, the plugin leaves each `.remote.ts` file to SvelteKit's own plugin: it is the real server
+module, with SvelteKit's init. A call from a test runs inside a request built from
+`mockRequestEvent()`, through SvelteKit's `withRequestEvent` (from `$app/server`), so
+`getRequestEvent()`, `locals`, cookies, `invalid()`, `error()` and `redirect()` work as in a request.
+A call from server code inside that request runs as it is. The mock request event is reset before
+each test, and live queries stop with the test.
+
+```ts
+import { mockRequestEvent, runInRequest, submitForm } from 'vitest-plugin-sveltekit/server.mock';
+
+// query, and prerender with `dynamic: true`: await the call.
+expect(await getPost(1)).toMatchObject({ title: 'Hello' });
+await expect(getPost(999)).rejects.toMatchObject({ status: 404 }); // error()
+await expect(listPosts({ page: 0 })).rejects.toMatchObject({ issues: [expect.anything()] }); // the schema
+
+// command: the same. `locals` and cookies come from mockRequestEvent().
+mockRequestEvent({ locals: { user: { name: 'Svelty' } } });
+await deletePost(1);
+await signIn({ name: 'svelty', password: 'secret' });
+expect(mockRequestEvent().cookies.get('session')).toBe('svelty'); // set by the handler
+
+// form: submitForm() runs the schema and the handler as SvelteKit does for a submission.
+const { result, issues } = await submitForm(createPost, { title: '' });
+await expect(submitForm(createPost, valid)).rejects.toMatchObject({ status: 303 }); // redirect()
+
+// query.batch: calls batch when they share a request.
+const [a, b] = await runInRequest(() => Promise.all([getStats(1), getStats(2)]));
+
+// query.live: await gives the first value, iteration the ones after.
+const live = getPostCount()[Symbol.asyncIterator]();
+expect((await live.next()).value).toBe(2);
+```
+
+What comes out is what SvelteKit's server code gives: `error()` an `HttpError` (`status`, `body`),
+`redirect()` a `Redirect` (`status`, `location`), and a schema that rejects the argument of a query
+or command a `ValidationError` with the schema's `issues` (SvelteKit's request handling turns it
+into a 400). `submitForm()` returns `{ result }`, or `{ issues }` with each issue's field `name`,
+`path` and `message`. SvelteKit has no public way to submit a form on the server, so `submitForm()`
+calls the form's internal handler, the one SvelteKit's request handling calls.
+
+Without this package, the same works with SvelteKit alone: wrap each call in `withRequestEvent`
+from `$app/server`, which takes `locals`, `cookies` and the other fields directly.
+
+`$app/env/private` gets its values as in SvelteKit, from `.env`, `.env.test` (Vitest's mode is
+`test`) and the shell: the rule that keeps real `.env` values out of the browser (see
+[Environment variables](#environment-variables)) is about the browser, and the `env` option does
+not apply in Node.
+
+Limits:
+
+- **`hooks.server` does not run.** No request goes through `handle`, so set `locals` in the test.
+- **A command that refreshes a `query.batch` fails** with "Could not get the request store":
+  SvelteKit PR B's `withRequestEvent` runs the refreshes after the request store has ended. A
+  `query` refresh works. A one-line fix in PR B is pending.
+- **SvelteKit's rules apply**, for example a query cannot read `event.url`, and a `prerender`
+  function's `inputs` do not run.
 
 ## Limitations
 

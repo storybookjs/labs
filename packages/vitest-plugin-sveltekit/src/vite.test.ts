@@ -36,19 +36,29 @@ describe('vitestPluginSvelteKit', () => {
     expect(transform(plugin, 'export const a = 1;', `${root}/src/a.remote.ts`)).toBeUndefined();
   });
 
-  it('in Vitest, replaces the remote plugin and removes the app plugins', () => {
+  it('in Vitest, keeps the remote plugin out of the browser and removes the app plugins', () => {
     vi.stubEnv('VITEST', 'true');
+    const remote = named('vite-plugin-sveltekit-remote');
     const { names } = setup([
       named('vite-plugin-sveltekit-setup'),
       named('vite-plugin-sveltekit-compile'),
       named('vite-plugin-sveltekit-guard'),
-      named('vite-plugin-sveltekit-remote'),
+      remote,
     ]);
 
-    expect(names).toEqual(['vite-plugin-sveltekit-setup', 'vitest-plugin-sveltekit']);
+    expect(names).toEqual([
+      'vite-plugin-sveltekit-setup',
+      'vite-plugin-sveltekit-remote',
+      'vitest-plugin-sveltekit',
+    ]);
+    // The browser gets this plugin's stubs; Node (and SSR) keeps SvelteKit's server modules.
+    const applies = (consumer: string) =>
+      (remote.applyToEnvironment as (environment: object) => boolean)({ config: { consumer } });
+    expect(applies('client')).toBe(false);
+    expect(applies('server')).toBe(true);
   });
 
-  it('in Storybook (the CLI sets STORYBOOK=true), replaces the remote plugin', () => {
+  it('in Storybook (the CLI sets STORYBOOK=true), turns on', () => {
     vi.stubEnv('VITEST', '');
     vi.stubEnv('STORYBOOK', 'true');
     const { plugin, names } = setup([
@@ -56,7 +66,11 @@ describe('vitestPluginSvelteKit', () => {
       named('vite-plugin-sveltekit-remote'),
     ]);
 
-    expect(names).toEqual(['vite-plugin-sveltekit-setup', 'vitest-plugin-sveltekit']);
+    expect(names).toEqual([
+      'vite-plugin-sveltekit-setup',
+      'vite-plugin-sveltekit-remote',
+      'vitest-plugin-sveltekit',
+    ]);
     const code = `import { query } from '$app/server';\nexport const a = query(() => 1);`;
     expect(transform(plugin, code, `${root}/src/a.remote.ts`)?.code).toContain('__remote.query(');
   });
@@ -73,6 +87,7 @@ describe('vitestPluginSvelteKit', () => {
     expect(names).toEqual([
       'storybook:sveltekit-mock-modules',
       'storybook:sveltekit-guard-server-modules',
+      'vite-plugin-sveltekit-remote',
       'vitest-plugin-sveltekit',
     ]);
   });
@@ -126,7 +141,7 @@ describe('vitestPluginSvelteKit', () => {
         [named('storybook:sveltekit-guard-server-modules'), named('vite-plugin-sveltekit-remote')],
         { enabled: true, server: true }
       );
-      expect(names).toEqual(['vitest-plugin-sveltekit']);
+      expect(names).toEqual(['vite-plugin-sveltekit-remote', 'vitest-plugin-sveltekit']);
     });
 
     it('keeps the source for the server copy and gives each export its id', () => {

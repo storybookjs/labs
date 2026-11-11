@@ -92,15 +92,18 @@ Mocked stories also mock the commands they use: in server mode, an unmocked comm
 
 ## Tests
 
-| Command         | What runs                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm test`     | Vitest browser mode, three projects: `components` (mocked tests), `server` (server mode tests), `storybook` (every story) |
-| `pnpm test:app` | Playwright against the app: a production build on a fresh database in a temporary folder                                  |
-| `pnpm test:e2e` | Playwright: the app, `storybook dev`, the static Storybook, the live panel and the Vitest runs                            |
-| `pnpm test:ci`  | `svelte-check`, `pnpm test`, then the app and Storybook Playwright projects (for a CI job)                                |
-| `pnpm check`    | `svelte-check`                                                                                                            |
+| Command         | What runs                                                                                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm test`     | Vitest, four projects: `unit` (the remote functions in Node, called directly), and in browser mode `components` (mocked tests), `server` (server mode tests) and `storybook` (every story) |
+| `pnpm test:app` | Playwright against the app: a production build on a fresh database in a temporary folder                                                                                                   |
+| `pnpm test:e2e` | Playwright: the app, `storybook dev`, the static Storybook, the live panel and the Vitest runs                                                                                             |
+| `pnpm test:ci`  | `svelte-check`, `pnpm test`, then the app and Storybook Playwright projects (for a CI job)                                                                                                 |
+| `pnpm check`    | `svelte-check`                                                                                                                                                                             |
 
-The `storybook` project (`@storybook/addon-vitest`) runs every story in `src/**/*.stories.*`, with
+The `unit` project (`environment: 'node'`, `src/**/*.unit.test.ts`) calls the Field Notes remote
+functions directly, on the in-memory database: schema issues, `invalid()`, `error()` and
+`redirect()`, auth through `locals` and cookies, a command's refresh, a `query.batch` and a
+`query.live` that pushes. The `storybook` project (`@storybook/addon-vitest`) runs every story in `src/**/*.stories.*`, with
 its `play` function; no story is excluded. The app tests (`e2e-tests/app`) cover one flow per spec:
 browse, read, create, edit, delete, validation, the live banner and the 404s.
 

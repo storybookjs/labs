@@ -35,7 +35,7 @@ export default defineConfig({
           // Catches a second copy of `expect` (for example `storybook/test`'s) in the test page.
           expect: { requireAssertions: true },
           include: ['src/**/*.test.ts'],
-          exclude: ['src/**/*.server.test.ts'],
+          exclude: ['src/**/*.server.test.ts', 'src/**/*.unit.test.ts'],
           browser: browser(),
           setupFiles: ['vitest-plugin-sveltekit/vitest'],
         },
@@ -50,6 +50,18 @@ export default defineConfig({
           expect: { requireAssertions: true },
           include: ['src/**/*.server.test.ts'],
           browser: browser(),
+          setupFiles: ['vitest-plugin-sveltekit/vitest', './src/vitest-server.setup.ts'],
+        },
+      },
+      {
+        // Vitest in Node: the real remote functions, called directly in a test, on the mocked
+        // database. Each call runs in the request that `mockRequestEvent()` sets up.
+        extends: true,
+        plugins: [vitestPluginSvelteKit()],
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['src/**/*.unit.test.ts'],
           setupFiles: ['vitest-plugin-sveltekit/vitest', './src/vitest-server.setup.ts'],
         },
       },
