@@ -1,5 +1,5 @@
 import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
 import { expect, waitFor } from 'storybook/test';
 
 import { getStats } from '#lib/posts.remote.ts';
@@ -46,7 +46,7 @@ export const MixedWithMock = meta.story({
 export const DeleteSignedIn = meta.story({
   beforeEach: () => {
     // `hooks.server.ts` reads the session cookie into `locals.user`.
-    requestEvent.cookies.set('session', 'svelty');
+    mockRequestEvent({ cookies: { session: 'svelty' } });
   },
   play: async ({ canvas, userEvent, step }) => {
     await step('Delete a post while signed in: the real command deletes it', async () => {
@@ -61,7 +61,7 @@ export const DeleteSignedIn = meta.story({
 
 export const DeleteForbidden = meta.story({
   beforeEach: () => {
-    requestEvent.locals.user = null;
+    mockRequestEvent({ locals: { user: null } });
   },
   play: async ({ canvas, userEvent, step }) => {
     await step('Delete a post while signed out: the real command refuses', async () => {

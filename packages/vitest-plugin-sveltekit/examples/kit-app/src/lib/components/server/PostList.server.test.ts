@@ -1,5 +1,5 @@
 import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
 import { beforeEach, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
@@ -45,8 +45,8 @@ test('a once mock serves one call, then the real handler runs again', async () =
   expect(mockRemote(getPosts)).toHaveBeenCalledTimes(1);
 });
 
-test('runs the real command with the session cookie from requestEvent', async () => {
-  requestEvent.cookies.set('session', 'svelty');
+test('runs the real command with the session cookie from mockRequestEvent', async () => {
+  mockRequestEvent({ cookies: { session: 'svelty' } });
   const screen = await render(PostList);
 
   await screen.getByRole('button', { name: 'Delete From the database' }).click();
@@ -57,8 +57,8 @@ test('runs the real command with the session cookie from requestEvent', async ()
   expect(await db.$count(posts)).toBe(1);
 });
 
-test('reads locals from requestEvent', async () => {
-  requestEvent.locals.user = null;
+test('reads locals from mockRequestEvent', async () => {
+  mockRequestEvent({ locals: { user: null } });
   const screen = await render(PostList);
 
   await screen.getByRole('button', { name: 'Delete From the database' }).click();

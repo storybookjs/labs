@@ -371,24 +371,39 @@ module, so `vi.mock` and `sb.mock` replace them for client and server code alike
 
 ### The request: `./server.mock`
 
-`getRequestEvent()` in your server code gets an event built from `requestEvent`, which is reset
-before each story and test:
+`getRequestEvent()` in your server code gets an event built from the request event that
+`mockRequestEvent()` sets up. It is reset before each story and test:
 
 ```ts
-import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
 
 beforeEach(() => {
-  requestEvent.cookies.set('session', 'svelty'); // sent with each request; `set-cookie` updates it
-  requestEvent.locals.user = { name: 'Svelty' }; // copied into `event.locals`
-  requestEvent.params = { id: '1' };
-  requestEvent.url = new URL('http://localhost/posts/1'); // default: the page URL
+  mockRequestEvent({
+    cookies: { session: 'svelty' }, // sent with each request; `set-cookie` updates it
+    locals: { user: { name: 'Svelty' } }, // copied into `event.locals`
+    params: { id: '1' },
+    url: new URL('http://localhost/posts/1'), // default: the page URL
+  });
 });
 ```
 
+Each field you pass replaces the current value: `locals` is not merged, and `cookies` replaces the
+contents of the jar. Fields you leave out keep their value. The fields are `locals`, `cookies`,
+`params`, `route`, `url` and `platform`.
+
+`mockRequestEvent()` returns the live event, like `mockRemote(fn)` returns the spy. Use it to check
+what your server code wrote, or to change the event in a later step. Without arguments, it only
+returns the event:
+
+```ts
+await signIn({ name: 'svelty', password: 'secret' });
+expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
+```
+
 Your `handle` hook runs around each request, as on a server, so it can read the cookies and fill
-`locals`. The cookies work like a browser's: each request sends the cookies of
-`requestEvent.cookies`, and when it answers, only what its handler set or deleted changes the jar.
-So a slower request does not undo a login that finished first.
+`locals`. The cookies work like a browser's: each request sends the cookies of the jar, and when it
+answers, only what its handler set or deleted changes the jar. So a slower request does not undo a
+login that finished first.
 
 ### Environment variables
 

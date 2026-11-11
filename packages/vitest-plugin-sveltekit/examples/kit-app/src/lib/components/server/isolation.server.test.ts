@@ -1,4 +1,4 @@
-import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
@@ -28,7 +28,7 @@ const scenarios = {
   },
   // A handler that threw `error(403)` after awaits.
   forbidden: async () => {
-    requestEvent.locals.user = null;
+    mockRequestEvent({ locals: { user: null } });
     const screen = await render(PostList);
     await screen.getByRole('button', { name: 'Delete seed' }).click();
     await expect
@@ -39,7 +39,7 @@ const scenarios = {
   cookie: async () => {
     open('signIn');
     await signIn('svelty');
-    expect(requestEvent.cookies.get('session')).toBe('svelty');
+    expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
     await whoAmI().refresh();
     expect(await whoAmI()).toEqual({ user: { name: 'svelty' }, session: 'svelty' });
   },
@@ -61,8 +61,8 @@ async function leftovers(previous: Scenario | undefined) {
   if (previous === 'live') await wait(350);
   const listening = openSubscriptions();
   return {
-    cookies: requestEvent.cookies.getAll(),
-    locals: requestEvent.locals,
+    cookies: mockRequestEvent().cookies.getAll(),
+    locals: mockRequestEvent().locals,
     pending: createPost.pending,
     result: createPost.result,
     issues: createPost.fields.title.issues() ?? [],

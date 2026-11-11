@@ -1,5 +1,5 @@
 import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
 import { expect, waitFor } from 'storybook/test';
 
 import { gate, open, resetGates } from '#lib/probes/gate.ts';
@@ -31,7 +31,7 @@ const meta = preview.meta({
 
 export const LiveThenCommand = meta.story({
   play: async ({ step }) => {
-    requestEvent.cookies.set('session', 'svelty');
+    mockRequestEvent({ cookies: { session: 'svelty' } });
     const live = ticker();
     let pending!: ReturnType<typeof probeCommand>;
 
@@ -110,7 +110,7 @@ export const CookieSurvivesSlowRequest = meta.story({
     await step('The slow query finishes: the cookie stays', async () => {
       open('slow');
       await slow;
-      await expect(requestEvent.cookies.get('session')).toBe('svelty');
+      await expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
     });
   },
 });

@@ -1,4 +1,4 @@
-import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
@@ -32,7 +32,7 @@ test('F1: handleError sees a sync throw, a rejection and error() from queries, a
 });
 
 test('F2: handle wraps a form post, and the cookie the form sets reaches the jar', async () => {
-  requestEvent.cookies.set('session', 'old');
+  mockRequestEvent({ cookies: { session: 'old' } });
   open('login');
   const screen = await render(LoginForm);
   await screen.getByLabelText('Name').fill('svelty');
@@ -40,5 +40,5 @@ test('F2: handle wraps a form post, and the cookie the form sets reaches the jar
   await expect
     .element(screen.getByRole('status'))
     .toHaveTextContent('signed in as svelty, was old');
-  expect(requestEvent.cookies.get('session')).toBe('svelty');
+  expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
 });

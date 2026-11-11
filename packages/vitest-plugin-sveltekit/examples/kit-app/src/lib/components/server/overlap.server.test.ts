@@ -1,5 +1,5 @@
 import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
@@ -28,7 +28,7 @@ beforeEach(async () => {
 afterEach(() => resetGates());
 
 test('O1: a command keeps its own event while a live query pulls', async () => {
-  requestEvent.cookies.set('session', 'svelty');
+  mockRequestEvent({ cookies: { session: 'svelty' } });
   const live = ticker();
   await expect.poll(() => live.current?.n).toBe(0);
   // `handle` ran for the live request: the user comes from the session cookie.
@@ -50,7 +50,7 @@ test('O1: a command keeps its own event while a live query pulls', async () => {
     url: '/',
     cookieSet: true,
   });
-  expect(requestEvent.cookies.get('seen-by')).toBe('A');
+  expect(mockRequestEvent().cookies.get('seen-by')).toBe('A');
 });
 
 test('O2: two real commands in flight each refresh their own requested query', async () => {
@@ -80,15 +80,15 @@ test('O3: a cookie set by a command survives a slower (mocked) request already i
   await tick();
   open('signIn');
   await signedIn;
-  expect(requestEvent.cookies.get('session')).toBe('svelty');
+  expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
 
   open('slow');
   await slow;
-  expect(requestEvent.cookies.get('session')).toBe('svelty');
+  expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
 });
 
 test('O4: deleting posts while PostCount follows the count (the example as is)', async () => {
-  requestEvent.cookies.set('session', 'svelty');
+  mockRequestEvent({ cookies: { session: 'svelty' } });
   const rows = await resetDb(Array.from({ length: 100 }, (_, i) => ({ title: `Post ${i}` })));
   const screen = await render(PostCount);
   await expect.element(screen.getByText('100', { exact: true })).toBeVisible();

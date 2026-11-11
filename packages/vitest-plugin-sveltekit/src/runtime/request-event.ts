@@ -1,11 +1,11 @@
 /**
  * The request that remote function requests run in, for `getRequestEvent()` in your server code.
- * Change it in `beforeEach` (or at the start of a test); it is reset before each story and test.
+ * `mockRequestEvent()` returns it; it is reset before each story and test.
  */
 export interface MockRequestEvent {
   /** Copied into `event.locals` of each request. A `handle` hook can still add to it. */
   locals: App.Locals;
-  /** Sent with each request, and updated by the cookies a remote function sets. */
+  /** Sent with each request, and updated by the cookies a remote function sets or deletes. */
   cookies: MockCookies;
   /** `event.params`. */
   params: Record<string, string>;
@@ -50,19 +50,59 @@ function initialRequestEvent(): MockRequestEvent {
   };
 }
 
-/**
- * ```ts
- * import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
- *
- * beforeEach(() => {
- *   requestEvent.locals.user = { id: 1, name: 'Svelty' };
- *   requestEvent.cookies.set('session', 'abc');
- * });
- * ```
- */
+/** What `mockRequestEvent()` takes. Each field you pass replaces the current value. */
+export interface MockRequestEventInit {
+  /** Replaces `locals` (no merge). */
+  locals?: App.Locals;
+  /** Replaces the contents of the cookie jar: `{ session: 'svelty' }`. */
+  cookies?: Record<string, string>;
+  params?: Record<string, string>;
+  route?: { id: string | null };
+  /** `undefined` uses the URL of the page again. */
+  url?: URL;
+  platform?: App.Platform;
+}
+
+/** The event of the running story or test. The runtime reads it for each request. */
 export const requestEvent: MockRequestEvent = initialRequestEvent();
 
-/** Restores the defaults. Called before each story and test. */
+/**
+ * Sets up the request that remote functions run in, for `getRequestEvent()` in your server code
+ * (server mode), and returns it. Each field you pass replaces the current value; fields you leave
+ * out keep theirs. It is reset before each story and test.
+ *
+ * The result is the live event, with the cookie jar, for assertions on what your server code
+ * wrote, or for changes in a later step. Without arguments, `mockRequestEvent()` only returns it.
+ *
+ * ```ts
+ * import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
+ *
+ * beforeEach(() => {
+ *   mockRequestEvent({ locals: { user: { id: 1, name: 'Svelty' } }, cookies: { session: 'abc' } });
+ * });
+ *
+ * // After a sign-in:
+ * expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
+ * ```
+ */
+export function mockRequestEvent(partial: MockRequestEventInit = {}): MockRequestEvent {
+  const has = (key: keyof MockRequestEventInit) => Object.hasOwn(partial, key);
+  if (has('locals')) requestEvent.locals = partial.locals ?? ({} as App.Locals);
+  if (has('cookies')) {
+    // The same jar: a request in flight keeps the jar it started with (see `server.ts`).
+    for (const { name } of requestEvent.cookies.getAll()) requestEvent.cookies.delete(name);
+    for (const [name, value] of Object.entries(partial.cookies ?? {})) {
+      requestEvent.cookies.set(name, value);
+    }
+  }
+  if (has('params')) requestEvent.params = partial.params ?? {};
+  if (has('route')) requestEvent.route = partial.route ?? { id: null };
+  if (has('url')) requestEvent.url = partial.url;
+  if (has('platform')) requestEvent.platform = partial.platform;
+  return requestEvent;
+}
+
+/** Restores the defaults, with a new cookie jar. Called before each story and test. */
 export function resetRequestEvent(): void {
   Object.assign(requestEvent, initialRequestEvent());
 }

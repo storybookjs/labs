@@ -1,4 +1,4 @@
-import { requestEvent } from 'vitest-plugin-sveltekit/server.mock';
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
@@ -19,18 +19,26 @@ beforeEach(async () => {
   await resetDb([{ title: 'From the database', body: '' }]);
 });
 
-test('a real command sets a cookie in requestEvent.cookies', async () => {
+test('the event from mockRequestEvent() sees the cookie a real command sets', async () => {
+  const event = mockRequestEvent({ cookies: { theme: 'dark' } });
   vi.mocked(checkPassword).mockResolvedValue(true);
   await signIn({ name: 'svelty', password: 'svelty-secret' });
-  expect(requestEvent.cookies.get('session')).toBe('svelty');
+  expect(event.cookies.getAll()).toEqual([
+    { name: 'theme', value: 'dark' },
+    { name: 'session', value: 'svelty' },
+  ]);
 });
 
 test('a real command refreshes a query through a helper module, in its own response', async () => {
-  // Counts the requests: each one copies `requestEvent.locals`, which reads this getter.
+  // Counts the requests: each one copies `locals`, which reads this getter.
   let requests = 0;
-  Object.defineProperty(requestEvent.locals, 'user', {
-    enumerable: true,
-    get: () => (requests++, { name: 'svelty' }),
+  mockRequestEvent({
+    locals: {
+      get user() {
+        requests++;
+        return { name: 'svelty' };
+      },
+    },
   });
   const screen = await render(PostList);
   await expect.element(screen.getByRole('link', { name: 'From the database' })).toBeVisible();
@@ -50,7 +58,7 @@ test('a query that runs while a real command waits does not take its refresh', a
   vi.mocked(checkPassword).mockImplementation(
     () => new Promise<boolean>((resolve) => (allowClear = resolve))
   );
-  requestEvent.cookies.set('session', 'svelty');
+  mockRequestEvent({ cookies: { session: 'svelty' } });
   const screen = await render(PostList);
   await expect.element(screen.getByRole('link', { name: 'From the database' })).toBeVisible();
 
@@ -79,13 +87,13 @@ test('a slow sign-in, 1/2: the password check is still running when the test end
 });
 
 test('a slow sign-in, 2/2: its cookie does not land in the next test', async () => {
-  requestEvent.cookies.set('theme', 'dark');
+  mockRequestEvent({ cookies: { theme: 'dark' } });
   // The sign-in still holds the previous test's request queue; this test has its own.
   expect(await getPosts('oldest')).toHaveLength(1);
 
   allowSignIn(true);
   await delay(100);
 
-  expect(requestEvent.cookies.getAll()).toEqual([{ name: 'theme', value: 'dark' }]);
+  expect(mockRequestEvent().cookies.getAll()).toEqual([{ name: 'theme', value: 'dark' }]);
   void signedIn;
 });
