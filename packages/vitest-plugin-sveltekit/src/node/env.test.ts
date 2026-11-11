@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
+import { literal } from './code.ts';
 import {
   browserEnv,
   declaredEnvVars,
@@ -115,7 +116,7 @@ describe('the modules', () => {
 
   it('validates every value in the page, and leaves a missing one unset instead of failing', () => {
     const code = envConfigModule(env);
-    expect(code).toContain(`import { variables } from ${JSON.stringify(entry)};`);
+    expect(code).toContain(`import { variables } from ${literal(entry)};`);
     expect(code).toContain(`import { validate, handle_issues } from '@sveltejs/kit/internal/env';`);
     expect(code).toContain('if (env[name] === undefined) continue;');
     expect(code).toContain('set_env({"API_KEY":"k"});');

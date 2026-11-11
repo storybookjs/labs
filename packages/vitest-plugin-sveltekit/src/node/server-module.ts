@@ -1,3 +1,4 @@
+import { literal } from './code.ts';
 import type { RemoteExport } from './analyze.ts';
 import { hash } from './hash.ts';
 
@@ -17,8 +18,8 @@ export function createServerModule(code: string, exports: RemoteExport[], file: 
     '',
     `import { init_remote_functions as $$_init_$$ } from '@sveltejs/kit/internal/server';`,
     'const $$_exports_$$ = Object.create(null);',
-    ...exports.map(({ name, local }) => `$$_exports_$$[${JSON.stringify(name)}] = ${local};`),
-    `$$_init_$$($$_exports_$$, ${JSON.stringify(file)}, ${JSON.stringify(hash(file))});`,
+    ...exports.map(({ name, local }) => `$$_exports_$$[${literal(name)}] = ${local};`),
+    `$$_init_$$($$_exports_$$, ${literal(file)}, ${literal(hash(file))});`,
     '',
   ].join('\n');
 }

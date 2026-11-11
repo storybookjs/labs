@@ -1,6 +1,7 @@
 import path from 'pathe';
 import type { ResolvedConfig } from 'vite';
 
+import { literal } from './code.ts';
 import { resolveModule } from './files.ts';
 
 export interface AppFiles {
@@ -43,14 +44,14 @@ export function appModule(app: AppFiles, server: boolean): string {
 
   lines.push(
     app.universalHooks
-      ? `export * as universalHooks from ${JSON.stringify(app.universalHooks)};`
+      ? `export * as universalHooks from ${literal(app.universalHooks)};`
       : 'export const universalHooks = {};'
   );
 
   // Lazy: the server hooks may import `$app/env/private`, which reads the env when it loads.
   lines.push(
     app.serverHooks
-      ? `export const loadServerHooks = () => import(${JSON.stringify(app.serverHooks)});`
+      ? `export const loadServerHooks = () => import(${literal(app.serverHooks)});`
       : 'export const loadServerHooks = async () => ({});'
   );
 

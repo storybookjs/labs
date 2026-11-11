@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'pathe';
 import { loadEnv } from 'vite';
 
+import { literal } from './code.ts';
 import { type Program, parseModule } from './parse.ts';
 
 export interface DeclaredEnvVar {
@@ -130,7 +131,7 @@ export function envConfigModule(env: BrowserEnv): string {
     ].join('\n');
   }
   return `// vitest-plugin-sveltekit: private values come from the plugin's \`env\` option, never from .env files.
-import { variables } from ${JSON.stringify(env.entry)};
+import { variables } from ${literal(env.entry)};
 import { validate, handle_issues } from '@sveltejs/kit/internal/env';
 
 export { variables };
@@ -156,7 +157,7 @@ export function set_env(env) {
   handle_issues(issues);
 }
 
-set_env(${JSON.stringify(env.values)});
+set_env(${literal(env.values)});
 `;
 }
 

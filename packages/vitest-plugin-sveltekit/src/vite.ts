@@ -6,6 +6,7 @@ import path from 'pathe';
 
 import type { Plugin, ResolvedConfig, Rollup } from 'vite';
 
+import { literal } from './node/code.ts';
 import { analyzeRemoteModule, type RemoteExport } from './node/analyze.ts';
 import { appModule, findAppFiles, type AppFiles } from './node/app.ts';
 import { findRemoteFiles, findServerDependencies } from './node/dependencies.ts';
@@ -391,7 +392,7 @@ function kitModule(kitDir: string): string {
     // sveltejs/kit PR B (SB-2443) adds `withRequestEvent` to `$app/server`, which the page cannot
     // import. By path until an entry the page can import exports it too, for example
     // `@sveltejs/kit/internal/remote-server` once both PRs are merged.
-    `export { withRequestEvent } from ${JSON.stringify(path.join(kitDir, 'src/runtime/app/server/request-event.js'))};`,
+    `export { withRequestEvent } from ${literal(path.join(kitDir, 'src/runtime/app/server/request-event.js'))};`,
     '',
   ].join('\n');
 }
@@ -440,14 +441,14 @@ function onlyOutsideTheBrowser(config: ResolvedConfig, name: string): void {
  */
 function callModule(file: string, exports: RemoteExport[], runtime: string): string {
   const lines = [
-    `import * as remote from ${JSON.stringify(file)};`,
+    `import * as remote from ${literal(file)};`,
     `import { getRequestEvent, withRequestEvent } from '$app/server';`,
-    `import { wrapRemoteExport } from ${JSON.stringify(runtime)};`,
+    `import { wrapRemoteExport } from ${literal(runtime)};`,
     '',
   ];
   exports.forEach(({ name }, index) => {
     lines.push(
-      `const _${index} = wrapRemoteExport(remote[${JSON.stringify(name)}], withRequestEvent, getRequestEvent);`,
+      `const _${index} = wrapRemoteExport(remote[${literal(name)}], withRequestEvent, getRequestEvent);`,
       `export { _${index} as ${name} };`
     );
   });

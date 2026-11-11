@@ -4,6 +4,7 @@ import type { Plugin, ResolvedConfig } from 'vite';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { vitestPluginSvelteKit } from './vite.ts';
+import { literal } from './node/code.ts';
 
 const root = path.resolve(import.meta.dirname, '../examples/kit-app');
 const named = (name: string) => ({ name }) as Plugin;
@@ -98,11 +99,15 @@ describe('vitestPluginSvelteKit', () => {
 
     const result = transform(plugin, code, `${root}/src/lib/posts.remote.ts?v=1`);
 
-    expect(result?.code).toContain(`export const getPosts = __remote.query("1rlm6aw/getPosts");`);
     expect(result?.code).toContain(
-      'import * as __remote from "@sveltejs/kit/internal/remote-client";'
+      `export const getPosts = __remote.query(${literal('1rlm6aw/getPosts')});`
     );
-    expect(result?.code).toContain('__register(getPosts, "1rlm6aw/getPosts", "query");');
+    expect(result?.code).toContain(
+      `import * as __remote from ${literal('@sveltejs/kit/internal/remote-client')};`
+    );
+    expect(result?.code).toContain(
+      `__register(getPosts, ${literal('1rlm6aw/getPosts')}, "query");`
+    );
   });
 
   it('handles every file SvelteKit treats as remote, like `.remote.svelte.ts`', () => {
@@ -152,7 +157,7 @@ describe('vitestPluginSvelteKit', () => {
       expect(result?.code).toContain('$$_exports_$$["getPosts"] = getPosts;');
       expect(result?.code).toContain('$$_exports_$$["createPost"] = create;');
       expect(result?.code).toContain(
-        '$$_init_$$($$_exports_$$, "src/lib/posts.remote.ts", "1rlm6aw");'
+        `$$_init_$$($$_exports_$$, ${literal('src/lib/posts.remote.ts')}, "1rlm6aw");`
       );
       expect(result?.code).not.toContain('?server";');
     });
@@ -162,7 +167,7 @@ describe('vitestPluginSvelteKit', () => {
       const result = transform(plugin, remoteCode, remoteFile);
 
       expect(result?.code).toContain(
-        `__registerModule("1rlm6aw", () => import(${JSON.stringify(`${remoteFile}?server`)}));`
+        `__registerModule("1rlm6aw", () => import(${literal(`${remoteFile}?server`)}));`
       );
     });
 
@@ -208,7 +213,7 @@ describe('vitestPluginSvelteKit', () => {
       ).resolves.toEqual({ id: `${root}/src/lib/other.remote.ts` });
       // An excluded file's stub names it, for the error when a function has no mock.
       const stub = transform(plugin, remoteCode, `${root}/src/lib/other.remote.ts`)?.code;
-      expect(stub).toContain('"src/lib/other.remote.ts"');
+      expect(stub).toContain(literal('src/lib/other.remote.ts'));
       expect(stub).not.toContain('?server');
     });
 
@@ -248,7 +253,7 @@ describe('vitestPluginSvelteKit', () => {
 
       expect(code).toContain('export const serverMode = true;');
       expect(code).toContain(
-        `export const loadServerHooks = () => import(${JSON.stringify(`${root}/src/hooks.server.ts`)});`
+        `export const loadServerHooks = () => import(${literal(`${root}/src/hooks.server.ts`)});`
       );
     });
 
@@ -267,7 +272,7 @@ describe('vitestPluginSvelteKit', () => {
       const generated = `${root}/.svelte-kit/generated/dev/env`;
 
       const config = handler.call(context, `${generated}/config.js`);
-      expect(config).toContain('set_env({"DATABASE_DIR":"/tmp/x"});');
+      expect(config).toContain(`set_env(${literal({ DATABASE_DIR: '/tmp/x' })});`);
       expect(config).not.toContain('shell-value');
       expect(handler.call(context, `${generated}/private/server.js?v=1`)).toContain(
         'export const DATABASE_DIR = env.DATABASE_DIR;'
