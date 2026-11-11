@@ -289,6 +289,35 @@ export default defineMain({
 
 The Storybook and Vitest entries need no change: they detect the mode.
 
+### Mock mode or server mode?
+
+Mock mode, the default, loads no server module of a `.remote.ts` file: no database driver, no
+private env and no server code in the browser. Every remote function is a `mockRemote(fn)` spy.
+Use it for:
+
+- components in each state (data, loading, empty, errors), set per story or test;
+- a published Storybook that must not contain server code;
+- fast tests that need nothing but the mocks.
+
+Server mode (`server: true`) runs the real handlers in the browser, against what you mock, such as
+the database with `sb.mock` or `vi.mock`. Use it for:
+
+- validation as in the app: the schema, its defaults and transforms, and `invalid()` in your
+  `.remote.ts` file;
+- auth branches through `locals` (see [The request](#the-request-servermock));
+- a published Storybook whose forms really work, on a mocked database.
+
+What server mode costs:
+
+- **Server code in the browser.** The handlers and the modules they import load in the page, and
+  `storybook build` puts them into the static Storybook. Server packages, such as a database
+  driver, must run in the browser or be mocked.
+- **Env values only from the plugin.** See [Environment variables](#environment-variables).
+- **One request at a time.** The browser has no `AsyncLocalStorage`, so real requests run one
+  after the other (see [Server mode limitations](#server-mode-limitations)).
+
+You can mix both: a function mocked with `mockRemote(fn)` stays a mock in server mode.
+
 ### Replace the data layer
 
 Your server code now runs in the browser, so replace the modules that talk to a database or to

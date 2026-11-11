@@ -32,7 +32,8 @@ export interface VitestPluginSvelteKitOptions {
    * Runs the real `.remote.ts` handlers in the page ("server mode"). Remote functions without a
    * `mockRemote(fn)` mock call your server code, with its `$app/server`, `#lib/server/*` and
    * `$app/env/private` imports. Replace the data layer with `sb.mock` (Storybook) or `vi.mock`
-   * (Vitest). Off by default: every remote function is a mock.
+   * (Vitest). Off by default: every remote function is a mock. See "Mock mode or server mode?" in
+   * the README.
    */
   server?: boolean;
   /**
