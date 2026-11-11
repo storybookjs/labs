@@ -1,4 +1,4 @@
-import { parseSync } from 'oxc-parser';
+import { type Program, parseModule } from './parse.ts';
 
 /** The remote function kinds, named like SvelteKit's client runtime exports. */
 export type RemoteKind = 'query' | 'query_batch' | 'query_live' | 'form' | 'command' | 'prerender';
@@ -28,9 +28,7 @@ export class RemoteAnalysisError extends Error {
  * without running the file. Only direct calls of the `$app/server` factories are understood.
  */
 export function analyzeRemoteModule(code: string, file: string): RemoteExport[] {
-  const { program, errors } = parseSync(file, code, { lang: langFor(file), sourceType: 'module' });
-  const fatal = errors.find((error) => error.severity === 'Error');
-  if (fatal) throw new RemoteAnalysisError(file, `cannot parse the file: ${fatal.message}`);
+  const program = parse(code, file);
 
   // Local name -> imported name, for `import { query as q } from '$app/server'`.
   const factories = new Map<string, string>();
@@ -218,9 +216,14 @@ function isTypeOnly(node: Node): boolean {
   );
 }
 
-function langFor(file: string): 'ts' | 'js' | 'tsx' | 'jsx' {
-  if (/\.[cm]?tsx$/.test(file)) return 'tsx';
-  if (/\.[cm]?ts$/.test(file)) return 'ts';
-  if (/\.[cm]?jsx$/.test(file)) return 'jsx';
-  return 'js';
+function parse(code: string, file: string): Program {
+  try {
+    return parseModule(code, file);
+  } catch (error) {
+    const message = String((error as Error).message).replace(
+      /^Parse failed with \d+ errors?:\n/,
+      ''
+    );
+    throw new RemoteAnalysisError(file, `cannot parse the file: ${message}`);
+  }
 }

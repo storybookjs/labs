@@ -39,7 +39,6 @@
     "example:check": "vp run --filter ./examples/kit-app check"
   },
   "dependencies": {
-    "oxc-parser": "^0.156.0",
     "pathe": "^1.1.2"
   },
   "peerDependencies": {
