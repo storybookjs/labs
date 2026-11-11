@@ -29,6 +29,7 @@ afterEach(() => {
 describe('vitestPluginSvelteKit', () => {
   it('does nothing outside Vitest and Storybook', () => {
     vi.stubEnv('VITEST', '');
+    vi.stubEnv('STORYBOOK', '');
     const { plugin, names } = setup([named('vite-plugin-sveltekit-remote')]);
 
     expect(names).toContain('vite-plugin-sveltekit-remote');
@@ -47,8 +48,22 @@ describe('vitestPluginSvelteKit', () => {
     expect(names).toEqual(['vite-plugin-sveltekit-setup', 'vitest-plugin-sveltekit']);
   });
 
-  it('in Storybook, only replaces the remote plugin', () => {
+  it('in Storybook (the CLI sets STORYBOOK=true), replaces the remote plugin', () => {
     vi.stubEnv('VITEST', '');
+    vi.stubEnv('STORYBOOK', 'true');
+    const { plugin, names } = setup([
+      named('vite-plugin-sveltekit-setup'),
+      named('vite-plugin-sveltekit-remote'),
+    ]);
+
+    expect(names).toEqual(['vite-plugin-sveltekit-setup', 'vitest-plugin-sveltekit']);
+    const code = `import { query } from '$app/server';\nexport const a = query(() => 1);`;
+    expect(transform(plugin, code, `${root}/src/a.remote.ts`)?.code).toContain('__remote.query(');
+  });
+
+  it('in Storybook started without the CLI, a storybook:* plugin turns it on', () => {
+    vi.stubEnv('VITEST', '');
+    vi.stubEnv('STORYBOOK', '');
     const { names } = setup([
       named('storybook:sveltekit-mock-modules'),
       named('vite-plugin-sveltekit-remote'),

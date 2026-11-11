@@ -23,7 +23,7 @@ const RESOLVED_KIT_VIRTUAL_ID = `\0${KIT_VIRTUAL_ID}`;
 
 /** SvelteKit's remote plugin, replaced by this plugin. */
 const KIT_REMOTE_PLUGIN = 'vite-plugin-sveltekit-remote';
-/** SvelteKit plugins that `@storybook/sveltekit` removes, and that this plugin removes in Vitest. */
+/** SvelteKit plugins that `@storybook/sveltekit` removes, and that this plugin removes too. */
 const KIT_APP_PLUGINS = ['vite-plugin-sveltekit-compile', 'vite-plugin-sveltekit-guard'];
 
 // SvelteKit's `remote_module_pattern`: `x.remote.ts`, `x.remote.svelte.ts`, `remote.js`, ... SvelteKit's
@@ -60,17 +60,14 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
     },
 
     configResolved(config) {
-      const inStorybook = config.plugins.some((plugin) => plugin.name.startsWith('storybook:'));
-      enabled = options.enabled ?? (inStorybook || !!process.env.VITEST);
+      enabled = options.enabled ?? (!!process.env.VITEST || inStorybook(config.plugins));
       if (!enabled) return;
 
       root = config.root;
       kitDir = resolveKitDir(root);
 
-      removePlugins(
-        config,
-        inStorybook ? [KIT_REMOTE_PLUGIN] : [KIT_REMOTE_PLUGIN, ...KIT_APP_PLUGINS]
-      );
+      // In Storybook, `@storybook/sveltekit` has removed the app plugins already.
+      removePlugins(config, [KIT_REMOTE_PLUGIN, ...KIT_APP_PLUGINS]);
     },
 
     resolveId: {
@@ -133,6 +130,18 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
       },
     },
   };
+}
+
+/**
+ * Storybook's CLI sets `STORYBOOK=true` for its whole process before it loads any config
+ * (`code/core/src/bin/core.ts` in storybookjs/storybook). The variable is not documented API, so a
+ * `storybook:*` plugin in the config also counts, for Storybook started without the CLI.
+ */
+function inStorybook(plugins: readonly Plugin[]): boolean {
+  return (
+    process.env.STORYBOOK === 'true' ||
+    plugins.some((plugin) => plugin.name.startsWith('storybook:'))
+  );
 }
 
 /**
