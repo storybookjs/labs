@@ -131,7 +131,7 @@ export function resetRemoteFunctions(): void {
 function createSpy(name: string, kind: RemoteKind): RemoteSpy {
   if (!spyFactory) {
     throw new Error(
-      '[vitest-plugin-sveltekit] remote functions have no spies yet. Add `@storybookjs/vitest-plugin-sveltekit/vitest` to `test.setupFiles` (Vitest), or the preview annotations from `@storybookjs/vitest-plugin-sveltekit/storybook` (Storybook).'
+      '[vitest-plugin-sveltekit] remote functions have no spies yet. Add `vitest-plugin-sveltekit/vitest` to `test.setupFiles` (Vitest), or the preview annotations from `vitest-plugin-sveltekit/storybook` (Storybook).'
     );
   }
   const spy = spyFactory() as RemoteSpy;

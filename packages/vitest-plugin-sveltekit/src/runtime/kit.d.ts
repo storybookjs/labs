@@ -1,6 +1,6 @@
 // SvelteKit internals that `vitestPluginSvelteKit()` serves by absolute path. Only the parts the
 // runtime uses are typed.
-declare module 'virtual:@storybookjs/vitest-plugin-sveltekit/kit' {
+declare module 'virtual:vitest-plugin-sveltekit/kit' {
   import type { RequestEvent } from '@sveltejs/kit';
 
   /** From sveltejs/kit PR A (SB-2442): `@sveltejs/kit/internal/client`. */

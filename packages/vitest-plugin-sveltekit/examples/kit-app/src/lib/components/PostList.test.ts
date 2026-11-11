@@ -1,5 +1,5 @@
-import { httpError, mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
-import { page } from '@storybookjs/vitest-plugin-sveltekit/vitest';
+import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
+import { page } from 'vitest-plugin-sveltekit/vitest';
 import { error } from '@sveltejs/kit';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';

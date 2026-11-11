@@ -1,5 +1,5 @@
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-import { vitestPluginSvelteKit } from '@storybookjs/vitest-plugin-sveltekit/vite';
+import { vitestPluginSvelteKit } from 'vitest-plugin-sveltekit/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
@@ -31,7 +31,7 @@ export default defineConfig({
           expect: { requireAssertions: true },
           include: ['src/**/*.test.ts'],
           browser: browser(),
-          setupFiles: ['@storybookjs/vitest-plugin-sveltekit/vitest'],
+          setupFiles: ['vitest-plugin-sveltekit/vitest'],
         },
       },
       {

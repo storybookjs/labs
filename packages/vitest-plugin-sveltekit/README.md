@@ -1,4 +1,4 @@
-# @storybookjs/vitest-plugin-sveltekit
+# vitest-plugin-sveltekit
 
 Render components that use [SvelteKit remote functions](https://svelte.dev/docs/kit/remote-functions)
 in Storybook and in Vitest browser mode, with each remote function mocked per story or test.
@@ -31,13 +31,13 @@ refreshes and `query.live` streams behave as they do in your app. Your schemas d
 Install the package:
 
 ```sh
-pnpm add -D @storybookjs/vitest-plugin-sveltekit
+pnpm add -D vitest-plugin-sveltekit
 ```
 
 Add the plugin to `vite.config.ts`, after `sveltekit()`:
 
 ```ts
-import { vitestPluginSvelteKit } from '@storybookjs/vitest-plugin-sveltekit/vite';
+import { vitestPluginSvelteKit } from 'vitest-plugin-sveltekit/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
@@ -61,7 +61,7 @@ Add the preview annotations to `.storybook/preview.ts`:
 
 ```ts
 import { definePreview } from '@storybook/sveltekit';
-import remoteFunctions from '@storybookjs/vitest-plugin-sveltekit/storybook';
+import remoteFunctions from 'vitest-plugin-sveltekit/storybook';
 
 export default definePreview({
   addons: [remoteFunctions()],
@@ -71,7 +71,7 @@ export default definePreview({
 With a classic `preview.ts` (no `definePreview`), export the hook instead:
 
 ```ts
-export { beforeEach } from '@storybookjs/vitest-plugin-sveltekit/storybook';
+export { beforeEach } from 'vitest-plugin-sveltekit/storybook';
 ```
 
 Before each story, this resets every mock, clears the cached results of remote functions, and
@@ -88,13 +88,13 @@ export default defineConfig({
   // ...
   test: {
     browser: { enabled: true, provider: playwright(), instances: [{ browser: 'chromium' }] },
-    setupFiles: ['@storybookjs/vitest-plugin-sveltekit/vitest'],
+    setupFiles: ['vitest-plugin-sveltekit/vitest'],
   },
 });
 ```
 
 Plain Vitest has no `$app/*` mocks, so the setup file has small stand-ins of its own. Import them
-from `@storybookjs/vitest-plugin-sveltekit/vitest` when a test needs them:
+from `vitest-plugin-sveltekit/vitest` when a test needs them:
 
 - `page`: `{ url }`, the page that requests come from. Set `page.url` to change it.
 - `navigating`: always `null`.
@@ -115,7 +115,7 @@ the guard would reject the files the package serves.
 The package handles remote functions. A component often needs more from SvelteKit:
 
 - **`$app/state` and `$app/paths` in plain Vitest.** Plain Vitest has no mocks for them. The `page`
-  from `@storybookjs/vitest-plugin-sveltekit/vitest` only goes to the remote-function requests; a
+  from `vitest-plugin-sveltekit/vitest` only goes to the remote-function requests; a
   component that imports `page` from `$app/state` gets SvelteKit's real, empty one. Mock the module
   in the test or a setup file:
 
@@ -148,7 +148,7 @@ The package handles remote functions. A component often needs more from SvelteKi
 `.remote.ts` file, the same import the component uses. The spy is typed from the remote function.
 
 ```ts
-import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
 import { getPosts } from '#lib/posts.remote';
 ```
 
@@ -313,5 +313,5 @@ then pnpm applies no patch.
 
 ## Development
 
-From the repository root: `pnpm --filter @storybookjs/vitest-plugin-sveltekit build`, then see
+From the repository root: `pnpm --filter vitest-plugin-sveltekit build`, then see
 [`examples/kit-app`](./examples/kit-app/README.md) for the example app and its tests.

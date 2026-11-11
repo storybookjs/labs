@@ -1,5 +1,5 @@
 {
-  "name": "@storybookjs/vitest-plugin-sveltekit",
+  "name": "vitest-plugin-sveltekit",
   "version": "0.0.0",
   "description": "Storybook and Vitest support for SvelteKit remote functions",
   "license": "MIT",

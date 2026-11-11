@@ -1,4 +1,4 @@
-import { httpError, mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
 import { error, redirect } from '@sveltejs/kit';
 import { expect, waitFor } from 'storybook/test';
 

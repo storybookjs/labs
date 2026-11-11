@@ -1,4 +1,4 @@
-import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
 import { error } from '@sveltejs/kit';
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';

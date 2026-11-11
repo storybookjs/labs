@@ -8,7 +8,7 @@ and Svelte CSF) and Vitest browser tests that mock the remote functions with `mo
 Build the package first, from the repository root:
 
 ```sh
-pnpm --filter @storybookjs/vitest-plugin-sveltekit build
+pnpm --filter vitest-plugin-sveltekit build
 ```
 
 Then, from this folder:

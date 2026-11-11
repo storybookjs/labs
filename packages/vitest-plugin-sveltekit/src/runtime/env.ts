@@ -1,4 +1,4 @@
-import * as kit from 'virtual:@storybookjs/vitest-plugin-sveltekit/kit';
+import * as kit from 'virtual:vitest-plugin-sveltekit/kit';
 
 import { resetGeneration, resetRemoteFunctions } from './registry.ts';
 import { ensureBodyStream } from './request-body.ts';

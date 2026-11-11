@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+  import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
   import { defineMeta } from '@storybook/sveltekit';
   import { redirect } from '@sveltejs/kit';
   import { expect, waitFor } from 'storybook/test';

@@ -1,5 +1,5 @@
-import { goto } from '@storybookjs/vitest-plugin-sveltekit/vitest';
-import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { goto } from 'vitest-plugin-sveltekit/vitest';
+import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
 import { redirect } from '@sveltejs/kit';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';

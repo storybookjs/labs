@@ -1,8 +1,4 @@
-import {
-  httpError,
-  mockRemote,
-  type RemoteStream,
-} from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { httpError, mockRemote, type RemoteStream } from 'vitest-plugin-sveltekit/remote.mock';
 import { expect } from 'storybook/test';
 
 import { getPostCount } from '#lib/posts.remote.ts';

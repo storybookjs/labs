@@ -17,7 +17,7 @@ export interface VitestPluginSvelteKitOptions {
   enabled?: boolean;
 }
 
-const PACKAGE_NAME = '@storybookjs/vitest-plugin-sveltekit';
+const PACKAGE_NAME = 'vitest-plugin-sveltekit';
 const KIT_VIRTUAL_ID = `virtual:${PACKAGE_NAME}/kit`;
 const RESOLVED_KIT_VIRTUAL_ID = `\0${KIT_VIRTUAL_ID}`;
 
@@ -37,7 +37,7 @@ const runtimeFile = (name: string) => path.join(distDir, 'internal', `${name}.mj
  * Lets components that use SvelteKit remote functions render in Storybook and in Vitest browser
  * mode. Remote modules become SvelteKit's client stubs, and their requests are answered in the
  * page by spies that stories and tests control with `mockRemote()` from
- * `@storybookjs/vitest-plugin-sveltekit/remote.mock`.
+ * `vitest-plugin-sveltekit/remote.mock`.
  */
 export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}): Plugin {
   let enabled = false;
@@ -72,7 +72,7 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
 
     resolveId: {
       filter: {
-        id: /^(virtual:@storybookjs\/vitest-plugin-sveltekit\/kit|node:async_hooks|#app\/env\/server|@storybook\/sveltekit\/.*)$/,
+        id: /^(virtual:vitest-plugin-sveltekit\/kit|node:async_hooks|#app\/env\/server|@storybook\/sveltekit\/.*)$/,
       },
       async handler(id, importer, resolveOptions) {
         if (!enabled || this.environment.config.consumer !== 'client') return;
@@ -101,7 +101,7 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
     },
 
     load: {
-      filter: { id: /^\0virtual:@storybookjs\/vitest-plugin-sveltekit\/kit$/ },
+      filter: { id: /^\0virtual:vitest-plugin-sveltekit\/kit$/ },
       handler(id) {
         if (id === RESOLVED_KIT_VIRTUAL_ID) return kitModule(kitDir);
       },

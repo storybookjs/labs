@@ -358,7 +358,7 @@ importers:
 
   packages/vitest-plugin-sveltekit/examples/kit-app:
     dependenciesMeta:
-      '@storybookjs/vitest-plugin-sveltekit':
+      vitest-plugin-sveltekit:
         injected: true
     devDependencies:
       '@playwright/test':
@@ -373,9 +373,6 @@ importers:
       '@storybook/sveltekit':
         specifier: 11.0.0-alpha.8
         version: 11.0.0-alpha.8(8d090a9647102c751b23478bc9bf95db)
-      '@storybookjs/vitest-plugin-sveltekit':
-        specifier: workspace:*
-        version: link:../..
       '@sveltejs/kit':
         specifier: 3.1.1
         version: 3.1.1(patch_hash=4926253f8ec93fa9a8c9e9231caafd78bb32e219a12377d770d3d9ac91d7fa55)(@sveltejs/vite-plugin-svelte@7.3.1(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.5)(@volar/typescript@2.4.28(typescript@6.0.3))(@vue/language-core@3.3.13)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.97.3)(terser@5.51.2)(typescript@6.0.3)(vue-tsc@3.3.13(typescript@6.0.3))(yaml@2.9.1))(svelte@5.57.3))(@voidzero-dev/vite-plus-core@1.4.0(@types/node@26.6.5)(@volar/typescript@2.4.28(typescript@6.0.3))(@vue/language-core@3.3.13)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.97.3)(terser@5.51.2)(typescript@6.0.3)(vue-tsc@3.3.13(typescript@6.0.3))(yaml@2.9.1))(svelte@5.57.3)(typescript@6.0.3)
@@ -418,6 +415,9 @@ importers:
       vitest-browser-svelte:
         specifier: ^3.1.0
         version: 3.1.0(svelte@5.57.3)(vitest@5.0.5)
+      vitest-plugin-sveltekit:
+        specifier: workspace:*
+        version: link:../..
 
 packages:
 

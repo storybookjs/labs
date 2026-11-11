@@ -1,5 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import * as kit from 'virtual:@storybookjs/vitest-plugin-sveltekit/kit';
+import * as kit from 'virtual:vitest-plugin-sveltekit/kit';
 
 import type { RemoteKind } from '../node/analyze.ts';
 import {
