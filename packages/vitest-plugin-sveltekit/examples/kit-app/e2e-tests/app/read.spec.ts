@@ -32,10 +32,13 @@ test('raw HTML in a post is shown as text, not run', async ({ page }) => {
 
 test('each visit counts a view', async ({ page }) => {
   await page.goto('/?q=calmer');
-  await page.getByRole('link', { name: 'A calmer colour palette' }).click();
   const stats = page.getByText(/^\d+ views?$/);
-  // The page shows the count from before this visit, then the visit's own `countView` adds one.
+  // The count before the visit, from the list: only the post page counts a view. On the post
+  // page, `countView` and the first read of the count run at the same time, so its first count
+  // can already include the visit.
   const before = Number((await stats.textContent())?.match(/\d+/)?.[0]);
+  await page.getByRole('link', { name: 'A calmer colour palette' }).click();
+  await expect(page).toHaveURL(/\/posts\/\d+$/);
   await expect(stats).toHaveText(`${before + 1} views`);
   await page.reload();
   await expect(stats).toHaveText(`${before + 2} views`);
