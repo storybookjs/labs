@@ -164,18 +164,28 @@ const kinds: Array<[name: string, code: string, expected: Record<string, string>
     { a: 'query', b: 'form' },
   ],
 ];
-// SvelteKit accepts the first ones by evaluation; the analysis refuses them instead of guessing.
-// SvelteKit's `init_remote_functions` refuses the rest too.
+// SvelteKit runs the module and accepts every export whose value is a remote function
+// (`init_remote_functions`). The analysis only reads the source, so it refuses all of these.
 const refused: Array<[name: string, code: string]> = [
+  // Kit accepts: `b` is the `query` that `a` holds.
   ['alias of a remote function', `${imports}const a = query(() => 1);\nexport const b = a;`],
+  // Kit accepts: the IIFE returns a `query`.
   ['IIFE', `${imports}export const a = (() => query(() => 1))();`],
+  // Kit accepts: awaiting a function gives the function.
   ['await', `${imports}export const a = await query(() => 1);`],
+  // Kit accepts: either branch is a remote function, so the kind is only known at run time.
   ['conditional', `${imports}export const a = Math.random() ? query(() => 1) : form(() => 1);`],
+  // Kit refuses: `a` is a plain function, not a remote function.
   ['local function named query', `const query = (f) => f;\nexport const a = query(() => 1);`],
+  // Kit accepts: `a` is a `query`.
   ['destructured export', `${imports}export const { a } = { a: query(() => 1) };`],
+  // Kit refuses: `n` is a number.
   ['plain value', `${imports}export const n = 1;\nexport const a = query(() => 1);`],
+  // Kit refuses: `C` is a class.
   ['class', `${imports}export class C {}\nexport const a = query(() => 1);`],
+  // Kit refuses: `E` is an object.
   ['enum', `${imports}export enum E { A }\nexport const a = query(() => 1);`],
+  // Kit refuses: `schema` is a valibot schema; it has to live in another file.
   [
     'schema next to the functions',
     `${imports}import * as v from 'valibot';\nexport const schema = v.string();\nexport const a = query(schema, () => 1);`,
