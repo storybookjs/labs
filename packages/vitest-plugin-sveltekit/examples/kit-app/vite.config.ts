@@ -41,9 +41,10 @@ export default defineConfig({
         },
       },
       {
-        // Server mode: the real remote functions run, on the mocked database.
+        // Server mode: the real remote functions run, on the mocked database. Server code gets
+        // these private env values (`src/lib/components/server/env.server.test.ts`).
         extends: true,
-        plugins: [vitestPluginSvelteKit({ server: true })],
+        plugins: [vitestPluginSvelteKit({ server: true, env: { API_TOKEN: 'test-token' } })],
         test: {
           name: 'server',
           expect: { requireAssertions: true },

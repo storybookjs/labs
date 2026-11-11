@@ -80,6 +80,21 @@ export default defineConfig({
     },
   ],
   webServer: [
+    // First: Playwright starts the servers one after another, and the build writes a `.env.local`
+    // that the dev servers must not see.
+    ...(wants('storybook-static')
+      ? [
+          {
+            command: 'node e2e-tests/build-static.mjs && node e2e-tests/serve-static.mjs',
+            cwd: import.meta.dirname,
+            // A shell value that `.env` copies into an undeclared key: the build must leave it out.
+            env: { ...env, PORT: staticPort, E2E_SHELL_CANARY: 'shell-canary-8b3f' },
+            url: `http://127.0.0.1:${staticPort}/index.json`,
+            timeout: 300_000,
+            reuseExistingServer: false,
+          },
+        ]
+      : []),
     ...(wants('app')
       ? [
           {
@@ -103,19 +118,6 @@ export default defineConfig({
             env,
             url: `http://127.0.0.1:${storybookPort}/index.json`,
             timeout: 120_000,
-            reuseExistingServer: false,
-          },
-        ]
-      : []),
-    ...(wants('storybook-static')
-      ? [
-          {
-            command: 'pnpm exec storybook build --quiet && node e2e-tests/serve-static.mjs',
-            cwd: import.meta.dirname,
-            // A shell value that `.env` copies into an undeclared key: the build must leave it out.
-            env: { ...env, PORT: staticPort, E2E_SHELL_CANARY: 'shell-canary-8b3f' },
-            url: `http://127.0.0.1:${staticPort}/index.json`,
-            timeout: 300_000,
             reuseExistingServer: false,
           },
         ]

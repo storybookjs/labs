@@ -133,7 +133,8 @@ The package handles remote functions. A component often needs more from SvelteKi
 
 - **Environment variables.** SvelteKit 3 checks the variables your `src/env.ts` declares, also in
   Storybook. If some are required, `storybook dev` and `storybook build` fail with `env_invalid`
-  until they are set, for example in a `.env` file.
+  until they are set, for example in a `.env` file. In the page, private variables get only the
+  values you pass to the plugin (see [Environment variables](#environment-variables)).
 
 - **Submissions take time.** A form submission or a command goes through a request, so the spy is
   not called yet right after the click. Wait for the UI to change, or wait for the call:
@@ -362,22 +363,35 @@ So a slower request does not undo a login that finished first.
 
 ### Environment variables
 
-`$app/env/private` (and the older `$env/static/private` and `$env/dynamic/private`) work in server
-mode. In `storybook dev` and Vitest, they have the values SvelteKit loads (`.env`, `.env.local`,
-the shell). In `storybook build`, they come from the `.env` files (`.env`, `.env.local`,
-`.env.<mode>`, `.env.<mode>.local`), with the shell's value for a variable that a file names.
+Real `.env` values never reach the browser. In `storybook dev`, `storybook build` and Vitest,
+`$app/env/private` (and the older `$env/static/private` and `$env/dynamic/private`) gives server
+code only the values you pass to the plugin:
 
-Only the variables that `src/env.ts` declares go into the build. The plugin reads their names from
-`export const variables = defineEnvVars({ ... })`; if it cannot (a spread, a computed key), the
-build gets no values and the plugin prints a warning.
+```ts
+vitestPluginSvelteKit({ server: true, env: { API_URL: 'https://api.example.test' } });
+```
+
+A private variable without a value gets the default of its schema, or no value, and the plugin
+prints a warning that names it. Public variables (`public: true`) keep the values the app gets,
+from the `.env` files and the shell: SvelteKit sends them to the browser in the app too.
+
+The plugin reads the names, and which variables are public, from `export const variables =
+defineEnvVars({ ... })` in `src/env.ts`. If it cannot (a spread, a computed key), stories and
+tests get no env values, and the plugin prints a warning.
+
+To keep the values in a file, read it in the config:
+
+```ts
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
+
+vitestPluginSvelteKit({ server: true, env: parseEnv(readFileSync('.env.storybook', 'utf8')) });
+```
 
 > [!CAUTION]
-> In server mode, `storybook build` writes the values of the declared variables into the
-> JavaScript of the static Storybook, for everybody who can open it to read. A value can come from
-> the shell: the shell overrides a file, and `${VAR}` in a file copies a shell variable
-> (`ALIAS=${CI_SECRET}` puts `CI_SECRET` into `ALIAS`). Never build a Storybook in server mode
-> where a declared variable holds a secret, from a file or from the shell. Build it where they hold
-> harmless values, or mock the module that reads the secret.
+> In server mode, a built Storybook contains the server code of your remote functions, the modules
+> they import, and the values you pass in `env`, for everybody who can open it to read. Pass only
+> values that may be public, and mock the modules that must stay private.
 
 ### Live queries and isolation
 

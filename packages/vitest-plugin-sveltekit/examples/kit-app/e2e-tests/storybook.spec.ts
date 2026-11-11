@@ -237,7 +237,7 @@ test('serves the manager with the story index', async ({ page, request }) => {
   await expect(preview.getByRole('link', { name: 'First post' })).toBeVisible();
 });
 
-test('the static build has the values of the declared private env variables only', () => {
+test('the static build has no value from `.env` files or the shell', () => {
   test.skip(test.info().project.name !== 'storybook-static', 'Reads the `storybook build` output');
   const dir = path.join(import.meta.dirname, '../storybook-static');
   const code = readdirSync(dir, { recursive: true, encoding: 'utf8' })
@@ -245,6 +245,10 @@ test('the static build has the values of the declared private env variables only
     .map((file) => readFileSync(path.join(dir, file), 'utf8'))
     .join('\n');
 
+  // `API_TOKEN` is declared private: `.env` has one fake secret, and `build-static.mjs` writes
+  // another into `.env.local` for the build.
+  expect(code).not.toContain('dot-env-secret-91f0');
+  expect(code).not.toContain('dot-env-local-secret-4c9e');
   expect(code).not.toContain('undeclared-canary-5e2a');
   expect(code).not.toContain('shell-canary-8b3f');
 });

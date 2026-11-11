@@ -213,8 +213,36 @@ describe('vitestPluginSvelteKit', () => {
       expect(code).toContain(
         `export const loadServerHooks = () => import(${JSON.stringify(`${root}/src/hooks.server.ts`)});`
       );
-      // `vite dev`: SvelteKit's generated env module already has the values.
-      expect(code).toContain('export function initEnv() {}');
+    });
+
+    it('serves its own env modules to the browser, with private values from `env` only', () => {
+      vi.stubEnv('DATABASE_DIR', 'shell-value');
+      const { plugin } = setup([], {
+        enabled: true,
+        server: true,
+        env: { DATABASE_DIR: '/tmp/x' },
+      });
+      const { handler } = plugin.load as {
+        handler: (this: unknown, id: string) => string | undefined;
+      };
+      const warn = vi.fn<(message: string) => void>();
+      const context = { environment: { config: { consumer: 'client' } }, warn };
+      const generated = `${root}/.svelte-kit/generated/dev/env`;
+
+      const config = handler.call(context, `${generated}/config.js`);
+      expect(config).toContain('set_env({"DATABASE_DIR":"/tmp/x"});');
+      expect(config).not.toContain('shell-value');
+      expect(handler.call(context, `${generated}/private/server.js?v=1`)).toContain(
+        'export const DATABASE_DIR = env.DATABASE_DIR;'
+      );
+      // The example also declares `API_TOKEN`, which `env` leaves out: one warning, at the first load.
+      expect(warn).toHaveBeenCalledOnce();
+      expect(warn.mock.calls[0]?.[0]).toMatch(/no value for API_TOKEN in stories and tests/);
+      handler.call(context, `${generated}/private/server.js`);
+      expect(warn).toHaveBeenCalledOnce();
+      // SvelteKit's own modules on the server side.
+      const ssr = { environment: { config: { consumer: 'server' } }, warn };
+      expect(handler.call(ssr, `${generated}/config.js`)).toBeUndefined();
     });
 
     const fixture = path.resolve(import.meta.dirname, '../test/fixtures/server-deps');

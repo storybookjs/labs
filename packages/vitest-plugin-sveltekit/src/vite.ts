@@ -8,6 +8,14 @@ import type { Plugin, ResolvedConfig, Rollup } from 'vite';
 import { analyzeRemoteModule } from './node/analyze.ts';
 import { appModule, findAppFiles, type AppFiles } from './node/app.ts';
 import { findRemoteFiles, findServerDependencies } from './node/dependencies.ts';
+import {
+  browserEnv,
+  type BrowserEnv,
+  envConfigModule,
+  generatedEnvModule,
+  missingEnvWarning,
+  privateEnvModule,
+} from './node/env.ts';
 import { REMOTE_MODULE, resolveModule } from './node/files.ts';
 import { hash } from './node/hash.ts';
 import { isProjectScript, isRemoteModule, reachesRemoteModule } from './node/server-context.ts';
@@ -27,6 +35,12 @@ export interface VitestPluginSvelteKitOptions {
    * (Vitest). Off by default: every remote function is a mock.
    */
   server?: boolean;
+  /**
+   * The private env values that `$app/env/private` gives server code in stories and tests. Real
+   * `.env` values never reach the browser: a private variable that is not here gets its schema's
+   * default, or no value, with a warning that names it. Public variables keep the app's values.
+   */
+  env?: Record<string, string | undefined>;
 }
 
 const PACKAGE_NAME = 'vitest-plugin-sveltekit';
@@ -56,7 +70,9 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
   let root = '';
   let kitDir = '';
   const server = options.server ?? false;
-  let app: AppFiles = { serverHooks: null, universalHooks: null, env: null };
+  let app: AppFiles | undefined;
+  let env: BrowserEnv | undefined;
+  let warnedMissingEnv = false;
   /** Server mode: whether a project script leads to a remote module (see `reachesRemoteModule`). */
   const reachesRemote = new Map<string, Promise<boolean>>();
   const leadsToRemote = (file: string, context: Pick<Rollup.PluginContext, 'resolve'>) => {
@@ -114,6 +130,12 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
       root = config.root;
       kitDir = resolveKitDir(root);
       app = findAppFiles(config, server);
+      env = browserEnv({
+        entry: app.envEntry,
+        envDir: app.envDir,
+        mode: config.mode,
+        env: options.env ?? {},
+      });
 
       // In Storybook, `@storybook/sveltekit` has removed the app plugins already.
       removePlugins(config, [
@@ -180,10 +202,28 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
     },
 
     load: {
-      filter: { id: /^\0virtual:vitest-plugin-sveltekit\/(kit|app)$/ },
+      filter: {
+        id: [
+          /^\0virtual:vitest-plugin-sveltekit\/(kit|app)$/,
+          /[/\\]generated[/\\](dev|build)[/\\]env[/\\](config|private[/\\]server)\.js($|\?)/,
+        ],
+      },
       handler(id) {
         if (id === RESOLVED_KIT_VIRTUAL_ID) return kitModule(kitDir);
-        if (id === RESOLVED_APP_VIRTUAL_ID) return appModule(app, server);
+        if (id === RESOLVED_APP_VIRTUAL_ID) return appModule(app!, server);
+
+        // SvelteKit's generated env modules have the app's values, and server code (and
+        // `storybook build`) would take them into the page. The browser gets its own.
+        if (!enabled || !app || !env || this.environment.config.consumer !== 'client') return;
+        const module = generatedEnvModule(cleanId(id), app.outDir);
+        if (module === 'config') return envConfigModule(env);
+        if (module === 'private') {
+          if (env.missing.length > 0 && !warnedMissingEnv) {
+            warnedMissingEnv = true;
+            this.warn(missingEnvWarning(env.missing));
+          }
+          return privateEnvModule(env);
+        }
       },
     },
 

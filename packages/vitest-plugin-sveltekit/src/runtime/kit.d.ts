@@ -79,5 +79,4 @@ declare module 'virtual:vitest-plugin-sveltekit/app' {
     handleError?: HandleServerError;
     init?: ServerInit;
   }>;
-  export function initEnv(): void;
 }

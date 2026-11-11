@@ -134,8 +134,6 @@ export function isRemoteRequest(url: URL): boolean {
 async function setup(): Promise<ServerHooks> {
   kit.init_transport(transport);
 
-  // Before the server hooks load: they may import `$app/env/private`.
-  app.initEnv();
   const hooks = await app.loadServerHooks();
   const handle: Handle = hooks.handle ?? (({ event, resolve }) => resolve(event));
 

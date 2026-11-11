@@ -56,6 +56,10 @@ To start over, stop the server and delete the folder:
 rm -rf .pglite
 ```
 
+Private env values stay out of stories and tests: the plugin gives `$app/env/private` only the
+values in its `env` option (`vite.config.ts` passes an `API_TOKEN` to the `server` project). `.env`
+has a fake `API_TOKEN`, and the e2e checks that `storybook build` leaves it out.
+
 Stories and tests never touch that folder: they replace `src/lib/server/db.ts` with
 `src/lib/server/__mocks__/db.ts`, PGlite in memory, seeded in `beforeEach`.
 
