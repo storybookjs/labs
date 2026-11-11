@@ -11,21 +11,21 @@ let open = 0;
  * `query.live` stream closed). Changes that come while the caller reads count once.
  */
 export async function* postsChanges(signal: AbortSignal): AsyncGenerator<void> {
-  let changed = true;
-  let wake: (() => void) | undefined;
-  const unlisten = await db.$client.listen(POSTS_CHANGED, () => {
-    changed = true;
-    wake?.();
-  });
-  const stop = () => wake?.();
+  // Resolved when the posts change, or when `signal` aborts. Resolved at the start, so the first
+  // value comes at once.
+  let change = Promise.withResolvers<void>();
+  change.resolve();
+  const unlisten = await db.$client.listen(POSTS_CHANGED, () => change.resolve());
+  const stop = () => change.resolve();
   signal.addEventListener('abort', stop);
   open++;
   try {
-    while (!signal.aborted) {
-      if (!changed) await new Promise<void>((resolve) => (wake = resolve));
-      wake = undefined;
+    while (true) {
+      await change.promise;
       if (signal.aborted) return;
-      changed = false;
+      // A new promise before the caller reads: a change during the read wakes the next turn, and
+      // several changes count once.
+      change = Promise.withResolvers<void>();
       yield;
     }
   } finally {
