@@ -1,6 +1,7 @@
 import * as kit from 'virtual:@storybookjs/vitest-plugin-sveltekit/kit';
 
 import { resetGeneration, resetRemoteFunctions } from './registry.ts';
+import { ensureBodyStream } from './request-body.ts';
 import { handleRemoteRequest, isRemoteRequest } from './server.ts';
 
 /** What the host (Storybook or Vitest) provides in place of SvelteKit's router. */
@@ -49,6 +50,7 @@ async function remoteFetch(input: RequestInfo | URL, init?: RequestInit): Promis
   );
   if (!isRemoteRequest(new URL(request.url))) return globalThis.fetch(input, init);
   const generation = resetGeneration();
+  await ensureBodyStream(request);
   // A real request leaves the page's event loop; this one would not. Without the hop, a loop of
   // requests with no await in between (SvelteKit reconnects a `query.live` at once when its
   // stream redirects) runs on microtasks alone and freezes the page.
