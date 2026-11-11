@@ -21,12 +21,16 @@ export const Filtered = meta.story({
 export const NoTags = meta.story({ args: { tags: [] } });
 
 export const ChangesFilters = meta.story({
-  play: async ({ canvas, args }) => {
-    await userEvent.selectOptions(canvas.getByLabelText('Tag'), 'design');
-    await expect(args.onfilter).toHaveBeenCalledWith({ tag: 'design', page: 1 });
+  play: async ({ canvas, args, step }) => {
+    await step('Pick a tag: the filter goes back to page 1', async () => {
+      await userEvent.selectOptions(canvas.getByLabelText('Tag'), 'design');
+      await expect(args.onfilter).toHaveBeenCalledWith({ tag: 'design', page: 1 });
+    });
 
-    await userEvent.type(canvas.getByLabelText('Search'), 'palette');
-    await waitFor(() => expect(args.onfilter).toHaveBeenCalledWith({ q: 'palette', page: 1 }));
+    await step('Type a search: the filter follows after a short pause', async () => {
+      await userEvent.type(canvas.getByLabelText('Search'), 'palette');
+      await waitFor(() => expect(args.onfilter).toHaveBeenCalledWith({ q: 'palette', page: 1 }));
+    });
   },
 });
 

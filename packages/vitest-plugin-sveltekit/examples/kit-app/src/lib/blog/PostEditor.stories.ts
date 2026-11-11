@@ -33,13 +33,17 @@ export const EditPost = meta.story({
 
 /** The schema runs in the browser first: an incomplete form shows its issues without a request. */
 export const ValidationIssues = meta.story({
-  play: async ({ canvas }) => {
-    await userEvent.type(canvas.getByLabelText('Title'), 'Hi');
-    await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
-    await expect(await canvas.findByText('Use at least 3 characters')).toBeVisible();
-    await expect(canvas.getByText('Write something first')).toBeVisible();
-    await expect(canvas.getByLabelText('Title')).toHaveAttribute('aria-invalid', 'true');
-    await expect(mockRemote(publishPost)).not.toHaveBeenCalled();
+  play: async ({ canvas, step }) => {
+    await step('Publish with a short title and no body', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'Hi');
+      await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+    });
+    await step('The schema reports both issues, and no request goes out', async () => {
+      await expect(await canvas.findByText('Use at least 3 characters')).toBeVisible();
+      await expect(canvas.getByText('Write something first')).toBeVisible();
+      await expect(canvas.getByLabelText('Title')).toHaveAttribute('aria-invalid', 'true');
+      await expect(mockRemote(publishPost)).not.toHaveBeenCalled();
+    });
   },
 });
 
@@ -50,14 +54,19 @@ export const HandlerIssue = meta.story({
       invalid(issue.title('A post with this title exists'))
     );
   },
-  play: async ({ canvas }) => {
-    await userEvent.type(canvas.getByLabelText('Title'), 'A calmer colour palette');
-    await userEvent.type(canvas.getByLabelText('Body'), 'Fewer colours.');
-    await userEvent.type(canvas.getByLabelText('Author'), 'Hydra');
-    await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
-    await expect(await canvas.findByText('A post with this title exists')).toBeVisible();
-    // The focus goes to the field with the issue.
-    await waitFor(() => expect(canvas.getByLabelText('Title')).toHaveFocus());
+  play: async ({ canvas, step }) => {
+    await step('Fill in a form that passes the schema', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'A calmer colour palette');
+      await userEvent.type(canvas.getByLabelText('Body'), 'Fewer colours.');
+      await userEvent.type(canvas.getByLabelText('Author'), 'Hydra');
+    });
+    await step('Publish: the (mocked) handler says the title is taken', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+      await expect(await canvas.findByText('A post with this title exists')).toBeVisible();
+    });
+    await step('The focus goes to the field with the issue', async () => {
+      await waitFor(() => expect(canvas.getByLabelText('Title')).toHaveFocus());
+    });
   },
 });
 
@@ -68,11 +77,17 @@ export const BodyIssueFromPreview = meta.story({
       invalid(issue.body('Write something first'))
     );
   },
-  play: async ({ canvas }) => {
-    await userEvent.click(canvas.getByRole('button', { name: 'Preview' }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
-    await expect(await canvas.findByText('Write something first')).toBeVisible();
-    await expect(canvas.getByLabelText('Body')).toBeVisible();
+  play: async ({ canvas, step }) => {
+    await step('Switch to the Preview', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Preview' }));
+    });
+    await step('Publish: the (mocked) handler reports a body issue', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+      await expect(await canvas.findByText('Write something first')).toBeVisible();
+    });
+    await step('The Write view comes back, with the body field', async () => {
+      await expect(canvas.getByLabelText('Body')).toBeVisible();
+    });
   },
 });
 
@@ -81,8 +96,10 @@ export const Submitting = meta.story({
   beforeEach: () => {
     mockRemote(editPost).mockPending();
   },
-  play: async ({ canvas }) => {
-    await userEvent.click(canvas.getByRole('button', { name: 'Save changes' }));
+  play: async ({ canvas, step }) => {
+    await step('Save: the (mocked) handler never answers', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Save changes' }));
+    });
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: /Save changes/ })).toBeDisabled()
     );
@@ -101,14 +118,18 @@ export const MarkdownPreview = meta.story({
 export const ServerMode = meta.story({
   name: 'Server mode',
   beforeEach: seedDatabase,
-  play: async ({ canvas }) => {
-    await userEvent.type(canvas.getByLabelText('Title'), 'Hi');
-    await userEvent.type(canvas.getByLabelText('Tags'), 'Not OK!');
-    await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
-    await expect(
-      await canvas.findByText('Use at least 3 characters', {}, { timeout: 5000 })
-    ).toBeVisible();
-    await expect(canvas.getByText('Write something first')).toBeVisible();
-    await expect(canvas.getByText(/Tags use lowercase letters/)).toBeVisible();
+  play: async ({ canvas, step }) => {
+    await step('Publish a short title, bad tags and no body', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'Hi');
+      await userEvent.type(canvas.getByLabelText('Tags'), 'Not OK!');
+      await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+    });
+    await step('The real schema reports every issue', async () => {
+      await expect(
+        await canvas.findByText('Use at least 3 characters', {}, { timeout: 5000 })
+      ).toBeVisible();
+      await expect(canvas.getByText('Write something first')).toBeVisible();
+      await expect(canvas.getByText(/Tags use lowercase letters/)).toBeVisible();
+    });
   },
 });

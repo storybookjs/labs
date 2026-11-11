@@ -17,12 +17,14 @@ const meta = preview.meta({
 });
 
 export const LivePolling = meta.story({
-  play: async ({ canvas }) => {
+  play: async ({ canvas, step }) => {
     await expect(await canvas.findByText('2')).toBeVisible();
     await expect(await canvas.findByText('live')).toBeVisible();
 
+    await step('A third post lands in the database', async () => {
+      await db.insert(posts).values({ title: 'Three' });
+    });
     // The real `getPostCount` polls the database (every `LIVE_POLL_MS` from `.env`).
-    await db.insert(posts).values({ title: 'Three' });
     await expect(await canvas.findByText('3')).toBeVisible();
   },
 });

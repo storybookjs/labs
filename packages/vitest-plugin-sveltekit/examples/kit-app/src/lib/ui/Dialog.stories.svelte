@@ -1,5 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/sveltekit';
+  import type { ComponentProps } from 'svelte';
   import { expect, waitFor } from 'storybook/test';
 
   import Button from './Button.svelte';
@@ -18,24 +19,34 @@
   let deleted = $state(false);
 </script>
 
+<!-- The first four stories are a page with a dialog in it: the page owns `open`, so there is
+     nothing for Controls to change. -->
 <Story
   name="Open and close"
   asChild
-  play={async ({ canvas, userEvent }) => {
+  parameters={{ controls: { disable: true } }}
+  play={async ({ canvas, userEvent, step }) => {
     const opener = canvas.getByRole('button', { name: 'Delete post' });
-    await userEvent.click(opener);
+    let dialog!: HTMLElement;
 
-    const dialog = await canvas.findByRole('dialog', { name: 'Delete this post?' });
-    await expect(dialog).toHaveAccessibleDescription('It goes away for good, with its comments.');
+    await step('Open the dialog', async () => {
+      await userEvent.click(opener);
+      dialog = await canvas.findByRole('dialog', { name: 'Delete this post?' });
+      await expect(dialog).toHaveAccessibleDescription('It goes away for good, with its comments.');
+    });
 
-    await userEvent.keyboard('{Escape}');
-    await waitFor(() => expect(dialog).not.toBeVisible());
-    await expect(opener).toHaveFocus();
+    await step('Escape closes it and gives the focus back', async () => {
+      await userEvent.keyboard('{Escape}');
+      await waitFor(() => expect(dialog).not.toBeVisible());
+      await expect(opener).toHaveFocus();
+    });
 
-    await userEvent.click(opener);
-    await userEvent.click(await canvas.findByRole('button', { name: 'Close' }));
-    await waitFor(() => expect(dialog).not.toBeVisible());
-    await expect(opener).toHaveFocus();
+    await step('The Close button does the same', async () => {
+      await userEvent.click(opener);
+      await userEvent.click(await canvas.findByRole('button', { name: 'Close' }));
+      await waitFor(() => expect(dialog).not.toBeVisible());
+      await expect(opener).toHaveFocus();
+    });
   }}
 >
   {@render confirm()}
@@ -44,23 +55,30 @@
 <Story
   name="Keyboard"
   asChild
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.click(canvas.getByRole('button', { name: 'Delete post' }));
-    const dialog = await canvas.findByRole('dialog');
-    // The dialog itself has the focus, so a screen reader starts at its title.
-    await waitFor(() => expect(dialog).toHaveFocus());
+  parameters={{ controls: { disable: true } }}
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Open the dialog: it has the focus itself', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Delete post' }));
+      const dialog = await canvas.findByRole('dialog');
+      // So a screen reader starts at its title.
+      await waitFor(() => expect(dialog).toHaveFocus());
+    });
 
-    // Tab goes round the controls, with no stop on the dialog.
-    await userEvent.tab();
-    await expect(canvas.getByRole('button', { name: 'Close' })).toHaveFocus();
-    await userEvent.tab();
-    await expect(canvas.getByRole('button', { name: 'Keep it' })).toHaveFocus();
-    await userEvent.tab();
-    await expect(canvas.getByRole('button', { name: 'Delete' })).toHaveFocus();
-    await userEvent.tab();
-    await expect(canvas.getByRole('button', { name: 'Close' })).toHaveFocus();
-    await userEvent.tab({ shift: true });
-    await expect(canvas.getByRole('button', { name: 'Delete' })).toHaveFocus();
+    await step('Tab goes round the controls, with no stop on the dialog', async () => {
+      await userEvent.tab();
+      await expect(canvas.getByRole('button', { name: 'Close' })).toHaveFocus();
+      await userEvent.tab();
+      await expect(canvas.getByRole('button', { name: 'Keep it' })).toHaveFocus();
+      await userEvent.tab();
+      await expect(canvas.getByRole('button', { name: 'Delete' })).toHaveFocus();
+      await userEvent.tab();
+      await expect(canvas.getByRole('button', { name: 'Close' })).toHaveFocus();
+    });
+
+    await step('Shift+Tab goes round backwards', async () => {
+      await userEvent.tab({ shift: true });
+      await expect(canvas.getByRole('button', { name: 'Delete' })).toHaveFocus();
+    });
   }}
 >
   {@render confirm()}
@@ -69,12 +87,18 @@
 <Story
   name="Confirm action"
   asChild
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.click(canvas.getByRole('button', { name: 'Delete post' }));
+  parameters={{ controls: { disable: true } }}
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Open the dialog', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Delete post' }));
+    });
     const dialog = await canvas.findByRole('dialog');
-    await userEvent.click(canvas.getByRole('button', { name: 'Delete' }));
-    await waitFor(() => expect(dialog).not.toBeVisible());
-    await expect(await canvas.findByRole('status')).toHaveTextContent('Deleted');
+
+    await step('Confirm: the dialog closes and the page acts', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Delete' }));
+      await waitFor(() => expect(dialog).not.toBeVisible());
+      await expect(await canvas.findByRole('status')).toHaveTextContent('Deleted');
+    });
   }}
 >
   {@render confirm()}
@@ -83,39 +107,52 @@
 <Story
   name="Backdrop click"
   asChild
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.click(canvas.getByRole('button', { name: 'Delete post' }));
+  parameters={{ controls: { disable: true } }}
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Open the dialog', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Delete post' }));
+    });
     const dialog = await canvas.findByRole('dialog');
-    // A point on the backdrop: the dialog element itself, outside its panel.
-    await userEvent.pointer({ keys: '[MouseLeft]', target: dialog, coords: { x: 1, y: 1 } });
-    await waitFor(() => expect(dialog).not.toBeVisible());
+
+    await step('Click the backdrop: it closes', async () => {
+      // A point on the backdrop: the dialog element itself, outside its panel.
+      await userEvent.pointer({ keys: '[MouseLeft]', target: dialog, coords: { x: 1, y: 1 } });
+      await waitFor(() => expect(dialog).not.toBeVisible());
+    });
   }}
 >
   {@render confirm()}
 </Story>
 
-<Story name="Opened" asChild>
-  {@render openDialog()}
-</Story>
+<Story
+  name="Opened"
+  args={{
+    open: true,
+    title: 'Rename tag',
+    description: 'Posts with this tag keep it under the new name.',
+  }}
+  template={renameTag}
+/>
 
-<Story name="Long content" asChild>
-  <Dialog open title="Terms for contributors to Field Notes, version three, with a long title">
-    {#each { length: 12 } as _, index (index)}
-      <p>
-        Paragraph {index + 1}. Contributions are published under the blog's licence. Keep notes
-        short, cite your sources, and be kind in the comments.
-      </p>
-    {/each}
-    {#snippet actions()}
-      <Button variant="secondary">Decline</Button>
-      <Button>Accept</Button>
-    {/snippet}
-  </Dialog>
-</Story>
+<Story
+  name="Long content"
+  args={{
+    open: true,
+    title: 'Terms for contributors to Field Notes, version three, with a long title',
+  }}
+  template={terms}
+/>
 
-<Story name="Dark" asChild globals={{ theme: 'dark' }}>
-  {@render openDialog()}
-</Story>
+<Story
+  name="Dark"
+  args={{
+    open: true,
+    title: 'Rename tag',
+    description: 'Posts with this tag keep it under the new name.',
+  }}
+  template={renameTag}
+  globals={{ theme: 'dark' }}
+/>
 
 {#snippet confirm()}
   <Button variant="danger" onclick={() => (open = true)}>Delete post</Button>
@@ -140,12 +177,27 @@
   {/if}
 {/snippet}
 
-{#snippet openDialog()}
-  <Dialog open title="Rename tag" description="Posts with this tag keep it under the new name.">
+{#snippet renameTag(args: ComponentProps<typeof Dialog>)}
+  <Dialog {...args}>
     <Input label="New name" value="svelte-5" />
     {#snippet actions()}
       <Button variant="secondary">Cancel</Button>
       <Button>Rename</Button>
+    {/snippet}
+  </Dialog>
+{/snippet}
+
+{#snippet terms(args: ComponentProps<typeof Dialog>)}
+  <Dialog {...args}>
+    {#each { length: 12 } as _, index (index)}
+      <p>
+        Paragraph {index + 1}. Contributions are published under the blog's licence. Keep notes
+        short, cite your sources, and be kind in the comments.
+      </p>
+    {/each}
+    {#snippet actions()}
+      <Button variant="secondary">Decline</Button>
+      <Button>Accept</Button>
     {/snippet}
   </Dialog>
 {/snippet}

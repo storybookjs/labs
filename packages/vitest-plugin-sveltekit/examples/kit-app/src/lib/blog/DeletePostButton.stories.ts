@@ -36,21 +36,25 @@ export const Default = meta.story({ ...mocked });
 
 export const CancelKeepsThePost = meta.story({
   ...mocked,
-  play: async ({ canvas }) => {
-    await openDialog(canvas);
-    await userEvent.click(within(dialog()).getByRole('button', { name: 'Cancel' }));
-    await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull());
-    await expect(mockRemote(removePost)).not.toHaveBeenCalled();
+  play: async ({ canvas, step }) => {
+    await step('Open the confirmation', () => openDialog(canvas));
+    await step('Cancel: the dialog closes and nothing is deleted', async () => {
+      await userEvent.click(within(dialog()).getByRole('button', { name: 'Cancel' }));
+      await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull());
+      await expect(mockRemote(removePost)).not.toHaveBeenCalled();
+    });
   },
 });
 
 export const Confirm = meta.story({
   ...mocked,
-  play: async ({ canvas, args }) => {
-    await openDialog(canvas);
-    await userEvent.click(within(dialog()).getByRole('button', { name: 'Delete post' }));
-    await waitFor(() => expect(mockRemote(removePost)).toHaveBeenCalledWith(args.id));
-    await waitFor(() => expect(toasts.at(-1)?.message).toBe(`Deleted “${args.title}”`));
+  play: async ({ canvas, args, step }) => {
+    await step('Open the confirmation', () => openDialog(canvas));
+    await step('Confirm: removePost runs and a toast says so', async () => {
+      await userEvent.click(within(dialog()).getByRole('button', { name: 'Delete post' }));
+      await waitFor(() => expect(mockRemote(removePost)).toHaveBeenCalledWith(args.id));
+      await waitFor(() => expect(toasts.at(-1)?.message).toBe(`Deleted “${args.title}”`));
+    });
   },
 });
 
@@ -60,19 +64,26 @@ export const Failure = meta.story({
       httpError(404, 'This post does not exist, or it was deleted.')
     );
   },
-  play: async ({ canvas }) => {
-    await openDialog(canvas);
-    await userEvent.click(within(dialog()).getByRole('button', { name: 'Delete post' }));
-    await waitFor(() => expect(toasts.at(-1)).toMatchObject({ tone: 'error' }));
+  play: async ({ canvas, step }) => {
+    await step('Open the confirmation', () => openDialog(canvas));
+    await step(
+      'Confirm: the (mocked) removePost fails with a 404, so an error toast shows',
+      async () => {
+        await userEvent.click(within(dialog()).getByRole('button', { name: 'Delete post' }));
+        await waitFor(() => expect(toasts.at(-1)).toMatchObject({ tone: 'error' }));
+      }
+    );
   },
 });
 
 export const ServerMode = meta.story({
   name: 'Server mode',
   beforeEach: seedDatabase,
-  play: async ({ canvas }) => {
-    await openDialog(canvas);
-    await userEvent.click(within(dialog()).getByRole('button', { name: 'Delete post' }));
-    await waitFor(async () => expect(await db.$count(posts)).toBe(11));
+  play: async ({ canvas, step }) => {
+    await step('Open the confirmation', () => openDialog(canvas));
+    await step('Confirm: the real removePost deletes one of the 12 seeded posts', async () => {
+      await userEvent.click(within(dialog()).getByRole('button', { name: 'Delete post' }));
+      await waitFor(async () => expect(await db.$count(posts)).toBe(11));
+    });
   },
 });

@@ -48,10 +48,14 @@ export const DeleteSignedIn = meta.story({
     // `hooks.server.ts` reads the session cookie into `locals.user`.
     requestEvent.cookies.set('session', 'svelty');
   },
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.click(await canvas.findByRole('button', { name: 'Delete From the database' }));
-    await waitFor(() => expect(canvas.queryByText('From the database')).toBeNull());
-    await expect(await db.$count(posts)).toBe(1);
+  play: async ({ canvas, userEvent, step }) => {
+    await step('Delete a post while signed in: the real command deletes it', async () => {
+      await userEvent.click(
+        await canvas.findByRole('button', { name: 'Delete From the database' })
+      );
+      await waitFor(() => expect(canvas.queryByText('From the database')).toBeNull());
+      await expect(await db.$count(posts)).toBe(1);
+    });
   },
 });
 
@@ -59,9 +63,13 @@ export const DeleteForbidden = meta.story({
   beforeEach: () => {
     requestEvent.locals.user = null;
   },
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.click(await canvas.findByRole('button', { name: 'Delete From the database' }));
-    await expect(await canvas.findByRole('alert')).toHaveTextContent('Sign in to delete posts');
-    await expect(await db.$count(posts)).toBe(2);
+  play: async ({ canvas, userEvent, step }) => {
+    await step('Delete a post while signed out: the real command refuses', async () => {
+      await userEvent.click(
+        await canvas.findByRole('button', { name: 'Delete From the database' })
+      );
+      await expect(await canvas.findByRole('alert')).toHaveTextContent('Sign in to delete posts');
+      await expect(await db.$count(posts)).toBe(2);
+    });
   },
 });

@@ -20,13 +20,16 @@
 <Story
   name="Show and dismiss"
   asChild
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+  play={async ({ canvas, userEvent, step }) => {
     const status = canvas.getByRole('status');
-    await expect(status).toHaveTextContent('Post published');
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Dismiss notification' }));
-    await expect(status).not.toHaveTextContent('Post published');
+    await step('Publish: a toast says so', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+      await expect(status).toHaveTextContent('Post published');
+    });
+    await step('Dismiss the toast', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Dismiss notification' }));
+      await expect(status).not.toHaveTextContent('Post published');
+    });
   }}
 >
   {@render triggers()}
@@ -47,11 +50,15 @@
 <Story
   name="Timeout"
   asChild
-  play={async ({ canvas }) => {
-    toast('Gone in a moment', { timeout: 300 });
+  play={async ({ canvas, step }) => {
     const status = canvas.getByRole('status');
-    await waitFor(() => expect(status).toHaveTextContent('Gone in a moment'));
-    await waitFor(() => expect(status).not.toHaveTextContent('Gone in a moment'));
+    await step('The app shows a toast that goes away after 300 ms', async () => {
+      toast('Gone in a moment', { timeout: 300 });
+      await waitFor(() => expect(status).toHaveTextContent('Gone in a moment'));
+    });
+    await step('300 ms later it is gone', async () => {
+      await waitFor(() => expect(status).not.toHaveTextContent('Gone in a moment'));
+    });
   }}
 >
   {@render triggers()}

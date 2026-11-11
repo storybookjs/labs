@@ -14,20 +14,24 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent, step }) => {
     const root = document.documentElement;
     const toggle = canvas.getByRole('button', { name: 'Dark theme' });
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
     await expect(root.dataset.theme).toBe('light');
 
-    await userEvent.click(toggle);
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await expect(root.dataset.theme).toBe('dark');
-    await expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+    await step('Turn the dark theme on: the page changes and remembers it', async () => {
+      await userEvent.click(toggle);
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+      await expect(root.dataset.theme).toBe('dark');
+      await expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+    });
 
-    await userEvent.click(toggle);
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    await expect(root.dataset.theme).toBe('light');
+    await step('Turn it off again', async () => {
+      await userEvent.click(toggle);
+      await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      await expect(root.dataset.theme).toBe('light');
+    });
   },
 });
 

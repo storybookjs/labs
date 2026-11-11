@@ -30,37 +30,56 @@ const meta = preview.meta({
 });
 
 export const LiveThenCommand = meta.story({
-  play: async () => {
+  play: async ({ step }) => {
     requestEvent.cookies.set('session', 'svelty');
     const live = ticker();
-    await waitFor(() => expect(live.current?.n).toBe(0));
-    const pending = probeCommand('A');
-    await tick();
-    open('tick');
-    await waitFor(() => expect(live.current?.n).toBe(1));
-    await tick();
-    open('A');
-    await expect(await pending).toEqual({
-      name: 'A',
-      sameRequest: true,
-      user: { name: 'svelty' },
-      url: '/',
-      cookieSet: true,
+    let pending!: ReturnType<typeof probeCommand>;
+
+    await step('A live query starts and sends its first value', async () => {
+      await waitFor(() => expect(live.current?.n).toBe(0));
+    });
+    await step('A command starts and waits at its gate', async () => {
+      pending = probeCommand('A');
+      await tick();
+    });
+    await step('The live query sends its next value while the command waits', async () => {
+      open('tick');
+      await waitFor(() => expect(live.current?.n).toBe(1));
+      await tick();
+    });
+    await step('The command finishes: it still sees its own request', async () => {
+      open('A');
+      await expect(await pending).toEqual({
+        name: 'A',
+        sameRequest: true,
+        user: { name: 'svelty' },
+        url: '/',
+        cookieSet: true,
+      });
     });
   },
 });
 
 export const TwoRealCommands = meta.story({
-  play: async () => {
-    await getTitles();
-    const a = addTitle('A').updates(getTitles());
-    const b = addTitle('B').updates(getTitles());
-    await tick();
-    open('B');
-    await tick();
-    open('A');
-    await Promise.all([a, b]);
-    await expect([...(await getTitles())].sort()).toEqual(['A', 'B', 'seed']);
+  play: async ({ step }) => {
+    let a!: Promise<unknown>;
+    let b!: Promise<unknown>;
+
+    await step('Two commands start, A then B, and wait at their gates', async () => {
+      await getTitles();
+      a = addTitle('A').updates(getTitles());
+      b = addTitle('B').updates(getTitles());
+      await tick();
+    });
+    await step('B finishes first, then A', async () => {
+      open('B');
+      await tick();
+      open('A');
+      await Promise.all([a, b]);
+    });
+    await step('Both titles are in the database', async () => {
+      await expect([...(await getTitles())].sort()).toEqual(['A', 'B', 'seed']);
+    });
   },
 });
 
@@ -71,19 +90,27 @@ export const CookieSurvivesSlowRequest = meta.story({
       return [];
     });
   },
-  play: async () => {
-    const slow = slowTitles();
-    void slow.then(
-      () => {},
-      () => {}
-    );
-    await tick();
-    const signedIn = signIn('svelty');
-    await tick();
-    open('signIn');
-    await signedIn;
-    open('slow');
-    await slow;
-    await expect(requestEvent.cookies.get('session')).toBe('svelty');
+  play: async ({ step }) => {
+    let slow!: Promise<unknown>;
+
+    await step('A slow query starts and waits at its gate', async () => {
+      slow = slowTitles();
+      void slow.then(
+        () => {},
+        () => {}
+      );
+      await tick();
+    });
+    await step('Sign in while the slow query waits: it sets the session cookie', async () => {
+      const signedIn = signIn('svelty');
+      await tick();
+      open('signIn');
+      await signedIn;
+    });
+    await step('The slow query finishes: the cookie stays', async () => {
+      open('slow');
+      await slow;
+      await expect(requestEvent.cookies.get('session')).toBe('svelty');
+    });
   },
 });

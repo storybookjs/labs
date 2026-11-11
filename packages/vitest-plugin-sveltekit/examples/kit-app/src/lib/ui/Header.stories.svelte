@@ -1,5 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/sveltekit';
+  import type { ComponentProps } from 'svelte';
   import { expect } from 'storybook/test';
 
   import Avatar from './Avatar.svelte';
@@ -23,7 +24,7 @@
 
 <Story
   name="With nav and actions"
-  asChild
+  template={full}
   play={async ({ canvas }) => {
     const nav = canvas.getByRole('navigation', { name: 'Main' });
     await expect(nav).toBeVisible();
@@ -32,30 +33,24 @@
       'page'
     );
   }}
->
-  {@render full()}
-</Story>
+/>
 
 <Story name="Custom title" args={{ title: 'Field Notes · Staging' }} />
 
 <Story
   name="Mobile"
-  asChild
+  template={full}
   globals={{ viewport: { value: 'mobile1' } }}
   play={async ({ canvas }) => {
     await expect(canvas.getByRole('link', { name: 'Field Notes' })).toBeVisible();
     await expect(canvas.getByRole('navigation', { name: 'Main' })).toBeVisible();
   }}
->
-  {@render full()}
-</Story>
+/>
 
-<Story name="Dark" asChild globals={{ theme: 'dark' }}>
-  {@render full()}
-</Story>
+<Story name="Dark" template={full} globals={{ theme: 'dark' }} />
 
-{#snippet full()}
-  <Header>
+{#snippet full(args: Partial<ComponentProps<typeof Header>>)}
+  <Header {...args}>
     {#snippet nav()}
       <a href="/posts" aria-current="page">Posts</a>
       <a href="/tags">Tags</a>

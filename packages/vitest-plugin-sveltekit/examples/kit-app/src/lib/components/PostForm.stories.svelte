@@ -23,9 +23,11 @@
 
 <Story
   name="Validation issue"
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('Title'), 'Hi');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create with a two-letter title: the (mocked) handler rejects it', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'Hi');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
     await expect(await canvas.findByRole('alert')).toHaveTextContent(
       'Title must be at least 3 characters'
     );
@@ -38,9 +40,11 @@
 
 <Story
   name="Created"
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('Title'), 'A real title');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create: the (mocked) handler accepts the title', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'A real title');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
     await expect(await canvas.findByRole('status')).toHaveTextContent('Created “A real title”');
   }}
 />
@@ -50,9 +54,11 @@
   beforeEach={() => {
     mockRemote(createPost).mockPending();
   }}
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('Title'), 'Slow');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create: the (mocked) handler never answers', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'Slow');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Create' })).toBeDisabled());
   }}
 />

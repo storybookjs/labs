@@ -99,14 +99,23 @@ export const TwoCommandsInFlight = meta.story({
       current = current.filter((post) => post.id !== id);
     });
   },
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas, userEvent, step }) => {
     await expect(await canvas.findByRole('link', { name: 'First post' })).toBeVisible();
-    await userEvent.click(canvas.getByRole('button', { name: 'Delete First post' }));
-    await userEvent.click(canvas.getByRole('button', { name: 'Delete Second post' }));
-    await waitFor(() => expect(canvas.queryByText('Second post')).toBeNull());
-    await waitFor(() => expect(canvas.queryByText('First post')).toBeNull(), { timeout: 2000 });
-    await expect(canvas.queryByRole('alert')).toBeNull();
-    await expect(canvas.getByRole('link', { name: 'Third post' })).toBeVisible();
+    await step(
+      'Delete two posts at once: the first delete takes 400 ms, the second 50 ms',
+      async () => {
+        await userEvent.click(canvas.getByRole('button', { name: 'Delete First post' }));
+        await userEvent.click(canvas.getByRole('button', { name: 'Delete Second post' }));
+      }
+    );
+    await step('The fast delete finishes first', async () => {
+      await waitFor(() => expect(canvas.queryByText('Second post')).toBeNull());
+    });
+    await step('Then the slow one, with no error and the other post kept', async () => {
+      await waitFor(() => expect(canvas.queryByText('First post')).toBeNull(), { timeout: 2000 });
+      await expect(canvas.queryByRole('alert')).toBeNull();
+      await expect(canvas.getByRole('link', { name: 'Third post' })).toBeVisible();
+    });
   },
 });
 
@@ -114,13 +123,15 @@ export const QueryRedirect = meta.story({
   beforeEach: () => {
     mockRemote(getPosts).mockImplementation(() => redirect(303, '/elsewhere'));
   },
-  play: async () => {
+  play: async ({ step }) => {
     // `goto` from Storybook's `$app/navigation` mock dispatches this event.
     const seen: unknown[] = [];
     const listener = (event: Event) => seen.push((event as CustomEvent).detail);
     window.addEventListener('storybook:goto', listener);
     try {
-      await getPosts();
+      await step('Call getPosts(): its mock redirects to /elsewhere', async () => {
+        await getPosts();
+      });
       await waitFor(() => expect(seen).toContainEqual(['/elsewhere', undefined]));
     } finally {
       window.removeEventListener('storybook:goto', listener);

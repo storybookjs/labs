@@ -7,7 +7,8 @@
   const { Story } = defineMeta({
     title: 'UI/Footer',
     component: Footer,
-    parameters: { layout: 'fullscreen' },
+    // The footer's only prop is its content, a snippet: Controls has nothing to change.
+    parameters: { layout: 'fullscreen', controls: { disable: true } },
   });
 </script>
 

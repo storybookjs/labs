@@ -1,5 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/sveltekit';
+  import type { ComponentProps } from 'svelte';
   import { expect, waitFor } from 'storybook/test';
 
   import Badge from './Badge.svelte';
@@ -51,7 +52,7 @@
 
 <Story
   name="Blog index"
-  asChild
+  template={page}
   play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
     const skip = canvas.getByRole('link', { name: 'Skip to content' });
@@ -59,18 +60,38 @@
     await expect(skip).toHaveAttribute('href', '#main');
     await expect(canvas.getByRole('main')).toHaveAttribute('id', 'main');
   }}
->
-  {@render page()}
-</Story>
+/>
 
 <Story
   name="Narrow article"
-  asChild
+  args={{ width: 'narrow' }}
+  template={article}
   play={async ({ canvas }) => {
     await expect(canvas.getByRole('main')).toHaveClass('narrow');
   }}
->
-  <Layout width="narrow">
+/>
+
+<Story name="Loading" template={loading} />
+
+<Story name="Empty" template={empty} />
+
+<Story
+  name="With toast"
+  template={page}
+  play={async ({ canvas, step }) => {
+    await step('The app shows a toast', async () => {
+      toast('Post published', { tone: 'success', timeout: 0 });
+    });
+    await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('Post published'));
+  }}
+/>
+
+<Story name="Mobile" template={page} globals={{ viewport: { value: 'mobile1' } }} />
+
+<Story name="Dark" template={page} globals={{ theme: 'dark' }} />
+
+{#snippet article(args: Partial<ComponentProps<typeof Layout>>)}
+  <Layout {...args}>
     {#snippet header()}
       {@render header_()}
     {/snippet}
@@ -89,10 +110,10 @@
       <Footer />
     {/snippet}
   </Layout>
-</Story>
+{/snippet}
 
-<Story name="Loading" asChild>
-  <Layout>
+{#snippet loading(args: Partial<ComponentProps<typeof Layout>>)}
+  <Layout {...args}>
     {#snippet header()}
       {@render header_()}
     {/snippet}
@@ -108,10 +129,10 @@
       <Footer />
     {/snippet}
   </Layout>
-</Story>
+{/snippet}
 
-<Story name="Empty" asChild>
-  <Layout>
+{#snippet empty(args: Partial<ComponentProps<typeof Layout>>)}
+  <Layout {...args}>
     {#snippet header()}
       {@render header_()}
     {/snippet}
@@ -124,26 +145,7 @@
       <Footer />
     {/snippet}
   </Layout>
-</Story>
-
-<Story
-  name="With toast"
-  asChild
-  play={async ({ canvas }) => {
-    toast('Post published', { tone: 'success', timeout: 0 });
-    await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('Post published'));
-  }}
->
-  {@render page()}
-</Story>
-
-<Story name="Mobile" asChild globals={{ viewport: { value: 'mobile1' } }}>
-  {@render page()}
-</Story>
-
-<Story name="Dark" asChild globals={{ theme: 'dark' }}>
-  {@render page()}
-</Story>
+{/snippet}
 
 {#snippet header_()}
   <Header>
@@ -158,8 +160,8 @@
   </Header>
 {/snippet}
 
-{#snippet page()}
-  <Layout>
+{#snippet page(args: Partial<ComponentProps<typeof Layout>>)}
+  <Layout {...args}>
     {#snippet header()}
       {@render header_()}
     {/snippet}

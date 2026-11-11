@@ -43,8 +43,10 @@ export const PostArrives = meta.story({
   beforeEach: () => {
     feed = mockRemote(watchNewPosts).mockStream(0);
   },
-  play: async ({ canvas }) => {
-    feed.emit(1);
+  play: async ({ canvas, step }) => {
+    await step('The live query sends 1', async () => {
+      feed.emit(1);
+    });
     await expect(await canvas.findByText(/1 new post since/)).toBeVisible();
   },
 });
@@ -54,9 +56,11 @@ export const PostShown = meta.story({
   beforeEach: () => {
     feed = mockRemote(watchNewPosts).mockStream(1);
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, step }) => {
     await expect(await canvas.findByText(/1 new post since/)).toBeVisible();
-    feed.emit(0);
+    await step('The live query sends 0', async () => {
+      feed.emit(0);
+    });
     await waitFor(() => expect(canvas.queryByRole('button', { name: 'Show' })).toBeNull());
     await expect(canvas.queryByText(/new posts? since/)).toBeNull();
   },
@@ -67,11 +71,13 @@ export const ServerMode = meta.story({
   // After the newest seed post.
   args: { since: Date.parse('2026-10-15T00:00:00Z') },
   beforeEach: seedDatabase,
-  play: async ({ canvas }) => {
+  play: async ({ canvas, step }) => {
+    await step('Someone else publishes a post: a new row in the database', async () => {
+      await db
+        .insert(posts)
+        .values({ title: 'Published elsewhere', body: 'Hello', publishedAt: new Date() });
+    });
     // The real `watchNewPosts` polls the database and sees the new row.
-    await db
-      .insert(posts)
-      .values({ title: 'Published elsewhere', body: 'Hello', publishedAt: new Date() });
     await expect(await canvas.findByText(/1 new post since/, {}, { timeout: 5000 })).toBeVisible();
   },
 });

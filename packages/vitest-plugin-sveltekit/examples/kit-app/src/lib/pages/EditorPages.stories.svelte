@@ -47,13 +47,17 @@
       invalid(issue.title('A post with this title exists'))
     );
   }}
-  play={async ({ canvas }) => {
+  play={async ({ canvas, step }) => {
     // A form that passes the preflight, so the (mocked) handler reports the issue.
-    await userEvent.type(canvas.getByLabelText('Title'), 'A calmer colour palette');
-    await userEvent.type(canvas.getByLabelText('Body'), 'Fewer colours.');
-    await userEvent.type(canvas.getByLabelText('Author'), 'Hydra');
-    await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
-    await expect(await canvas.findByText('A post with this title exists')).toBeVisible();
+    await step('Fill in a form that passes the schema', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'A calmer colour palette');
+      await userEvent.type(canvas.getByLabelText('Body'), 'Fewer colours.');
+      await userEvent.type(canvas.getByLabelText('Author'), 'Hydra');
+    });
+    await step('Publish: the (mocked) handler says the title is taken', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+      await expect(await canvas.findByText('A post with this title exists')).toBeVisible();
+    });
   }}
 />
 
@@ -77,12 +81,16 @@
       invalid(issue.title('A post with this title exists'))
     );
   }}
-  play={async ({ canvas }) => {
-    const title = await canvas.findByLabelText('Title');
-    await userEvent.clear(title);
-    await userEvent.type(title, 'Typography for long reads');
-    await userEvent.click(canvas.getByRole('button', { name: 'Save changes' }));
-    await expect(await canvas.findByText('A post with this title exists')).toBeVisible();
+  play={async ({ canvas, step }) => {
+    await step("Change the title to another post's title", async () => {
+      const title = await canvas.findByLabelText('Title');
+      await userEvent.clear(title);
+      await userEvent.type(title, 'Typography for long reads');
+    });
+    await step('Save: the (mocked) handler says the title is taken', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Save changes' }));
+      await expect(await canvas.findByText('A post with this title exists')).toBeVisible();
+    });
   }}
 />
 
@@ -98,9 +106,10 @@
   name="New post, server mode"
   template={newPostPage}
   beforeEach={seedDatabase}
-  play={async ({ canvas }) => {
-    // The real `publishPost`: its schema reports every missing field.
-    await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+  play={async ({ canvas, step }) => {
+    await step('Publish an empty form: the real schema reports every missing field', async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Publish' }));
+    });
     await expect(await canvas.findByText('Write something first', {}, { timeout: 5000 })).toBeVisible();
     await expect(canvas.getByText('Say who wrote this')).toBeVisible();
   }}

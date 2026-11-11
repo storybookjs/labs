@@ -1,5 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/sveltekit';
+  import type { ComponentProps } from 'svelte';
 
   import Button from './Button.svelte';
   import EmptyState from './EmptyState.svelte';
@@ -18,25 +19,37 @@
   args={{ title: 'No posts yet', description: 'Posts you write show up here.' }}
 />
 
-<Story name="With icon and action" asChild>
-  {@render full()}
-</Story>
+<Story
+  name="With icon and action"
+  args={{ title: 'No drafts', description: 'Start a post and save it as a draft to finish later.' }}
+  template={full}
+/>
 
-<Story name="Long content" asChild>
+<Story
+  name="Long content"
+  args={{
+    title: 'Nothing matches “a-search-term-that-is-unusually-long-and-specific”',
+    description:
+      'Try fewer words, check the spelling, or clear the tag filter to see every post in the blog again.',
+  }}
+  template={narrow}
+/>
+
+<Story
+  name="Dark"
+  args={{ title: 'No drafts', description: 'Start a post and save it as a draft to finish later.' }}
+  template={full}
+  globals={{ theme: 'dark' }}
+/>
+
+{#snippet narrow(args: ComponentProps<typeof EmptyState>)}
   <div style="max-width: 22rem">
-    <EmptyState
-      title="Nothing matches “a-search-term-that-is-unusually-long-and-specific”"
-      description="Try fewer words, check the spelling, or clear the tag filter to see every post in the blog again."
-    />
+    <EmptyState {...args} />
   </div>
-</Story>
+{/snippet}
 
-<Story name="Dark" asChild globals={{ theme: 'dark' }}>
-  {@render full()}
-</Story>
-
-{#snippet full()}
-  <EmptyState title="No drafts" description="Start a post and save it as a draft to finish later.">
+{#snippet full(args: ComponentProps<typeof EmptyState>)}
+  <EmptyState {...args}>
     {#snippet icon()}
       <svg viewBox="0 0 24 24" width="28" height="28">
         <path

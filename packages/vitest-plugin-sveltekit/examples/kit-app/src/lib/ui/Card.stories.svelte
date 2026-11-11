@@ -1,5 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/sveltekit';
+  import type { ComponentProps } from 'svelte';
   import { expect } from 'storybook/test';
 
   import Badge from './Badge.svelte';
@@ -14,14 +15,37 @@
   });
 </script>
 
-<Story name="Default" asChild>
-  <Card>
+<Story name="Default" template={plain} />
+
+<Story name="Header and footer" args={{ as: 'section' }} template={withHeaderAndFooter} />
+
+<Story
+  name="Interactive"
+  args={{ as: 'article', interactive: true }}
+  template={postCard}
+  play={async ({ canvas, userEvent }) => {
+    await userEvent.tab();
+    await expect(canvas.getByRole('link', { name: 'Notes on testing remote functions' })).toHaveFocus();
+  }}
+/>
+
+<Story name="Long content" args={{ as: 'article' }} template={longContent} />
+
+<Story
+  name="Dark"
+  args={{ as: 'article', interactive: true }}
+  template={postCard}
+  globals={{ theme: 'dark' }}
+/>
+
+{#snippet plain(args: Partial<ComponentProps<typeof Card>>)}
+  <Card {...args}>
     <p style="margin: 0">A plain card holds any content on a raised surface.</p>
   </Card>
-</Story>
+{/snippet}
 
-<Story name="Header and footer" asChild>
-  <Card as="section">
+{#snippet withHeaderAndFooter(args: Partial<ComponentProps<typeof Card>>)}
+  <Card {...args}>
     {#snippet header()}
       <strong>Drafts</strong>
     {/snippet}
@@ -30,22 +54,11 @@
       Updated 2 hours ago
     {/snippet}
   </Card>
-</Story>
+{/snippet}
 
-<Story
-  name="Interactive"
-  asChild
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.tab();
-    await expect(canvas.getByRole('link', { name: 'Notes on testing remote functions' })).toHaveFocus();
-  }}
->
-  {@render postCard()}
-</Story>
-
-<Story name="Long content" asChild>
+{#snippet longContent(args: Partial<ComponentProps<typeof Card>>)}
   <div style="max-width: 22rem">
-    <Card as="article">
+    <Card {...args}>
       {#snippet header()}
         <strong>
           A title that goes on for quite a while, with averyveryverylongwordthatneedstobreak
@@ -61,15 +74,11 @@
       {/snippet}
     </Card>
   </div>
-</Story>
+{/snippet}
 
-<Story name="Dark" asChild globals={{ theme: 'dark' }}>
-  {@render postCard()}
-</Story>
-
-{#snippet postCard()}
+{#snippet postCard(args: Partial<ComponentProps<typeof Card>>)}
   <div style="max-width: 26rem">
-    <Card as="article" interactive>
+    <Card {...args}>
       {#snippet header()}
         <Badge tone="success">Published</Badge>
       {/snippet}

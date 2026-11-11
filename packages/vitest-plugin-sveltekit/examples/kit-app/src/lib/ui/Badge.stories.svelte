@@ -1,5 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/sveltekit';
+  import type { ComponentProps } from 'svelte';
 
   import Badge from './Badge.svelte';
 
@@ -26,19 +27,27 @@
 
 <Story name="Danger" args={{ tone: 'danger' }}>Archived</Story>
 
-<Story name="Long content" asChild>
+<Story name="Long content" args={{ tone: 'accent' }} template={longLabel} />
+
+<!-- Every tone at once: there is no single `tone` for Controls to change. -->
+<Story name="All tones" asChild parameters={{ controls: { disable: true } }}>
+  {@render tones()}
+</Story>
+
+<Story
+  name="Dark"
+  asChild
+  globals={{ theme: 'dark' }}
+  parameters={{ controls: { disable: true } }}
+>
+  {@render tones()}
+</Story>
+
+{#snippet longLabel(args: Partial<ComponentProps<typeof Badge>>)}
   <div style="max-width: 12rem">
-    <Badge tone="accent">A very long badge label that does not fit</Badge>
+    <Badge {...args}>A very long badge label that does not fit</Badge>
   </div>
-</Story>
-
-<Story name="All tones" asChild>
-  {@render tones()}
-</Story>
-
-<Story name="Dark" asChild globals={{ theme: 'dark' }}>
-  {@render tones()}
-</Story>
+{/snippet}
 
 {#snippet tones()}
   <div style="display: flex; flex-wrap: wrap; gap: var(--space-2)">

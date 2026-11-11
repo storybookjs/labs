@@ -24,34 +24,43 @@
 
 <Story
   name="Create and refresh"
-  play={async ({ canvas, userEvent }) => {
+  play={async ({ canvas, userEvent, step }) => {
     await expect(await canvas.findByRole('link', { name: 'First post' })).toBeVisible();
-    await userEvent.type(canvas.getByLabelText('Title'), 'Second post');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
-
-    await expect(await canvas.findByRole('link', { name: 'Second post' })).toBeVisible();
-    await expect(await db.$count(posts)).toBe(2);
+    await step('Create a post: the real handler inserts it', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'Second post');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
+    await step('The list refreshes, and the database has both posts', async () => {
+      await expect(await canvas.findByRole('link', { name: 'Second post' })).toBeVisible();
+      await expect(await db.$count(posts)).toBe(2);
+    });
   }}
 />
 
 <Story
   name="Schema issue"
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(await canvas.findByLabelText('Title'), '   ');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create with a blank title: the real schema rejects it', async () => {
+      await userEvent.type(await canvas.findByLabelText('Title'), '   ');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
     await expect(await canvas.findByRole('alert')).toHaveTextContent('Title is required');
   }}
 />
 
 <Story
   name="Handler issue"
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(await canvas.findByLabelText('Title'), 'First post');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
-    await expect(await canvas.findByRole('alert')).toHaveTextContent(
-      'A post with this title exists'
-    );
-    await expect(await db.$count(posts)).toBe(1);
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create a post with the title of the seeded post', async () => {
+      await userEvent.type(await canvas.findByLabelText('Title'), 'First post');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
+    await step('The real handler finds the title and calls invalid(): no insert', async () => {
+      await expect(await canvas.findByRole('alert')).toHaveTextContent(
+        'A post with this title exists'
+      );
+      await expect(await db.$count(posts)).toBe(1);
+    });
   }}
 />
 
@@ -60,9 +69,11 @@
   beforeEach={() => {
     mockRemote(createPost).mockPending();
   }}
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(await canvas.findByLabelText('Title'), 'Slow');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create: the (mocked) handler never answers', async () => {
+      await userEvent.type(await canvas.findByLabelText('Title'), 'Slow');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Create' })).toBeDisabled());
   }}
 />

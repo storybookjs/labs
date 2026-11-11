@@ -74,7 +74,8 @@
   }}>Publish</Story
 >
 
-<Story name="All variants" asChild>
+<!-- Every variant at once: there is no single set of props for Controls to change. -->
+<Story name="All variants" asChild parameters={{ controls: { disable: true } }}>
   {@render variants()}
 </Story>
 
@@ -82,6 +83,7 @@
   name="Dark"
   asChild
   globals={{ theme: 'dark' }}
+  parameters={{ controls: { disable: true } }}
   play={async () => {
     await expect(document.documentElement.dataset.theme).toBe('dark');
   }}
