@@ -20,6 +20,7 @@ import {
 import { REMOTE_MODULE, resolveModule } from './node/files.ts';
 import { hash } from './node/hash.ts';
 import { formatServerBuildReport, serverBuildReport } from './node/report.ts';
+import { resolveIdFilter } from './node/resolve-filter.ts';
 import { isProjectScript, isRemoteModule, reachesRemoteModule } from './node/server-context.ts';
 import { createServerModule, SERVER_QUERY } from './node/server-module.ts';
 import { type ServerOption, serverFilter } from './node/server-option.ts';
@@ -197,16 +198,8 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
     },
 
     resolveId: {
-      // Server mode looks at every import of server code, so it has no filter.
-      ...(!options.server && {
-        filter: {
-          id: [
-            /^(virtual:vitest-plugin-sveltekit\/(kit|app)|node:async_hooks|#app\/env\/server|@storybook\/sveltekit\/.*)$/,
-            // Node: imports of remote files (`$lib/posts.remote`, `./a.remote.ts`, ...).
-            /remote/,
-          ],
-        },
-      }),
+      // Server mode filters by importer too, in builds only (see `resolveIdFilter`).
+      filter: resolveIdFilter(!!options.server),
       async handler(id, importer, resolveOptions) {
         if (!enabled) return;
 
