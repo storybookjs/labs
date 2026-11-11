@@ -1,5 +1,5 @@
 // Mutations that overlap, and state that must not leak from one test to the next.
-import { type RemoteMock, remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { type RemoteMock, mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { invalid } from '@sveltejs/kit';
 import { beforeEach, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
@@ -33,13 +33,13 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
-  remote(getStats).mockImplementation(async (id) => ({ views: id * 100, likes: id }));
+  mockRemote(getStats).mockImplementation(async (id) => ({ views: id * 100, likes: id }));
 });
 
 test('two commands in flight both refresh the query they update', async () => {
   let current = [...posts];
-  remote(getPosts).mockImplementation(async () => current);
-  remote(deletePost).mockImplementation(async (id) => {
+  mockRemote(getPosts).mockImplementation(async () => current);
+  mockRemote(deletePost).mockImplementation(async (id) => {
     await delay(id === 1 ? 400 : 50);
     current = current.filter((post) => post.id !== id);
   });
@@ -57,9 +57,9 @@ test('two commands in flight both refresh the query they update', async () => {
 
 test('a live stream emitting during a slow mutation does not break the refresh', async () => {
   let current = [...posts];
-  remote(getPosts).mockImplementation(async () => current);
-  const feed = remote(getPostCount).mockStream(3);
-  remote(deletePost).mockImplementation(async (id) => {
+  mockRemote(getPosts).mockImplementation(async () => current);
+  const feed = mockRemote(getPostCount).mockStream(3);
+  mockRemote(deletePost).mockImplementation(async (id) => {
     await delay(200);
     current = current.filter((post) => post.id !== id);
     feed.emit(current.length);
@@ -78,7 +78,7 @@ test('a live stream emitting during a slow mutation does not break the refresh',
 });
 
 test('a form submission that never settles', async () => {
-  remote(createPost).mockPending();
+  mockRemote(createPost).mockPending();
   const screen = await render(PostForm);
   await screen.getByLabelText('Title').fill('Slow');
   await screen.getByRole('button', { name: 'Create' }).click();
@@ -93,8 +93,8 @@ test('the next test starts with an idle form', async () => {
 });
 
 test('a command that never settles', async () => {
-  remote(getPosts).mockResolvedValue(posts);
-  remote(deletePost).mockPending();
+  mockRemote(getPosts).mockResolvedValue(posts);
+  mockRemote(deletePost).mockPending();
   const screen = await render(PostList);
   await screen.getByRole('button', { name: 'Delete First post' }).click();
   expect(deletePost.pending).toBe(1);
@@ -108,15 +108,15 @@ test('the next test starts with an idle command', async () => {
 // reset must not race with that write.
 for (let i = 0; i < 8; i++) {
   test(`prerender pair ${i}: first test`, async () => {
-    remote(getPost).mockImplementation(async (id) => ({ id, title: `A${i}`, body: '' }));
+    mockRemote(getPost).mockImplementation(async (id) => ({ id, title: `A${i}`, body: '' }));
     const screen = await render(PostDetail, { id: 7 });
     await expect.element(screen.getByRole('heading', { name: `A${i}` })).toBeVisible();
   });
   test(`prerender pair ${i}: second test does not see the first`, async () => {
-    remote(getPost).mockImplementation(async (id) => ({ id, title: `B${i}`, body: '' }));
+    mockRemote(getPost).mockImplementation(async (id) => ({ id, title: `B${i}`, body: '' }));
     const screen = await render(PostDetail, { id: 7 });
     await expect.element(screen.getByRole('heading', { name: `B${i}` })).toBeVisible();
-    expect(remote(getPost)).toHaveBeenCalledTimes(1);
+    expect(mockRemote(getPost)).toHaveBeenCalledTimes(1);
   });
 }
 
@@ -132,7 +132,7 @@ const lateQuery = deferred<typeof posts>();
 const answered = { form: deferred<void>(), invalid: deferred<void>(), command: deferred<void>() };
 
 async function submitLate(answer: typeof lateForm | typeof lateInvalid, done: () => void) {
-  remote(createPost).mockImplementation(async (_data, issue) => {
+  mockRemote(createPost).mockImplementation(async (_data, issue) => {
     try {
       return (await answer.promise)(issue);
     } finally {
@@ -147,11 +147,11 @@ async function submitLate(answer: typeof lateForm | typeof lateInvalid, done: ()
 
 /** Renders a list and a form, then waits until `late` answered and the page had time to react. */
 async function renderNextTest(answer: () => void, done: Promise<void>) {
-  remote(getPosts).mockResolvedValue(posts);
+  mockRemote(getPosts).mockResolvedValue(posts);
   const list = await render(PostList);
   const form = await render(PostForm);
   await expect.element(list.getByRole('link', { name: 'First post' })).toBeVisible();
-  expect(remote(getPosts)).toHaveBeenCalledTimes(1);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(1);
 
   answer();
   await done;
@@ -165,15 +165,15 @@ async function expectUntouched({ list, form }: Awaited<ReturnType<typeof renderN
   expect(form.getByRole('alert').query()).toBeNull();
   expect(createPost.pending).toBe(0);
   await expect.element(list.getByRole('link', { name: 'First post' })).toBeVisible();
-  expect(remote(getPosts)).toHaveBeenCalledTimes(1);
-  expect(remote(createPost)).not.toHaveBeenCalled();
-  expect(remote(deletePost)).not.toHaveBeenCalled();
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(1);
+  expect(mockRemote(createPost)).not.toHaveBeenCalled();
+  expect(mockRemote(deletePost)).not.toHaveBeenCalled();
 }
 
 test('late form result, 1/2: the submission is still in flight when the test ends', async () => {
   await submitLate(lateForm, () => answered.form.resolve());
   // The request reaches the mock while this test runs, so this mock answers it.
-  await expect.poll(() => remote(createPost).mock.calls.length).toBe(1);
+  await expect.poll(() => mockRemote(createPost).mock.calls.length).toBe(1);
 });
 
 test('late form result, 2/2: the next test keeps its form and queries', async () => {
@@ -187,7 +187,7 @@ test('late form result, 2/2: the next test keeps its form and queries', async ()
 
 test('late form issues, 1/2: the submission is still in flight when the test ends', async () => {
   await submitLate(lateInvalid, () => answered.invalid.resolve());
-  await expect.poll(() => remote(createPost).mock.calls.length).toBe(1);
+  await expect.poll(() => mockRemote(createPost).mock.calls.length).toBe(1);
 });
 
 test('late form issues, 2/2: the next test keeps its form and queries', async () => {
@@ -200,8 +200,8 @@ test('late form issues, 2/2: the next test keeps its form and queries', async ()
 });
 
 test('late command refreshes, 1/2: the command is still in flight when the test ends', async () => {
-  remote(getPosts).mockResolvedValue(posts);
-  remote(deletePost).mockImplementation(async () => {
+  mockRemote(getPosts).mockResolvedValue(posts);
+  mockRemote(deletePost).mockImplementation(async () => {
     await lateCommand.promise;
     answered.command.resolve();
   });
@@ -209,7 +209,7 @@ test('late command refreshes, 1/2: the command is still in flight when the test 
   // The click sends `getPosts` along as a query to refresh (`.updates(getPosts(order))`).
   await screen.getByRole('button', { name: 'Delete First post' }).click();
   expect(deletePost.pending).toBe(1);
-  await expect.poll(() => remote(deletePost).mock.calls.length).toBe(1);
+  await expect.poll(() => mockRemote(deletePost).mock.calls.length).toBe(1);
 });
 
 test('late command refreshes, 2/2: the queries of the next test do not refresh', async () => {
@@ -219,14 +219,14 @@ test('late command refreshes, 2/2: the queries of the next test do not refresh',
 });
 
 test('late query, 1/2: the query is still loading when the test ends', async () => {
-  remote(getPosts).mockImplementation(() => lateQuery.promise);
+  mockRemote(getPosts).mockImplementation(() => lateQuery.promise);
   const screen = await render(PostList);
   await expect.element(screen.getByText('Loading posts…')).toBeVisible();
-  await expect.poll(() => remote(getPosts).mock.calls.length).toBe(1);
+  await expect.poll(() => mockRemote(getPosts).mock.calls.length).toBe(1);
 });
 
 test('late query, 2/2: the next test does not see its data', async () => {
-  remote(getPosts).mockResolvedValue([{ id: 5, title: 'Fresh post', body: '' }]);
+  mockRemote(getPosts).mockResolvedValue([{ id: 5, title: 'Fresh post', body: '' }]);
   const screen = await render(PostList);
   await expect.element(screen.getByRole('link', { name: 'Fresh post' })).toBeVisible();
 
@@ -234,19 +234,19 @@ test('late query, 2/2: the next test does not see its data', async () => {
   await delay(100);
   expect(screen.getByText('Stale post').query()).toBeNull();
   await expect.element(screen.getByRole('link', { name: 'Fresh post' })).toBeVisible();
-  expect(remote(getPosts)).toHaveBeenCalledTimes(1);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(1);
 });
 
 test('request sent as the test ends, 1/2: the query has not reached its mock yet', async () => {
-  remote(getPosts).mockResolvedValue(posts);
+  mockRemote(getPosts).mockResolvedValue(posts);
   await render(PostList);
-  expect(remote(getPosts)).not.toHaveBeenCalled();
+  expect(mockRemote(getPosts)).not.toHaveBeenCalled();
 });
 
 test('request sent as the test ends, 2/2: the spies of the next test do not answer it', async () => {
-  remote(getPosts).mockResolvedValue([{ id: 5, title: 'Fresh post', body: '' }]);
+  mockRemote(getPosts).mockResolvedValue([{ id: 5, title: 'Fresh post', body: '' }]);
   const screen = await render(PostList);
   await expect.element(screen.getByRole('link', { name: 'Fresh post' })).toBeVisible();
   await delay(100);
-  expect(remote(getPosts)).toHaveBeenCalledTimes(1);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(1);
 });

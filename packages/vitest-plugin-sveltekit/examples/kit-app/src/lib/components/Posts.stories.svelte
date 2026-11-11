@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+  import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
   import { defineMeta } from '@storybook/sveltekit';
   import { redirect } from '@sveltejs/kit';
   import { expect, waitFor } from 'storybook/test';
@@ -13,7 +13,7 @@
     title: 'Posts',
     component: Posts,
     beforeEach: () => {
-      remote(getStats).mockResolvedValue({ views: 1, likes: 0 });
+      mockRemote(getStats).mockResolvedValue({ views: 1, likes: 0 });
     },
   });
 
@@ -31,8 +31,8 @@
   name="Refresh after submit"
   beforeEach={() => {
     const posts: Post[] = [{ id: 1, title: 'First post', body: '' }];
-    remote(getPosts).mockImplementation(async () => [...posts]);
-    remote(createPost).mockImplementation(async ({ title, body }) => {
+    mockRemote(getPosts).mockImplementation(async () => [...posts]);
+    mockRemote(createPost).mockImplementation(async ({ title, body }) => {
       const post = { id: posts.length + 1, title, body: body ?? '' };
       posts.push(post);
       return post;
@@ -44,15 +44,15 @@
     await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
     // A successful form submission refreshes the queries on the page.
     await expect(await canvas.findByRole('link', { name: 'Second post' })).toBeVisible();
-    await expect(remote(getPosts)).toHaveBeenCalledTimes(2);
+    await expect(mockRemote(getPosts)).toHaveBeenCalledTimes(2);
   }}
 />
 
 <Story
   name="Redirect"
   beforeEach={() => {
-    remote(getPosts).mockResolvedValue([]);
-    remote(createPost).mockImplementation(() => redirect(303, '/posts/42'));
+    mockRemote(getPosts).mockResolvedValue([]);
+    mockRemote(createPost).mockImplementation(() => redirect(303, '/posts/42'));
     return recordNavigations();
   }}
   play={async ({ canvas, userEvent }) => {

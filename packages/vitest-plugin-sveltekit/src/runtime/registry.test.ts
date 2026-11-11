@@ -54,9 +54,9 @@ describe('registry', () => {
     expect(hasRemoteModule('nope')).toBe(false);
   });
 
-  it('explains what remote() expects', () => {
-    expect(() => getRemoteEntry(() => {})).toThrow(/remote\(\) expects a remote function/);
-    expect(() => getRemoteEntry(undefined)).toThrow(/remote\(\) expects a remote function/);
+  it('explains what mockRemote() expects', () => {
+    expect(() => getRemoteEntry(() => {})).toThrow(/mockRemote\(\) expects a remote function/);
+    expect(() => getRemoteEntry(undefined)).toThrow(/mockRemote\(\) expects a remote function/);
   });
 
   it('keeps the spy when a module registers again (HMR)', () => {
@@ -75,7 +75,7 @@ describe('registry', () => {
     expect(thrownBody(() => getRemoteEntry(getPosts).spy('x'))).toEqual({
       status: 500,
       message:
-        '`getPosts` has no mock. Call `remote(getPosts).mockResolvedValue(...)` in `beforeEach`.',
+        '`getPosts` has no mock. Call `mockRemote(getPosts).mockResolvedValue(...)` in `beforeEach`.',
     });
     expect(getRemoteEntry(createPost).spy({})).toBeUndefined();
   });

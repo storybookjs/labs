@@ -1,4 +1,4 @@
-import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { invalid } from '@sveltejs/kit';
 import { beforeEach, expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
@@ -8,7 +8,7 @@ import { createPost } from '#lib/posts.remote.ts';
 import PostForm from './PostForm.svelte';
 
 beforeEach(() => {
-  remote(createPost).mockImplementation(async (data, issue) => {
+  mockRemote(createPost).mockImplementation(async (data, issue) => {
     if (data.title.length < 3) invalid(issue.title('Title must be at least 3 characters'));
     return { id: 3, title: data.title, body: data.body ?? '' };
   });
@@ -23,7 +23,7 @@ test('shows the issue the form handler reports', async () => {
   await expect
     .element(screen.getByRole('alert'))
     .toHaveTextContent('Title must be at least 3 characters');
-  expect(remote(createPost)).toHaveBeenCalledWith(
+  expect(mockRemote(createPost)).toHaveBeenCalledWith(
     expect.objectContaining({ title: 'Hi' }),
     expect.anything()
   );

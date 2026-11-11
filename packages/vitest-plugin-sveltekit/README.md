@@ -4,7 +4,7 @@ Render components that use [SvelteKit remote functions](https://svelte.dev/docs/
 in Storybook and in Vitest browser mode, with each remote function mocked per story or test.
 
 ```ts
-remote(getPosts).mockResolvedValue([{ id: 1, title: 'Hello' }]);
+mockRemote(getPosts).mockResolvedValue([{ id: 1, title: 'Hello' }]);
 ```
 
 The component runs SvelteKit's own client code for remote functions. Its requests go to SvelteKit's
@@ -139,32 +139,32 @@ The package handles remote functions. A component often needs more from SvelteKi
 
   ```ts
   await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
-  await waitFor(() => expect(remote(createPost)).toHaveBeenCalled());
+  await waitFor(() => expect(mockRemote(createPost)).toHaveBeenCalled());
   ```
 
 ## Mock a remote function
 
-`remote(fn)` returns the spy behind a remote function. Import the remote function from your
+`mockRemote(fn)` returns the spy behind a remote function. Import the remote function from your
 `.remote.ts` file, the same import the component uses. The spy is typed from the remote function.
 
 ```ts
-import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { getPosts } from '#lib/posts.remote';
 ```
 
 In Storybook the spy is an `fn()` from `storybook/test`, so its calls show in the Actions panel; in
 Vitest it is a `vi.fn()`. Use it in `beforeEach` (or at the start of a test), and assert on
-it with `expect(remote(getPosts)).toHaveBeenCalledWith('newest')`.
+it with `expect(mockRemote(getPosts)).toHaveBeenCalledWith('newest')`.
 
-| You want                          | Write                                                                    |
-| --------------------------------- | ------------------------------------------------------------------------ |
-| Data                              | `remote(getPosts).mockResolvedValue(posts)`                              |
-| Data that depends on the argument | `remote(getPost).mockImplementation(async (id) => posts[id])`            |
-| The pending state                 | `remote(getPosts).mockPending()` (never settles)                         |
-| An HTTP error                     | `remote(getPosts).mockImplementation(() => error(404, 'Not found'))`     |
-| The same, as a value              | `remote(getPosts).mockRejectedValue(httpError(404, 'Not found'))`        |
-| A redirect                        | `remote(createPost).mockImplementation(() => redirect(303, '/posts/1'))` |
-| A form validation issue           | see below                                                                |
+| You want                          | Write                                                                        |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| Data                              | `mockRemote(getPosts).mockResolvedValue(posts)`                              |
+| Data that depends on the argument | `mockRemote(getPost).mockImplementation(async (id) => posts[id])`            |
+| The pending state                 | `mockRemote(getPosts).mockPending()` (never settles)                         |
+| An HTTP error                     | `mockRemote(getPosts).mockImplementation(() => error(404, 'Not found'))`     |
+| The same, as a value              | `mockRemote(getPosts).mockRejectedValue(httpError(404, 'Not found'))`        |
+| A redirect                        | `mockRemote(createPost).mockImplementation(() => redirect(303, '/posts/1'))` |
+| A form validation issue           | see below                                                                    |
 
 `error`, `redirect` and `invalid` come from `@sveltejs/kit`. They throw at once, so use them inside
 `mockImplementation`. `httpError(status, message)` from `./remote.mock` returns the error instead,
@@ -190,14 +190,14 @@ output type.
 **`query` and `prerender`**: the spy gets the argument: `(arg) => result`.
 
 **`query.batch`**: the spy is called once per argument, `(arg) => result`, like a `query`, so
-`remote(getStats).mock.calls` has one entry per argument.
+`mockRemote(getStats).mock.calls` has one entry per argument.
 SvelteKit still sends one request for the whole batch.
 
 **`form`**: the spy gets `(data, issue)`: `data` is the submitted form data as an object (schema
 input), and `issue` reports issues with `invalid()`, as in the server handler:
 
 ```ts
-remote(createPost).mockImplementation(async (data, issue) => {
+mockRemote(createPost).mockImplementation(async (data, issue) => {
   if (data.title.length < 3) invalid(issue.title('Too short'));
   return { id: 2, title: data.title };
 });
@@ -216,21 +216,21 @@ The spy returns what your server handler returns. Three ways:
 
 ```ts
 // An async generator
-remote(getPrices).mockImplementation(async function* () {
+mockRemote(getPrices).mockImplementation(async function* () {
   yield 1;
   await new Promise((resolve) => setTimeout(resolve, 500));
   yield 2;
 });
 
 // A finite array: emits each value, then the stream is done
-remote(getPrices).mockReturnValue([1, 2]);
+mockRemote(getPrices).mockReturnValue([1, 2]);
 
 // A stream that the story or test drives
 let feed: RemoteStream<number>;
 
 export const Live = meta.story({
   beforeEach: () => {
-    feed = remote(getPrices).mockStream(1);
+    feed = mockRemote(getPrices).mockStream(1);
   },
   play: async ({ canvas }) => {
     await expect(await canvas.findByText('1')).toBeVisible();
@@ -269,7 +269,7 @@ resolves `undefined`.
   `await` while other requests run (two commands in flight, a live stream emitting) can get another
   request's event. The package itself reads the store only before the mock's first `await`.
 - **No custom `transport` types.** Values are serialised with devalue's built-in types only.
-- **`.for(id)` forms.** `remote()` takes the form itself, not an instance from `.for(id)`. Both
+- **`.for(id)` forms.** `mockRemote()` takes the form itself, not an instance from `.for(id)`. Both
   instances use the same mock.
 
 ## SvelteKit patch

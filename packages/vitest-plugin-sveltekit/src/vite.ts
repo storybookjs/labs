@@ -36,7 +36,7 @@ const runtimeFile = (name: string) => path.join(distDir, 'internal', `${name}.mj
 /**
  * Lets components that use SvelteKit remote functions render in Storybook and in Vitest browser
  * mode. Remote modules become SvelteKit's client stubs, and their requests are answered in the
- * page by spies that stories and tests control with `remote()` from
+ * page by spies that stories and tests control with `mockRemote()` from
  * `@storybookjs/vitest-plugin-sveltekit/remote.mock`.
  */
 export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}): Plugin {

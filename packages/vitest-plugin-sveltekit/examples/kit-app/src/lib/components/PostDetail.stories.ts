@@ -1,4 +1,4 @@
-import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { error } from '@sveltejs/kit';
 import { expect } from 'storybook/test';
 
@@ -11,7 +11,7 @@ const meta = preview.meta({ title: 'PostDetail', component: PostDetail, args: { 
 
 export const Prerendered = meta.story({
   beforeEach: () => {
-    remote(getPost).mockImplementation(async (id) => ({
+    mockRemote(getPost).mockImplementation(async (id) => ({
       id,
       title: `Post ${id}`,
       body: 'Rendered from a prerender function.',
@@ -19,13 +19,13 @@ export const Prerendered = meta.story({
   },
   play: async ({ canvas }) => {
     await expect(await canvas.findByRole('heading', { name: 'Post 7' })).toBeVisible();
-    await expect(remote(getPost)).toHaveBeenCalledWith(7);
+    await expect(mockRemote(getPost)).toHaveBeenCalledWith(7);
   },
 });
 
 export const NotFound = meta.story({
   beforeEach: () => {
-    remote(getPost).mockImplementation((id) => error(404, `Post ${id} not found`));
+    mockRemote(getPost).mockImplementation((id) => error(404, `Post ${id} not found`));
   },
   play: async ({ canvas }) => {
     await expect(await canvas.findByRole('alert')).toHaveTextContent('Post 7 not found');

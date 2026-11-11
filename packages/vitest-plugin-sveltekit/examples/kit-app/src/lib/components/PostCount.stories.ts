@@ -1,6 +1,6 @@
 import {
   httpError,
-  remote,
+  mockRemote,
   type RemoteStream,
 } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { expect } from 'storybook/test';
@@ -14,7 +14,7 @@ const meta = preview.meta({ title: 'PostCount', component: PostCount });
 
 export const LiveGenerator = meta.story({
   beforeEach: () => {
-    remote(getPostCount).mockImplementation(async function* () {
+    mockRemote(getPostCount).mockImplementation(async function* () {
       yield 1;
       await new Promise((resolve) => setTimeout(resolve, 200));
       yield 2;
@@ -29,7 +29,7 @@ export const LiveGenerator = meta.story({
 
 export const LiveArray = meta.story({
   beforeEach: () => {
-    remote(getPostCount).mockReturnValue([3, 4]);
+    mockRemote(getPostCount).mockReturnValue([3, 4]);
   },
   play: async ({ canvas }) => {
     await expect(await canvas.findByText('4')).toBeVisible();
@@ -41,7 +41,7 @@ let feed: RemoteStream<number>;
 
 export const LiveStream = meta.story({
   beforeEach: () => {
-    feed = remote(getPostCount).mockStream(5);
+    feed = mockRemote(getPostCount).mockStream(5);
   },
   play: async ({ canvas }) => {
     await expect(await canvas.findByText('5')).toBeVisible();
@@ -57,7 +57,7 @@ export const LiveStream = meta.story({
 
 export const LiveStreamOpen = meta.story({
   beforeEach: () => {
-    remote(getPostCount).mockStream(7);
+    mockRemote(getPostCount).mockStream(7);
   },
   // Ends with the stream still open.
   play: async ({ canvas }) => {

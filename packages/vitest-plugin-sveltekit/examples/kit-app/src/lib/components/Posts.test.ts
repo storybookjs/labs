@@ -1,5 +1,5 @@
 import { goto } from '@storybookjs/vitest-plugin-sveltekit/vitest';
-import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { redirect } from '@sveltejs/kit';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
@@ -10,13 +10,13 @@ import type { Post } from '#lib/server/db.ts';
 import Posts from './Posts.svelte';
 
 beforeEach(() => {
-  remote(getStats).mockResolvedValue({ views: 1, likes: 0 });
+  mockRemote(getStats).mockResolvedValue({ views: 1, likes: 0 });
 });
 
 test('refreshes the queries after a successful submission', async () => {
   const posts: Post[] = [{ id: 1, title: 'First post', body: '' }];
-  remote(getPosts).mockImplementation(async () => [...posts]);
-  remote(createPost).mockImplementation(async ({ title, body }) => {
+  mockRemote(getPosts).mockImplementation(async () => [...posts]);
+  mockRemote(createPost).mockImplementation(async ({ title, body }) => {
     const post = { id: posts.length + 1, title, body: body ?? '' };
     posts.push(post);
     return post;
@@ -28,12 +28,12 @@ test('refreshes the queries after a successful submission', async () => {
   await screen.getByRole('button', { name: 'Create' }).click();
 
   await expect.element(screen.getByRole('link', { name: 'Second post' })).toBeVisible();
-  expect(remote(getPosts)).toHaveBeenCalledTimes(2);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(2);
 });
 
 test('navigates when the form handler redirects', async () => {
-  remote(getPosts).mockResolvedValue([]);
-  remote(createPost).mockImplementation(() => redirect(303, '/posts/42'));
+  mockRemote(getPosts).mockResolvedValue([]);
+  mockRemote(createPost).mockImplementation(() => redirect(303, '/posts/42'));
   const screen = await render(Posts);
 
   await screen.getByLabelText('Title').fill('Go somewhere');

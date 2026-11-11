@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+  import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
   import { defineMeta } from '@storybook/sveltekit';
   import { invalid } from '@sveltejs/kit';
   import { expect, waitFor } from 'storybook/test';
@@ -12,7 +12,7 @@
     title: 'PostForm',
     component: PostForm,
     beforeEach: () => {
-      remote(createPost).mockImplementation(async (data, issue) => {
+      mockRemote(createPost).mockImplementation(async (data, issue) => {
         if (data.title.length < 3) invalid(issue.title('Title must be at least 3 characters'));
         return { id: 3, title: data.title, body: data.body ?? '' };
       });
@@ -28,7 +28,7 @@
     await expect(await canvas.findByRole('alert')).toHaveTextContent(
       'Title must be at least 3 characters'
     );
-    await expect(remote(createPost)).toHaveBeenCalledWith(
+    await expect(mockRemote(createPost)).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Hi' }),
       expect.anything()
     );
@@ -47,7 +47,7 @@
 <Story
   name="Submitting"
   beforeEach={() => {
-    remote(createPost).mockPending();
+    mockRemote(createPost).mockPending();
   }}
   play={async ({ canvas, userEvent }) => {
     await userEvent.type(canvas.getByLabelText('Title'), 'Slow');

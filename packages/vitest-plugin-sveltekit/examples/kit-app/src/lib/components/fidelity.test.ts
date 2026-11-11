@@ -1,7 +1,7 @@
 // What a component sees matches SvelteKit: serialisation, errors, redirects, caching and live
 // streams, for mocked remote functions.
 import { goto } from '@storybookjs/vitest-plugin-sveltekit/vitest';
-import { remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { error, redirect } from '@sveltejs/kit';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
@@ -33,7 +33,7 @@ const anyPosts = getPosts as unknown as (arg: unknown) => Promise<unknown> & {
 };
 
 beforeEach(() => {
-  remote(getStats).mockImplementation(async (id) => ({ views: id * 100, likes: id }));
+  mockRemote(getStats).mockImplementation(async (id) => ({ views: id * 100, likes: id }));
 });
 
 // --- Fidelity --------------------------------------------------------------------------
@@ -48,24 +48,24 @@ test('arguments and results survive devalue in every shape', async () => {
     missing: undefined,
     nested: { inner: { list: [new Date(1), 2n] } },
   };
-  remote(getPosts).mockImplementation(async (received) => ({ echo: received }) as never);
+  mockRemote(getPosts).mockImplementation(async (received) => ({ echo: received }) as never);
 
   const result = (await anyPosts(arg)) as { echo: unknown };
 
-  expect(remote(getPosts)).toHaveBeenCalledWith(arg);
+  expect(mockRemote(getPosts)).toHaveBeenCalledWith(arg);
   expect(result.echo).toEqual(arg);
 });
 
 test('a query without an argument calls the spy with undefined', async () => {
-  remote(getPosts).mockResolvedValue([]);
+  mockRemote(getPosts).mockResolvedValue([]);
   await getPosts();
-  expect(remote(getPosts)).toHaveBeenCalledWith(undefined);
-  expect(remote(getPosts).mock.calls[0]).toHaveLength(1);
+  expect(mockRemote(getPosts)).toHaveBeenCalledWith(undefined);
+  expect(mockRemote(getPosts).mock.calls[0]).toHaveLength(1);
 });
 
 test('a plain Error in a query mock is an Internal Error for the component', async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  remote(getPosts).mockImplementation(() => {
+  mockRemote(getPosts).mockImplementation(() => {
     throw new Error('boom');
   });
   const screen = await render(PostList);
@@ -73,13 +73,13 @@ test('a plain Error in a query mock is an Internal Error for the component', asy
 });
 
 test('error() in a command rejects the command promise with the status and body', async () => {
-  remote(deletePost).mockImplementation(() => error(409, 'Taken'));
+  mockRemote(deletePost).mockImplementation(() => error(409, 'Taken'));
   await expect(deletePost(1)).rejects.toMatchObject({ status: 409, body: { message: 'Taken' } });
 });
 
 test('a rejected plain Error in a command is an Internal Error', async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  remote(deletePost).mockRejectedValue(new Error('boom'));
+  mockRemote(deletePost).mockRejectedValue(new Error('boom'));
   await expect(deletePost(1)).rejects.toMatchObject({
     status: 500,
     body: { message: 'Internal Error' },
@@ -87,7 +87,7 @@ test('a rejected plain Error in a command is an Internal Error', async () => {
 });
 
 test('error() in a form handler leaves the form idle, like a handled error', async () => {
-  remote(createPost).mockImplementation(() => error(500, 'nope'));
+  mockRemote(createPost).mockImplementation(() => error(500, 'nope'));
   const screen = await render(PostForm);
   await screen.getByLabelText('Title').fill('Hello');
   await screen.getByRole('button', { name: 'Create' }).click();
@@ -97,25 +97,25 @@ test('error() in a form handler leaves the form idle, like a handled error', asy
 });
 
 test('one failing batch entry fails only that entry', async () => {
-  remote(getPosts).mockResolvedValue(posts);
-  remote(getStats).mockImplementation(async (id) => {
+  mockRemote(getPosts).mockResolvedValue(posts);
+  mockRemote(getStats).mockImplementation(async (id) => {
     if (id === 2) error(404, 'No stats for 2');
     return { views: id, likes: id };
   });
   await expect(getStats(1)).resolves.toEqual({ views: 1, likes: 1 });
   await expect(getStats(2)).rejects.toMatchObject({ status: 404 });
   await expect(getStats(3)).resolves.toEqual({ views: 3, likes: 3 });
-  expect(remote(getStats)).toHaveBeenCalledTimes(3);
+  expect(mockRemote(getStats)).toHaveBeenCalledTimes(3);
 });
 
 test('redirect() in a query navigates (relative)', async () => {
-  remote(getPosts).mockImplementation(() => redirect(303, '/elsewhere'));
+  mockRemote(getPosts).mockImplementation(() => redirect(303, '/elsewhere'));
   await getPosts();
   expect(goto).toHaveBeenCalledWith('/elsewhere', undefined);
 });
 
 test('redirect() in a query navigates (absolute, external: true as SvelteKit requires)', async () => {
-  remote(getPosts).mockImplementation(() =>
+  mockRemote(getPosts).mockImplementation(() =>
     redirect(303, 'https://example.com/x', { external: true } as never)
   );
   await getPosts();
@@ -124,24 +124,24 @@ test('redirect() in a query navigates (absolute, external: true as SvelteKit req
 
 test('an external redirect without `external: true` is a 500, as on a real server', async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  remote(getPosts).mockImplementation(() => redirect(303, 'https://example.com/x'));
+  mockRemote(getPosts).mockImplementation(() => redirect(303, 'https://example.com/x'));
   await expect(getPosts()).rejects.toMatchObject({ status: 500 });
   expect(goto).not.toHaveBeenCalled();
 });
 
 test('redirect() in a prerender navigates', async () => {
-  remote(getPost).mockImplementation(() => redirect(303, '/post-moved'));
+  mockRemote(getPost).mockImplementation(() => redirect(303, '/post-moved'));
   await getPost(1);
   expect(goto).toHaveBeenCalledWith('/post-moved', undefined);
 });
 
 test('redirect() in a command is an error, as in SvelteKit', async () => {
-  remote(deletePost).mockImplementation(() => redirect(303, '/x'));
+  mockRemote(deletePost).mockImplementation(() => redirect(303, '/x'));
   await expect(deletePost(1)).rejects.toThrow(/redirect/i);
 });
 
 test('redirect() from a live stream navigates', async () => {
-  remote(getPostCount).mockImplementation(async function* () {
+  mockRemote(getPostCount).mockImplementation(async function* () {
     yield 1;
     redirect(303, '/live-moved');
   });
@@ -156,21 +156,21 @@ test('redirect() from a live stream navigates', async () => {
 // --- Caching ---------------------------------------------------------------------------
 
 test('the same argument from two components hits the spy once', async () => {
-  remote(getPosts).mockResolvedValue(posts);
+  mockRemote(getPosts).mockResolvedValue(posts);
   await render(PostList, { order: 'newest' });
   const screen = await render(PostList, { order: 'newest' });
   await expect.element(screen.getByRole('link', { name: 'First post' }).nth(1)).toBeVisible();
   await expect.element(screen.getByTestId('stats-3').nth(1)).toMatchTextContent(/300 views/);
-  expect(remote(getPosts)).toHaveBeenCalledTimes(1);
-  expect(remote(getStats)).toHaveBeenCalledTimes(3);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(1);
+  expect(mockRemote(getStats)).toHaveBeenCalledTimes(3);
 });
 
 test('different arguments hit the spy once each', async () => {
-  remote(getPosts).mockResolvedValue(posts);
+  mockRemote(getPosts).mockResolvedValue(posts);
   await render(PostList, { order: 'newest' });
   const screen = await render(PostList, { order: 'oldest' });
   await expect.element(screen.getByRole('link', { name: 'First post' }).nth(1)).toBeVisible();
-  expect(remote(getPosts)).toHaveBeenCalledTimes(2);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(2);
 });
 
 const orders = ['newest', 'oldest', 'newest', 'oldest'] as const;
@@ -186,32 +186,32 @@ for (const order of permutations([...orders])) {
   if (seen.has(key)) continue;
   seen.add(key);
   test(`concurrent calls ${key} hit the spy once per distinct argument`, async () => {
-    remote(getPosts).mockImplementation(async (o) => [{ id: 1, title: o ?? 'none', body: '' }]);
+    mockRemote(getPosts).mockImplementation(async (o) => [{ id: 1, title: o ?? 'none', body: '' }]);
     const results = await Promise.all(order.map((o) => getPosts(o)));
     results.forEach((r, i) => expect(r[0]!.title).toBe(order[i]));
-    expect(remote(getPosts)).toHaveBeenCalledTimes(2);
-    expect(remote(getPosts)).toHaveBeenCalledWith('newest');
-    expect(remote(getPosts)).toHaveBeenCalledWith('oldest');
+    expect(mockRemote(getPosts)).toHaveBeenCalledTimes(2);
+    expect(mockRemote(getPosts)).toHaveBeenCalledWith('newest');
+    expect(mockRemote(getPosts)).toHaveBeenCalledWith('oldest');
   });
 }
 
 test('refresh() calls the spy again and set() does not', async () => {
   let n = 0;
-  remote(getPosts).mockImplementation(async () => [{ id: ++n, title: `Run ${n}`, body: '' }]);
+  mockRemote(getPosts).mockImplementation(async () => [{ id: ++n, title: `Run ${n}`, body: '' }]);
   const screen = await render(PostList);
   await expect.element(screen.getByRole('link', { name: 'Run 1' })).toBeVisible();
 
   await getPosts('newest').refresh();
   await expect.element(screen.getByRole('link', { name: 'Run 2' })).toBeVisible();
-  expect(remote(getPosts)).toHaveBeenCalledTimes(2);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(2);
 
   getPosts('newest').set([{ id: 9, title: 'Set by hand', body: '' }]);
   await expect.element(screen.getByRole('link', { name: 'Set by hand' })).toBeVisible();
-  expect(remote(getPosts)).toHaveBeenCalledTimes(2);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(2);
 });
 
 test('withOverride applies and reverts', async () => {
-  remote(getPosts).mockResolvedValue(posts);
+  mockRemote(getPosts).mockResolvedValue(posts);
   const screen = await render(PostList);
   await expect.element(screen.getByRole('link', { name: 'First post' })).toBeVisible();
 
@@ -219,13 +219,13 @@ test('withOverride applies and reverts', async () => {
   await expect.element(screen.getByText('No posts yet')).toBeVisible();
   release();
   await expect.element(screen.getByRole('link', { name: 'First post' })).toBeVisible();
-  expect(remote(getPosts)).toHaveBeenCalledTimes(1);
+  expect(mockRemote(getPosts)).toHaveBeenCalledTimes(1);
 });
 
 // --- Live streams ----------------------------------------------------------------------
 
 test('emits before mount: the connection starts with the latest value', async () => {
-  const feed = remote(getPostCount).mockStream();
+  const feed = mockRemote(getPostCount).mockStream();
   feed.emit(1);
   feed.emit(2);
   const screen = await render(PostCount);
@@ -234,7 +234,7 @@ test('emits before mount: the connection starts with the latest value', async ()
 });
 
 test('a burst of emits arrives in order', async () => {
-  const feed = remote(getPostCount).mockStream(0);
+  const feed = mockRemote(getPostCount).mockStream(0);
   const screen = await render(PostCount);
   await expect.element(screen.getByText('0', { exact: true })).toBeVisible();
   const values: number[] = [];
@@ -247,11 +247,11 @@ test('a burst of emits arrives in order', async () => {
   await expect.element(screen.getByText('3', { exact: true })).toBeVisible();
   stop();
   expect(values.filter((v) => v !== undefined)).toEqual([0, 1, 2, 3]);
-  expect(remote(getPostCount)).toHaveBeenCalledTimes(1);
+  expect(mockRemote(getPostCount)).toHaveBeenCalledTimes(1);
 });
 
 test('end() marks the query done and keeps the last value', async () => {
-  const feed = remote(getPostCount).mockStream(4);
+  const feed = mockRemote(getPostCount).mockStream(4);
   const screen = await render(PostCount);
   await expect.element(screen.getByText('4', { exact: true })).toBeVisible();
   feed.end();
@@ -267,7 +267,7 @@ test('unmount while a pull is pending: the stream outlives the component until G
   let pulls = 0;
   let release!: () => void;
   const gate = new Promise<void>((resolve) => (release = resolve));
-  remote(getPostCount).mockImplementation(async function* () {
+  mockRemote(getPostCount).mockImplementation(async function* () {
     pulls++;
     yield 1;
     pulls++;
@@ -283,11 +283,11 @@ test('unmount while a pull is pending: the stream outlives the component until G
   release();
   await new Promise((resolve) => setTimeout(resolve, 50));
   expect(pulls).toBe(3);
-  expect(remote(getPostCount)).toHaveBeenCalledTimes(1);
+  expect(mockRemote(getPostCount)).toHaveBeenCalledTimes(1);
 });
 
 test('a live mock that never yields stays pending without error', async () => {
-  remote(getPostCount).mockPending();
+  mockRemote(getPostCount).mockPending();
   const screen = await render(PostCount);
   await expect.element(screen.getByText(/Counting posts…/)).toBeVisible();
   await new Promise((resolve) => setTimeout(resolve, 50));

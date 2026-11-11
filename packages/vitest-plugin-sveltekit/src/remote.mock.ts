@@ -77,19 +77,19 @@ export type RemoteMock<T> =
  * and no transforms. Its result goes back to the component through SvelteKit's own runtime:
  *
  * ```ts
- * remote(getPosts).mockResolvedValue([{ id: 1, title: 'Hello' }]);
- * remote(getPosts).mockImplementation(() => error(404, 'Not found'));
- * remote(getPosts).mockRejectedValue(httpError(404, 'Not found'));
- * remote(createPost).mockImplementation(async (data, issue) => invalid(issue.title('Too short')));
- * remote(getPosts).mockPending();
- * const feed = remote(getPostCount).mockStream(1);
+ * mockRemote(getPosts).mockResolvedValue([{ id: 1, title: 'Hello' }]);
+ * mockRemote(getPosts).mockImplementation(() => error(404, 'Not found'));
+ * mockRemote(getPosts).mockRejectedValue(httpError(404, 'Not found'));
+ * mockRemote(createPost).mockImplementation(async (data, issue) => invalid(issue.title('Too short')));
+ * mockRemote(getPosts).mockPending();
+ * const feed = mockRemote(getPostCount).mockStream(1);
  * ```
  *
  * The spy is reset before each story and test. In Storybook it is an `fn()` from `storybook/test`, so
  * its calls show in the Actions panel; in Vitest it is a `vi.fn()`. Both work with
  * `expect(...).toHaveBeenCalledWith(...)`.
  */
-export function remote<T>(remoteFunction: T): RemoteMock<T> {
+export function mockRemote<T>(remoteFunction: T): RemoteMock<T> {
   return getRemoteEntry(remoteFunction).spy as unknown as RemoteMock<T>;
 }
 

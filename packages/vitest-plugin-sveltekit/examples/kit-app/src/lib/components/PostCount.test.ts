@@ -1,4 +1,4 @@
-import { httpError, remote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
+import { httpError, mockRemote } from '@storybookjs/vitest-plugin-sveltekit/remote.mock';
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 
@@ -9,7 +9,7 @@ import PostCount from './PostCount.svelte';
 test('renders each value of an async generator', async () => {
   let release!: () => void;
   const second = new Promise<void>((resolve) => (release = resolve));
-  remote(getPostCount).mockImplementation(async function* () {
+  mockRemote(getPostCount).mockImplementation(async function* () {
     yield 1;
     await second;
     yield 2;
@@ -23,7 +23,7 @@ test('renders each value of an async generator', async () => {
 });
 
 test('replays a finite array and completes', async () => {
-  remote(getPostCount).mockReturnValue([3, 4]);
+  mockRemote(getPostCount).mockReturnValue([3, 4]);
   const screen = await render(PostCount);
 
   await expect.element(screen.getByText('4', { exact: true })).toBeVisible();
@@ -31,7 +31,7 @@ test('replays a finite array and completes', async () => {
 });
 
 test('follows a stream driven by the test', async () => {
-  const feed = remote(getPostCount).mockStream(5);
+  const feed = mockRemote(getPostCount).mockStream(5);
   const screen = await render(PostCount);
 
   await expect.element(screen.getByText('5', { exact: true })).toBeVisible();

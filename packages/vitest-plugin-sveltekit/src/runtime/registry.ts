@@ -84,7 +84,7 @@ export function getRemoteEntry(client: unknown): RemoteEntry {
 
   if (!entry) {
     throw new Error(
-      '[vitest-plugin-sveltekit] remote() expects a remote function imported from a `.remote.ts` or `.remote.js` file. Check that `vitestPluginSvelteKit()` is in the Vite config and that the value comes straight from the remote file (not from `.for(id)`).'
+      '[vitest-plugin-sveltekit] mockRemote() expects a remote function imported from a `.remote.ts` or `.remote.js` file. Check that `vitestPluginSvelteKit()` is in the Vite config and that the value comes straight from the remote file (not from `.for(id)`).'
     );
   }
 
@@ -174,7 +174,7 @@ function applyDefaults(spy: RemoteSpy, name: string, kind: RemoteKind): void {
       spy.mockImplementation(() => {
         error(
           500,
-          `\`${name}\` has no mock. Call \`remote(${name}).mockResolvedValue(...)\` in \`beforeEach\`.`
+          `\`${name}\` has no mock. Call \`mockRemote(${name}).mockResolvedValue(...)\` in \`beforeEach\`.`
         );
       });
       break;
