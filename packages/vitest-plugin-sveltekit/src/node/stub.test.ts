@@ -4,7 +4,6 @@ import { createClientStub } from './stub.ts';
 
 const options = {
   hash: 'abc123',
-  kitClientRuntime: '/kit/src/runtime/client/remote-functions/index.js',
   registry: '/pkg/dist/internal/registry.mjs',
 };
 
@@ -18,7 +17,7 @@ it('emits SvelteKit’s stub and registers each export', () => {
       options
     )
   ).toMatchInlineSnapshot(`
-    "import * as __remote from "/kit/src/runtime/client/remote-functions/index.js";
+    "import * as __remote from "@sveltejs/kit/internal/remote-client";
     import { registerRemoteFunction as __register } from "/pkg/dist/internal/registry.mjs";
 
     export const getPosts = __remote.query("abc123/getPosts");

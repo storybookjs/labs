@@ -1,16 +1,19 @@
 This patch is sveltejs/kit PR A (Linear SB-2442) and PR B (SB-2443), unchanged and in that order,
-as a pnpm patch for @sveltejs/kit@3.1.1, from https://github.com/jreinhold/kit:
-- PR A: branch remote-client-env, commit 6751eb4f5
-  ("feat: allow the client remote-function runtime to run outside a SvelteKit app"):
-  set_remote_env and reset_remote_state (@sveltejs/kit/internal/client).
-- PR B: branch with-request-event, commit 734de7ce7 ("feat: add `withRequestEvent` to `$app/server`").
+as a pnpm patch for @sveltejs/kit@3.2.0, from https://github.com/jreinhold/kit:
+- PR A: branch remote-client-env, commit 423a0a267
+  ("feat: let tools run remote functions without a SvelteKit app"):
+  @sveltejs/kit/internal/client (set_remote_env, reset_remote_state, refresh_remote_queries),
+  @sveltejs/kit/internal/remote-client (the client remote functions) and
+  @sveltejs/kit/internal/remote-server (init_remote_server, handle_remote_request, get_remote_id,
+  and the server remote functions).
+- PR B: branch with-request-event, commit 5f3febb40 ("feat: add `withRequestEvent` to `$app/server`").
 Delete it when Kit releases these changes.
 
 diff --git a/package.json b/package.json
-index 224e83e..242f373 100644
+index e0c41c0..9566e19 100644
 --- a/package.json
 +++ b/package.json
-@@ -124,6 +124,9 @@
+@@ -125,6 +125,9 @@
        "workerd": "./src/exports/internal/server/index.js",
        "browser": "./src/exports/internal/client.js",
        "default": "./src/exports/internal/server/index.js"
@@ -20,7 +23,7 @@ index 224e83e..242f373 100644
      }
    },
    "exports": {
-@@ -143,6 +146,10 @@
+@@ -144,10 +147,22 @@
      "./internal/types": {
        "types": "./src/exports/internal/types.d.ts"
      },
@@ -31,23 +34,36 @@ index 224e83e..242f373 100644
      "./internal/server": {
        "types": "./types/index.d.ts",
        "import": "./src/exports/internal/server/index.js"
+     },
++    "./internal/remote-client": {
++      "types": "./types/index.d.ts",
++      "import": "./src/runtime/client/remote-functions/index.js"
++    },
++    "./internal/remote-server": {
++      "types": "./types/index.d.ts",
++      "import": "./src/runtime/server/remote-host.js"
++    },
+     "./adapter": {
+       "types": "./types/index.d.ts",
+       "import": "./src/exports/adapter.js"
 diff --git a/src/exports/internal/client.js b/src/exports/internal/client.js
-index d1d3d89..9f3c2ec 100644
+index d1d3d89..97f1571 100644
 --- a/src/exports/internal/client.js
 +++ b/src/exports/internal/client.js
 @@ -3,3 +3,4 @@ export function get_origin() {
  }
  
  export * from './shared.js';
-+export { reset_remote_state, set_remote_env } from './remote-env.js';
++export { refresh_remote_queries, reset_remote_state, set_remote_env } from './remote-env.js';
 diff --git a/src/exports/internal/remote-env.js b/src/exports/internal/remote-env.js
 new file mode 100644
-index 0000000..5633926
+index 0000000..dfd1a98
 --- /dev/null
 +++ b/src/exports/internal/remote-env.js
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,113 @@
 +/** @import { NavigationEvent } from '@sveltejs/kit' */
 +import * as e from '../../messages/client-errors.js';
++import { HttpError, SvelteKitError } from './shared.js';
 +
 +/**
 + * Everything the client remote-function runtime needs from the app it runs in.
@@ -68,8 +84,8 @@ index 0000000..5633926
 + */
 +
 +/**
-+ * `page`, `goto`, `refresh_all` and `handle_error` need an app,
-+ * so they throw until `start()` or `set_remote_env` provides them
++ * `page` and `goto` need an app, so they throw until `start()` or `set_remote_env`
++ * provides them. The other defaults work without an app
 + * @type {RemoteEnv}
 + */
 +export const remote_env = {
@@ -83,16 +99,51 @@ index 0000000..5633926
 +	},
 +	navigating: null,
 +	goto: () => e.remote_env_missing({ name: 'goto' }),
-+	refresh_all: () => e.remote_env_missing({ name: 'refresh_all' }),
-+	handle_error: () => e.remote_env_missing({ name: 'handle_error' }),
++	refresh_all: () => refresh_remote_queries(),
++	handle_error: (error) => Promise.resolve(default_error(error)),
 +	notify_version: () => {}
 +};
++
++/**
++ * What `handle_error` returns in an app without a `handleError` hook
++ * @param {unknown} error
++ * @returns {App.Error}
++ */
++function default_error(error) {
++	if (error instanceof HttpError) return error.body;
++	if (error instanceof SvelteKitError) return { status: error.status, message: error.text };
++
++	console.error(error);
++	return { status: 500, message: 'Internal Error' };
++}
 +
 +/**
 + * @param {Partial<RemoteEnv>} env
 + */
 +export function set_remote_env(env) {
 +	Object.assign(remote_env, env);
++}
++
++/** @type {Set<() => Promise<void>>} */
++const refreshers = new Set();
++
++/**
++ * Registers a callback that refreshes the queries of one kind (`query`, `query.live`)
++ * when `refresh_remote_queries` is called. Call it once per module
++ * @param {() => Promise<void>} callback
++ */
++export function on_remote_refresh(callback) {
++	refreshers.add(callback);
++}
++
++/**
++ * Refreshes every remote query and reconnects every live query on the page, as
++ * `refreshAll()` does, but without rerunning `load` functions. It is the default
++ * `refresh_all` before `start()`
++ * @returns {Promise<void>}
++ */
++export async function refresh_remote_queries() {
++	await Promise.all(Array.from(refreshers, (refresh) => refresh()));
 +}
 +
 +/** @type {Set<() => void | Promise<void>>} */
@@ -148,7 +199,7 @@ index 065dbff..61898bd 100644
   * Cannot mix and match file and non-file inputs under the same name (`%name%`)
   * @param {{ "name": string }} _values
 diff --git a/src/runtime/client/client.js b/src/runtime/client/client.js
-index 2d34d23..f1897ab 100644
+index 5e491ae..1b3dcf9 100644
 --- a/src/runtime/client/client.js
 +++ b/src/runtime/client/client.js
 @@ -9,6 +9,7 @@
@@ -604,17 +655,30 @@ index d8bfc8a..3cabe22 100644
  					route: { id: null },
  					url: new URL(location.href)
 diff --git a/src/runtime/client/remote-functions/query/cache.js b/src/runtime/client/remote-functions/query/cache.js
-index 16a16ac..b302b8f 100644
+index 16a16ac..a520c29 100644
 --- a/src/runtime/client/remote-functions/query/cache.js
 +++ b/src/runtime/client/remote-functions/query/cache.js
-@@ -1,4 +1,7 @@
+@@ -1,4 +1,20 @@
  import { query_map } from '../../client.js';
-+import { on_remote_reset } from '#internal/remote-env';
++import { on_remote_refresh, on_remote_reset } from '#internal/remote-env';
  import { CacheController } from '../cache.svelte.js';
  
  export const cache = new CacheController(query_map);
 +
 +on_remote_reset(cache.clear);
++
++on_remote_refresh(async () => {
++	/** @type {Promise<void>[]} */
++	const refreshes = [];
++
++	for (const entries of query_map.values()) {
++		for (const { resource } of entries.values()) {
++			refreshes.push(resource.refresh());
++		}
++	}
++
++	await Promise.all(refreshes);
++});
 diff --git a/src/runtime/client/remote-functions/query/index.js b/src/runtime/client/remote-functions/query/index.js
 index 0d7f881..41f1db9 100644
 --- a/src/runtime/client/remote-functions/query/index.js
@@ -638,7 +702,7 @@ index 0d7f881..41f1db9 100644
  		});
  	};
 diff --git a/src/runtime/client/remote-functions/query/instance.svelte.js b/src/runtime/client/remote-functions/query/instance.svelte.js
-index 3936ac9..9d8fc58 100644
+index fcdf955..63a9925 100644
 --- a/src/runtime/client/remote-functions/query/instance.svelte.js
 +++ b/src/runtime/client/remote-functions/query/instance.svelte.js
 @@ -1,5 +1,6 @@
@@ -651,7 +715,7 @@ index 3936ac9..9d8fc58 100644
  import { noop } from '../../../../utils/functions.js';
 @@ -142,7 +143,7 @@ export class Query {
  				//   LiveQuery does and preserve the last known good value and retry the connection
- 				if (this.#latest.indexOf(resolve) === -1) return;
+ 				if (!this.#latest.includes(resolve)) return;
  
 -				const error = await handle_error(e, {
 +				const error = await remote_env.handle_error(e, {
@@ -680,17 +744,32 @@ index b3dbd5a..4b35036 100644
  							// settle all batched promises (with `undefined`, like a redirect
  							// from a non-batched query) so that callers don't hang forever
 diff --git a/src/runtime/client/remote-functions/query-live/cache.js b/src/runtime/client/remote-functions/query-live/cache.js
-index e6cb1cc..f1d7eb4 100644
+index e6cb1cc..5235174 100644
 --- a/src/runtime/client/remote-functions/query-live/cache.js
 +++ b/src/runtime/client/remote-functions/query-live/cache.js
-@@ -1,4 +1,7 @@
+@@ -1,4 +1,22 @@
  import { live_query_map } from '../../client.js';
-+import { on_remote_reset } from '#internal/remote-env';
++import { on_remote_refresh, on_remote_reset } from '#internal/remote-env';
++import { noop } from '../../../../utils/functions.js';
  import { CacheController } from '../cache.svelte.js';
  
  export const cache = new CacheController(live_query_map, (resource) => resource.destroy());
 +
 +on_remote_reset(cache.clear);
++
++on_remote_refresh(async () => {
++	/** @type {Promise<void>[]} */
++	const reconnects = [];
++
++	for (const entries of live_query_map.values()) {
++		for (const { resource } of entries.values()) {
++			// a failed reconnect shows up as the live query's `error`, as in `refreshAll()`
++			reconnects.push(resource.reconnect().catch(noop));
++		}
++	}
++
++	await Promise.all(reconnects);
++});
 diff --git a/src/runtime/client/remote-functions/query-live/instance.svelte.js b/src/runtime/client/remote-functions/query-live/instance.svelte.js
 index bb37fab..6569706 100644
 --- a/src/runtime/client/remote-functions/query-live/instance.svelte.js
@@ -849,11 +928,74 @@ index 354da42..6070f52 100644
  		throw new Redirect(307, response.location);
  	}
  
+diff --git a/src/runtime/server/remote-host.js b/src/runtime/server/remote-host.js
+new file mode 100644
+index 0000000..1700c88
+--- /dev/null
++++ b/src/runtime/server/remote-host.js
+@@ -0,0 +1,57 @@
++/** @import { RequestEvent } from '@sveltejs/kit' */
++/** @import { HandleServerError, Transport } from '@sveltejs/kit/hooks' */
++/** @import { SSRManifest } from 'types' */
++import { get_request_store } from '@sveltejs/kit/internal/server';
++import { init_transport } from '#app/internal/transport';
++import { noop } from '../../utils/functions.js';
++import { default_handle_error } from './errors.js';
++import { set_hooks, set_manifest } from './internal.js';
++import { get_remote_id, handle_remote_call } from './remote-functions.js';
++
++// The server versions of the remote functions, for tools that create remote functions
++// in a page where `$app/server` is not available
++export { command, form, prerender, query, requested } from '../app/server/remote/index.js';
++
++export { get_remote_id };
++
++/**
++ * Sets up SvelteKit's server runtime to answer remote function requests without a SvelteKit
++ * server, for tools that run components and their remote functions in one page, such as a
++ * component test runner. `remotes` maps the hash of each remote file to its module, whose
++ * exports went through `init_remote_functions`
++ * @param {{
++ *   remotes: Record<string, () => Promise<{ default: Record<string, any> }>>;
++ *   handleError?: HandleServerError;
++ *   transport?: Transport;
++ * }} options
++ */
++export function init_remote_server({
++	remotes,
++	handleError = default_handle_error,
++	transport = {}
++}) {
++	set_hooks({
++		handle: ({ event, resolve }) => resolve(event),
++		handleError,
++		handleFetch: ({ request, fetch }) => fetch(request),
++		reroute: noop
++	});
++
++	init_transport(transport);
++
++	set_manifest(/** @type {SSRManifest} */ ({ remotes }));
++}
++
++/**
++ * Answers a request for a remote function (`/_app/remote/...`) with the modules passed to
++ * `init_remote_server`. Like SvelteKit's server, it reads the request state from the request
++ * store of `event`, so call it inside one, for example in the `resolve` of a `handle` hook
++ * @param {RequestEvent} event
++ * @returns {Promise<Response>}
++ */
++export function handle_remote_request(event) {
++	const { state } = get_request_store();
++	const id = get_remote_id(new URL(event.request.url)) || '';
++
++	return handle_remote_call(event, state, id);
++}
 diff --git a/src/runtime/app/server/index.js b/src/runtime/app/server/index.js
-index 7575b81..82400a6 100644
+index 8169635..88c3ad4 100644
 --- a/src/runtime/app/server/index.js
 +++ b/src/runtime/app/server/index.js
-@@ -75,4 +75,6 @@ export function read(asset) {
+@@ -80,4 +80,6 @@ export function read(asset) {
  
  export { getRequestEvent } from '@sveltejs/kit/internal/server';
  
@@ -861,7 +1003,7 @@ index 7575b81..82400a6 100644
 +
  export { query, prerender, command, form, requested } from './remote/index.js';
 diff --git a/src/runtime/app/server/remote/command.js b/src/runtime/app/server/remote/command.js
-index 2824b1a..668f530 100644
+index 04b7fff..dbd4019 100644
 --- a/src/runtime/app/server/remote/command.js
 +++ b/src/runtime/app/server/remote/command.js
 @@ -82,7 +82,13 @@ export function command(validate_or_fn, maybe_fn) {
@@ -894,10 +1036,10 @@ index d2198bf..b1e6d03 100644
  							(data) => (!maybe_fn ? fn() : fn(data, issue))
 diff --git a/src/runtime/app/server/request-event.js b/src/runtime/app/server/request-event.js
 new file mode 100644
-index 0000000..4e09223
+index 0000000..6f413c2
 --- /dev/null
 +++ b/src/runtime/app/server/request-event.js
-@@ -0,0 +1,160 @@
+@@ -0,0 +1,163 @@
 +/** @import { RequestEvent } from '@sveltejs/kit' */
 +/** @import { InternalRequestOptions, RequestState } from 'types' */
 +import { Redirect } from '@sveltejs/kit/internal';
@@ -934,7 +1076,7 @@ index 0000000..4e09223
 + * }} init `url` sets `event.url` (relative URLs are resolved against `http://localhost`). `cookies` are the cookies the request was sent with. They go on the `cookie` header, which browsers drop from a `Request`, so `cookies` (and a `cookie` header on a given `request`) only work outside browsers. `signal` is placed on the request, so aborting it stops a `query.live` generator. Without `url`, a `request` with the `x-sveltekit-pathname` and `x-sveltekit-search` headers of a remote call gets `event.url` from them, as on the server.
 + * @param {(event: RequestEvent) => T} fn
 + * @returns {T}
-+ * @since 3.2.0
++ * @since 3.3.0
 + */
 +export function withRequestEvent(init, fn) {
 +	const url = new URL(init.url ?? init.request?.url ?? '/', 'http://localhost');
@@ -1008,12 +1150,15 @@ index 0000000..4e09223
 +		}
 +	};
 +
-+	const result = with_request_store({ event, state }, () => fn(event));
++	const store = { event, state };
++	const result = with_request_store(store, () => fn(event));
 +
 +	if (result instanceof Promise) {
 +		return /** @type {T} */ (
 +			result.then(async (value) => {
-+				await run_refreshes(state);
++				// inside the store, like `collect_remote_data` in `handle_remote_call`,
++				// because some queries (such as `query.batch`) read it when they run
++				await with_request_store(store, () => run_refreshes(state));
 +				return value;
 +			})
 +		);
@@ -1106,7 +1251,7 @@ index 0000000..3581308
 +	};
 +}
 diff --git a/src/runtime/server/respond.js b/src/runtime/server/respond.js
-index 3ba16b6..1f45374 100644
+index 29c868f..e560966 100644
 --- a/src/runtime/server/respond.js
 +++ b/src/runtime/server/respond.js
 @@ -30,7 +30,7 @@ import { action_json_redirect, is_action_json_request } from './page/actions.js'
@@ -1154,10 +1299,10 @@ index 3ba16b6..1f45374 100644
  		isDataRequest: is_data_request,
  		isSubRequest: state.depth > 0,
 diff --git a/types/index.d.ts b/types/index.d.ts
-index c2b56af..aa02aec 100644
+index a58197c..435eaf6 100644
 --- a/types/index.d.ts
 +++ b/types/index.d.ts
-@@ -3601,6 +3601,35 @@ declare module '$app/server' {
+@@ -3618,6 +3618,35 @@ declare module '$app/server' {
  					: T extends Record<string, any>
  						? { [K in keyof T]: HasNonOptionalBoolean<T[K]> }[keyof T]
  						: never;
@@ -1176,7 +1321,7 @@ index c2b56af..aa02aec 100644
 +	 * const posts = await withRequestEvent({ locals: { user } }, () => getPosts({ author: 1 }));
 +	 * ```
 +	 * @param init `url` sets `event.url` (relative URLs are resolved against `http://localhost`). `cookies` are the cookies the request was sent with. They go on the `cookie` header, which browsers drop from a `Request`, so `cookies` (and a `cookie` header on a given `request`) only work outside browsers. `signal` is placed on the request, so aborting it stops a `query.live` generator. Without `url`, a `request` with the `x-sveltekit-pathname` and `x-sveltekit-search` headers of a remote call gets `event.url` from them, as on the server.
-+	 * @since 3.2.0
++	 * @since 3.3.0
 +	 */
 +	export function withRequestEvent<T>(init: {
 +		request?: Request;

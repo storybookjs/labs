@@ -20,7 +20,8 @@ refreshes and `query.live` streams behave as they do in your app. Your schemas d
 
 ## Requirements
 
-- `@sveltejs/kit` 3.1.1 exactly (see [SvelteKit patch](#sveltekit-patch)) with
+- `@sveltejs/kit` 3.2.0 exactly, with the patch from this repository (see
+  [SvelteKit patch](#sveltekit-patch)), and
   `experimental.remoteFunctions`, and Svelte 5.57+ with
   `compilerOptions.experimental.async`
 - Vite 8
@@ -274,31 +275,43 @@ resolves `undefined`.
 
 ## SvelteKit patch
 
-SvelteKit's client runtime for remote functions calls the router directly. This package needs a way
-to give it a different `fetch`, `page` and `goto`, and a way to reset its caches and form state
-between tests: `set_remote_env` and `reset_remote_state` from `@sveltejs/kit/internal/client`,
-proposed to SvelteKit. Each request runs in `withRequestEvent` from `$app/server`, also proposed.
+SvelteKit's runtime for remote functions expects a SvelteKit app around it: the client calls the
+router, and the server code runs inside SvelteKit's server. The package uses entries that a
+proposed change to SvelteKit adds for tools like this one, and imports no SvelteKit file by path
+except the two below:
+
+- `@sveltejs/kit/internal/client`: `set_remote_env` (a different `fetch`, `page` and `goto`),
+  `reset_remote_state` (clears the caches and form state between tests) and
+  `refresh_remote_queries`.
+- `@sveltejs/kit/internal/remote-client`: the client remote functions the stubs are built from.
+- `@sveltejs/kit/internal/remote-server`: `init_remote_server`, `handle_remote_request`,
+  `get_remote_id` and the server remote functions, to answer each request in the page.
+
+Each request runs in `withRequestEvent` from `$app/server`, a second proposed change. The page cannot
+import `$app/server`, so the package imports that one file by path until an entry the page can
+import exports it. The package also points SvelteKit's `#app/env/server` at its server module in
+the page, because SvelteKit maps it to a module that throws in the browser, on purpose.
 
 Until these are released, use the patch from this repository. It is for one SvelteKit version, so
-pin that version exactly. A range such as `^3.1.0` can keep an older version in your lockfile, and
+pin that version exactly. A range such as `^3.2.0` can keep an older version in your lockfile, and
 then pnpm applies no patch.
 
 1. Pin SvelteKit in `package.json`:
 
    ```json
    "devDependencies": {
-     "@sveltejs/kit": "3.1.1"
+     "@sveltejs/kit": "3.2.0"
    }
    ```
 
-2. Copy [`patches/@sveltejs__kit@3.1.1.patch`](../../patches/@sveltejs__kit@3.1.1.patch) to the
+2. Copy [`patches/@sveltejs__kit@3.2.0.patch`](../../patches/@sveltejs__kit@3.2.0.patch) to the
    `patches/` folder of your project.
 
 3. Tell pnpm about it in `pnpm-workspace.yaml`:
 
    ```yaml
    patchedDependencies:
-     '@sveltejs/kit@3.1.1': patches/@sveltejs__kit@3.1.1.patch
+     '@sveltejs/kit@3.2.0': patches/@sveltejs__kit@3.2.0.patch
    ```
 
    If you set `minimumReleaseAge`, pnpm refuses a SvelteKit version younger than that age. Exclude
@@ -306,7 +319,7 @@ then pnpm applies no patch.
 
    ```yaml
    minimumReleaseAgeExclude:
-     - '@sveltejs/kit@3.1.1'
+     - '@sveltejs/kit@3.2.0'
    ```
 
 4. Run `pnpm install`. With npm or yarn, apply the same file with `patch-package`.

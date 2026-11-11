@@ -1,6 +1,6 @@
 # SvelteKit example
 
-A SvelteKit 3.1 app with remote functions (`src/lib/posts.remote.ts`): a `query` with a valibot
+A SvelteKit 3.2 app with remote functions (`src/lib/posts.remote.ts`): a `query` with a valibot
 schema, a `form` with validation and `invalid()`, a `command`, a `prerender`, a `query.batch` and a
 `query.live`. The components in `src/lib/components` use them, and each component has stories (CSF
 and Svelte CSF) and Vitest browser tests that mock the remote functions with `mockRemote()`.

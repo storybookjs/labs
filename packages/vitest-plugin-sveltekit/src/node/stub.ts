@@ -53,11 +53,12 @@ const RESERVED = new Set([
   'instanceof',
 ]);
 
+/** SvelteKit's client remote functions, the module its own stubs import (sveltejs/kit PR A). */
+const KIT_REMOTE_CLIENT = '@sveltejs/kit/internal/remote-client';
+
 export interface StubOptions {
   /** The hash of the remote file, as SvelteKit computes it. */
   hash: string;
-  /** Path of SvelteKit's `runtime/client/remote-functions/index.js`. */
-  kitClientRuntime: string;
   /** Path of this package's registry module. */
   registry: string;
 }
@@ -100,7 +101,7 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
     registrations.push(`${registry}(${local}, ${JSON.stringify(id)}, ${JSON.stringify(kind)});`);
   }
 
-  let code = `import * as ${namespace} from ${JSON.stringify(options.kitClientRuntime)};\n`;
+  let code = `import * as ${namespace} from ${JSON.stringify(KIT_REMOTE_CLIENT)};\n`;
   code += `import { registerRemoteFunction as ${registry} } from ${JSON.stringify(options.registry)};\n\n`;
   code += declarations.join('\n');
   if (reexports.length > 0) code += `\nexport { ${reexports.join(', ')} };`;

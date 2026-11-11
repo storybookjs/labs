@@ -79,8 +79,8 @@ describe('vitestPluginSvelteKit', () => {
     const result = transform(plugin, code, `${root}/src/lib/posts.remote.ts?v=1`);
 
     expect(result?.code).toContain(`export const getPosts = __remote.query("1rlm6aw/getPosts");`);
-    expect(result?.code).toMatch(
-      /import \* as __remote from ".*\/@sveltejs\/kit\/src\/runtime\/client\/remote-functions\/index\.js";/
+    expect(result?.code).toContain(
+      'import * as __remote from "@sveltejs/kit/internal/remote-client";'
     );
     expect(result?.code).toContain('__register(getPosts, "1rlm6aw/getPosts", "query");');
   });

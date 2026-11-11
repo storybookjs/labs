@@ -121,7 +121,6 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         const exports = analyzeRemoteModule(code, file);
         let stub = createClientStub(exports, {
           hash: hash(file),
-          kitClientRuntime: path.join(kitDir, 'src/runtime/client/remote-functions/index.js'),
           registry: runtimeFile('registry'),
         });
         if (this.environment.mode === 'dev') stub += '\nimport.meta.hot?.accept();\n';
@@ -145,23 +144,18 @@ function inStorybook(plugins: readonly Plugin[]): boolean {
 }
 
 /**
- * The SvelteKit internals the runtime needs, by absolute path, because SvelteKit does not export
- * them. They resolve to the same files SvelteKit's own runtime imports, so module state is shared.
+ * The parts of SvelteKit the runtime needs, from the entries sveltejs/kit PR A (SB-2442) adds for
+ * tools that run remote functions outside a SvelteKit app. Resolved from the project, so they are
+ * the same modules SvelteKit's own runtime uses there.
  */
 function kitModule(kitDir: string): string {
-  const file = (relative: string) => JSON.stringify(path.join(kitDir, 'src', relative));
   return [
-    // PR A's public entry, `@sveltejs/kit/internal/client`.
-    `export { set_remote_env, reset_remote_state } from ${file('exports/internal/client.js')};`,
-    `export { query_map, live_query_map } from ${file('runtime/client/client.js')};`,
-    `export { HttpError, SvelteKitError } from ${file('exports/internal/shared.js')};`,
-    `export { app_dir, base } from ${file('runtime/app/paths/client.js')};`,
-    `export { handle_remote_call } from ${file('runtime/server/remote-functions.js')};`,
-    `export { set_manifest, set_hooks } from ${file('runtime/server/internal.js')};`,
-    `export { init_transport } from ${file('runtime/app/internal/transport.js')};`,
-    `export { query, form, command, prerender, requested } from ${file('runtime/app/server/remote/index.js')};`,
-    `export { withRequestEvent } from ${file('runtime/app/server/request-event.js')};`,
-    `export { get_request_store } from ${file('exports/internal/server/index.js')};`,
+    `export { set_remote_env, reset_remote_state, refresh_remote_queries } from '@sveltejs/kit/internal/client';`,
+    `export { init_remote_server, handle_remote_request, get_remote_id, query, form, command, prerender, requested } from '@sveltejs/kit/internal/remote-server';`,
+    // sveltejs/kit PR B (SB-2443) adds `withRequestEvent` to `$app/server`, which the page cannot
+    // import. By path until an entry the page can import exports it too, for example
+    // `@sveltejs/kit/internal/remote-server` once both PRs are merged.
+    `export { withRequestEvent } from ${JSON.stringify(path.join(kitDir, 'src/runtime/app/server/request-event.js'))};`,
     '',
   ].join('\n');
 }

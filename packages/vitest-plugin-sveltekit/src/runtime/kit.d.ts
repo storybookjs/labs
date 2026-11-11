@@ -1,7 +1,8 @@
-// SvelteKit internals that `vitestPluginSvelteKit()` serves by absolute path. Only the parts the
-// runtime uses are typed.
+// The SvelteKit entries that `vitestPluginSvelteKit()` serves from the project (sveltejs/kit PR A,
+// and PR B's `withRequestEvent`). Only the parts the runtime uses are typed.
 declare module 'virtual:vitest-plugin-sveltekit/kit' {
   import type { RequestEvent } from '@sveltejs/kit';
+  import type { HandleServerError, Transport } from '@sveltejs/kit/hooks';
 
   /** From sveltejs/kit PR A (SB-2442): `@sveltejs/kit/internal/client`. */
   export interface RemoteEnv {
@@ -23,37 +24,20 @@ declare module 'virtual:vitest-plugin-sveltekit/kit' {
   /** From sveltejs/kit PR A: clears cached results and form state between tests. */
   export function reset_remote_state(): Promise<void>;
 
-  interface CacheEntry {
-    resource: { refresh(): Promise<void> } & { reconnect(): Promise<void> };
-  }
-  export const query_map: Map<string, Map<string, CacheEntry>>;
-  export const live_query_map: Map<string, Map<string, CacheEntry>>;
+  /** From PR A: SvelteKit's `refreshAll()` for remote queries, the default `refresh_all`. */
+  export function refresh_remote_queries(): Promise<void>;
 
-  /** `HandledHttpError` extends it. */
-  export class HttpError {
-    status: number;
-    body: App.Error;
-  }
-  export class SvelteKitError extends Error {
-    status: number;
-    text: string;
-  }
-
-  export const app_dir: string;
-  export const base: string;
-
-  export type RequestState = Record<string, any>;
-
-  export function handle_remote_call(
-    event: RequestEvent,
-    state: RequestState,
-    id: string
-  ): Promise<Response>;
-  export function set_manifest(manifest: {
+  /** From PR A (`@sveltejs/kit/internal/remote-server`): SvelteKit's server runtime, outside an app. */
+  export function init_remote_server(options: {
     remotes: Record<string, () => Promise<{ default: Record<string, unknown> }>>;
+    handleError?: HandleServerError;
+    transport?: Transport;
   }): void;
-  export function set_hooks(hooks: Record<string, unknown>): void;
-  export function init_transport(transport: Record<string, unknown>): void;
+  /** Answers a remote request inside the request store of `event`. */
+  export function handle_remote_request(event: RequestEvent): Promise<Response>;
+  /** The remote function id in a `/_app/remote/...` URL, or `false`. */
+  export function get_remote_id(url: URL): string | false;
+
   /** From sveltejs/kit PR B (SB-2443), `$app/server`. */
   export function withRequestEvent<T>(
     init: {
@@ -68,7 +52,6 @@ declare module 'virtual:vitest-plugin-sveltekit/kit' {
     },
     fn: (event: RequestEvent) => T
   ): T;
-  export function get_request_store(): { event: RequestEvent; state: RequestState };
 
   type Factory = (validate: 'unchecked', fn: (...args: any[]) => any, options?: object) => any;
   export const query: Factory & { batch: Factory; live: Factory };

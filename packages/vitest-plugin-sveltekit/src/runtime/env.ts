@@ -27,11 +27,11 @@ export function installRemoteEnv(host: RemoteHost): void {
     goto: async (url, options) => {
       await host.goto(String(url), options);
     },
+    // SvelteKit's `refreshAll()`, limited to remote functions: there are no `load` functions here.
     refresh_all: async () => {
-      await refreshAllQueries();
+      await kit.refresh_remote_queries();
       await host.refreshAll?.();
     },
-    handle_error: handleError,
     notify_version: () => {},
   });
 }
@@ -63,26 +63,4 @@ async function remoteFetch(input: RequestInfo | URL, init?: RequestInit): Promis
   // components that wait for it.
   if (resetGeneration() !== generation) return new Promise<never>(() => {});
   return handleRemoteRequest(request);
-}
-
-/** SvelteKit's `refreshAll()`, limited to remote functions: there are no `load` functions here. */
-async function refreshAllQueries(): Promise<void> {
-  const pending: Promise<void>[] = [];
-  for (const entries of kit.query_map.values()) {
-    for (const { resource } of entries.values()) pending.push(resource.refresh());
-  }
-  for (const entries of kit.live_query_map.values()) {
-    for (const { resource } of entries.values()) pending.push(resource.reconnect());
-  }
-  await Promise.all(pending);
-}
-
-/** SvelteKit's client `handle_error`, without the app's `handleError` hook. */
-async function handleError(error: unknown): Promise<App.Error> {
-  if (error instanceof kit.HttpError) return error.body;
-  if (error instanceof kit.SvelteKitError) {
-    return { status: error.status, message: error.text } as App.Error;
-  }
-  console.error(error);
-  return { status: 500, message: 'Internal Error' } as App.Error;
 }

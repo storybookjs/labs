@@ -1,4 +1,3 @@
-import type { RequestEvent } from '@sveltejs/kit';
 import * as kit from 'virtual:vitest-plugin-sveltekit/kit';
 
 import type { RemoteKind } from '../node/analyze.ts';
@@ -20,53 +19,28 @@ let ready = false;
 
 /**
  * Answers a request for `/_app/remote/<hash>/<name>` in the page, with SvelteKit's own server
- * runtime: `handle_remote_call` runs the remote function and builds the same `Response` a
+ * runtime: `handle_remote_request` runs the remote function and builds the same `Response` a
  * SvelteKit server sends.
  */
 export function handleRemoteRequest(request: Request): Promise<Response> {
   setup();
-  const id = new URL(request.url).pathname.slice(remotePrefix().length);
-
-  // `withRequestEvent` (sveltejs/kit PR B) builds the event and state as SvelteKit's server does.
-  // It takes `event.url` from the `x-sveltekit-pathname` header, like SvelteKit's server.
-  return kit.withRequestEvent({ request }, (event) =>
-    // `handle_remote_call` needs the state that `withRequestEvent` made for this request.
-    kit.handle_remote_call(event, kit.get_request_store().state, id)
-  );
+  // `withRequestEvent` (sveltejs/kit PR B) builds the event and state as SvelteKit's server does,
+  // and `handle_remote_request` reads them from the request store. It takes `event.url` from the
+  // `x-sveltekit-pathname` header, like SvelteKit's server.
+  return kit.withRequestEvent({ request }, (event) => kit.handle_remote_request(event));
 }
 
 export function isRemoteRequest(url: URL): boolean {
-  return url.origin === location.origin && url.pathname.startsWith(remotePrefix());
-}
-
-function remotePrefix(): string {
-  return `${kit.base}/${kit.app_dir}/remote/`;
+  return url.origin === location.origin && kit.get_remote_id(url) !== false;
 }
 
 function setup(): void {
   if (ready) return;
   ready = true;
 
-  kit.init_transport({});
-  kit.set_hooks({
-    handle: ({
-      event,
-      resolve,
-    }: {
-      event: RequestEvent;
-      resolve: (event: RequestEvent) => unknown;
-    }) => resolve(event),
-    handleError: ({ kind, error }: { kind: string; error: unknown }) => {
-      // Same as SvelteKit's default: expected errors (`error(404)`) are not logged.
-      if (kind === 'unknown') console.error(error);
-    },
-    handleFetch: ({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) =>
-      fetch(request),
-    reroute: () => {},
-  });
-
   const loader = (hash: string) => () => Promise.resolve({ default: getRemoteModule(hash) });
-  kit.set_manifest({
+  // With SvelteKit's default `handleError`: expected errors (`error(404)`) are not logged.
+  kit.init_remote_server({
     // A proxy, so remote files registered later (lazy imports, HMR) are found too.
     remotes: new Proxy({} as Record<string, () => Promise<{ default: RemoteModule }>>, {
       getOwnPropertyDescriptor: (_, hash) =>
