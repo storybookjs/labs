@@ -27,8 +27,7 @@ describe('createServerModule', () => {
         { name: 'getPosts', local: 'getPosts', kind: 'query' },
         { name: 'createPost', local: 'create', kind: 'form' },
       ],
-      'src/lib/posts.remote.ts',
-      '/kit'
+      'src/lib/posts.remote.ts'
     );
 
     expect(registeredExports(code, { getPosts: 1, create: 2 })).toEqual({
@@ -42,8 +41,7 @@ describe('createServerModule', () => {
     const code = createServerModule(
       '',
       [{ name: '__proto__', local: 'getOdd', kind: 'query' }],
-      'src/lib/odd.remote.ts',
-      '/kit'
+      'src/lib/odd.remote.ts'
     );
     const exports = registeredExports(code, { getOdd: 'the query' });
 
@@ -65,7 +63,7 @@ describe('createServerModule', () => {
       'export type T = number;',
     ].join('\n');
     const exports = analyzeRemoteModule(code, 'src/lib/x.remote.ts');
-    const module = createServerModule('', exports, 'src/lib/x.remote.ts', '/kit');
+    const module = createServerModule('', exports, 'src/lib/x.remote.ts');
 
     expect(registeredExports(module, { a: 'a', b: 'b', c: 'c', d: 'd', e: 'e', f: 'f' })).toEqual({
       a: 'a',

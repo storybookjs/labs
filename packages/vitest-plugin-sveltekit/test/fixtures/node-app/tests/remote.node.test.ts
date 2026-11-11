@@ -50,10 +50,15 @@ test('calls in one runInRequest() share a query.batch run', async () => {
   batchRuns.length = 0;
   expect(await runInRequest(() => Promise.all([stats(1), stats(2)]))).toEqual([10, 20]);
   expect(batchRuns).toEqual([[1, 2]]);
+  // A direct call is a request of its own.
+  expect(await stats(3)).toBe(30);
+  expect(batchRuns).toEqual([[1, 2], [3]]);
 });
 
-// SvelteKit PR B: `withRequestEvent` runs the deferred refreshes after the request store has ended,
-// and a `query.batch` needs it. Passes once PR B runs them inside the store.
-test.fails('a command that refreshes a query.batch', async () => {
+// The refresh runs at the end of the command's request, inside its request store: a `query.batch`
+// needs it.
+test('a command that refreshes a query.batch', async () => {
+  batchRuns.length = 0;
   await expect(bump()).resolves.toBeUndefined();
+  expect(batchRuns).toEqual([[1]]);
 });

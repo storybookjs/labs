@@ -590,9 +590,6 @@ not apply in Node.
 Limits:
 
 - **`hooks.server` does not run.** No request goes through `handle`, so set `locals` in the test.
-- **A command that refreshes a `query.batch` fails** with "Could not get the request store":
-  SvelteKit PR B's `withRequestEvent` runs the refreshes after the request store has ended. A
-  `query` refresh works. A one-line fix in PR B is pending.
 - **SvelteKit's rules apply**, for example a query cannot read `event.url`, and a `prerender`
   function's `inputs` do not run.
 
@@ -629,6 +626,8 @@ except the two below:
 - `@sveltejs/kit/internal/remote-client`: the client remote functions the stubs are built from.
 - `@sveltejs/kit/internal/remote-server`: `init_remote_server`, `handle_remote_request`,
   `get_remote_id` and the server remote functions, to answer each request in the page.
+- `@sveltejs/kit/internal/server` (server mode): `init_remote_functions` for the server copy of
+  each remote file, as SvelteKit's own plugin does, and `get_request_store`.
 
 Each request runs in `withRequestEvent` from `$app/server`, a second proposed change. The page cannot
 import `$app/server`, so the package imports that one file by path until an entry the page can

@@ -1,5 +1,3 @@
-import path from 'pathe';
-
 import type { RemoteExport } from './analyze.ts';
 import { hash } from './hash.ts';
 
@@ -13,17 +11,11 @@ export const SERVER_QUERY = '?server';
  * exports are listed instead. They go on an object without a prototype, one assignment each, so an
  * export named `__proto__` stays an export.
  */
-export function createServerModule(
-  code: string,
-  exports: RemoteExport[],
-  file: string,
-  kitDir: string
-): string {
-  const internal = path.join(kitDir, 'src/exports/internal/server/index.js');
+export function createServerModule(code: string, exports: RemoteExport[], file: string): string {
   return [
     code,
     '',
-    `import { init_remote_functions as $$_init_$$ } from ${JSON.stringify(internal)};`,
+    `import { init_remote_functions as $$_init_$$ } from '@sveltejs/kit/internal/server';`,
     'const $$_exports_$$ = Object.create(null);',
     ...exports.map(({ name, local }) => `$$_exports_$$[${JSON.stringify(name)}] = ${local};`),
     `$$_init_$$($$_exports_$$, ${JSON.stringify(file)}, ${JSON.stringify(hash(file))});`,

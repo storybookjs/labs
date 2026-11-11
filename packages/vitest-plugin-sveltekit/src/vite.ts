@@ -323,7 +323,7 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         if (id.endsWith(SERVER_QUERY)) {
           if (!included) return;
           const exports = analyzeRemoteModule(code, file);
-          return { code: createServerModule(code, exports, file, kitDir), map: null };
+          return { code: createServerModule(code, exports, file), map: null };
         }
 
         const exports = analyzeRemoteModule(code, file);
@@ -389,17 +389,14 @@ function inStorybook(plugins: readonly unknown[]): boolean {
  */
 function kitModule(kitDir: string): string {
   return [
-    // PR A's public entry, `@sveltejs/kit/internal/client`.
-    `export { set_remote_env, reset_remote_state } from ${file('exports/internal/client.js')};`,
-    `export { query_map, live_query_map } from ${file('runtime/client/client.js')};`,
-    `export { HttpError, SvelteKitError } from ${file('exports/internal/shared.js')};`,
-    `export { app_dir, base } from ${file('runtime/app/paths/client.js')};`,
-    `export { handle_remote_call } from ${file('runtime/server/remote-functions.js')};`,
-    `export { set_manifest, set_hooks } from ${file('runtime/server/internal.js')};`,
-    `export { init_transport } from ${file('runtime/app/internal/transport.js')};`,
-    `export { query, form, command, prerender, requested } from ${file('runtime/app/server/remote/index.js')};`,
-    `export { withRequestEvent } from ${file('runtime/app/server/request-event.js')};`,
-    `export { get_request_store } from ${file('exports/internal/server/index.js')};`,
+    `export { set_remote_env, reset_remote_state, refresh_remote_queries } from '@sveltejs/kit/internal/client';`,
+    `export { init_remote_server, handle_remote_request, get_remote_id, query, form, command, prerender, requested } from '@sveltejs/kit/internal/remote-server';`,
+    // Server mode pins the running request's state (see `pinRequest`).
+    `export { get_request_store } from '@sveltejs/kit/internal/server';`,
+    // sveltejs/kit PR B (SB-2443) adds `withRequestEvent` to `$app/server`, which the page cannot
+    // import. By path until an entry the page can import exports it too, for example
+    // `@sveltejs/kit/internal/remote-server` once both PRs are merged.
+    `export { withRequestEvent } from ${JSON.stringify(path.join(kitDir, 'src/runtime/app/server/request-event.js'))};`,
     '',
   ].join('\n');
 }

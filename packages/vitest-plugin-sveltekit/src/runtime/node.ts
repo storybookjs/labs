@@ -90,7 +90,12 @@ export function runInRequest<T>(fn: () => T): T {
     },
     (event) => {
       requests.add({ cookies: event.cookies, jar, seen: new Map(Object.entries(cookies)) });
-      return fn();
+      const value = fn();
+      // A query does its work when it is awaited, and a `query.batch` looks the request up then.
+      // Start it here, inside the request; the query keeps the promise for the test's `await`.
+      // A live query stays lazy: iterating it starts its own generator.
+      if (isQueryResource(value)) value.then(noop, noop);
+      return value;
     }
   );
   if (result instanceof Promise) {
@@ -143,6 +148,15 @@ export function resetNodeRequests(): void {
   controller = new AbortController();
   requests.clear();
   resetRequestEvent();
+}
+
+function noop(): void {}
+
+function isQueryResource(value: unknown): value is PromiseLike<unknown> {
+  return (
+    typeof (value as PromiseLike<unknown> | null)?.then === 'function' &&
+    (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'QueryResource'
+  );
 }
 
 function insideRequest(): boolean {

@@ -41,7 +41,7 @@ export const transport: Transport = app.universalHooks.transport ?? {};
 
 /**
  * Answers a request for `/_app/remote/<hash>/<name>` in the page, with SvelteKit's own server
- * runtime: `handle_remote_call` runs the remote function and builds the same `Response` a
+ * runtime: `handle_remote_request` runs the remote function and builds the same `Response` a
  * SvelteKit server sends. The app's `handle` hook runs around it, as on a server.
  */
 export async function handleRemoteRequest(request: Request, alone = false): Promise<Response> {
@@ -49,7 +49,6 @@ export async function handleRemoteRequest(request: Request, alone = false): Prom
   const generation = resetGeneration();
   const jar = requestEvent.cookies;
   const { handle } = await (setupPromise ??= setup());
-  const id = new URL(request.url).pathname.slice(remotePrefix().length);
 
   return kit.withRequestEvent(
     {
@@ -63,7 +62,7 @@ export async function handleRemoteRequest(request: Request, alone = false): Prom
       platform: requestEvent.platform,
     },
     async (event) => {
-      // `handle_remote_call` needs the state that `withRequestEvent` made for this request.
+      // The state that `withRequestEvent` made for this request.
       const { state } = kit.get_request_store();
       // A mock or a `query.live` pull may run in between: this request keeps its store.
       if (alone) pinRequest(state.remote);
@@ -76,7 +75,7 @@ export async function handleRemoteRequest(request: Request, alone = false): Prom
 
         const response = await handle({
           event,
-          resolve: (event) => kit.handle_remote_call(event, state, id),
+          resolve: (event) => kit.handle_remote_request(event),
         });
 
         // Apply what the remote function (or `handle`) set or deleted, as a browser applies
@@ -123,7 +122,7 @@ export async function prepareServer(): Promise<void> {
  */
 export function runsAlone(request: Request): boolean {
   if (!app.serverMode || request.headers.get('accept')?.includes('text/event-stream')) return false;
-  const entry = getRemoteEntryById(new URL(request.url).pathname.slice(remotePrefix().length));
+  const entry = getRemoteEntryById(kit.get_remote_id(new URL(request.url)) || '');
   return entry !== undefined && !isMocked(entry);
 }
 
@@ -132,26 +131,15 @@ export function isRemoteRequest(url: URL): boolean {
 }
 
 async function setup(): Promise<ServerHooks> {
-  kit.init_transport(transport);
-
   const hooks = await app.loadServerHooks();
+  // `handle_remote_request` does not run `handle`: `handleRemoteRequest` runs it around it.
   const handle: Handle = hooks.handle ?? (({ event, resolve }) => resolve(event));
 
-  kit.set_hooks({
-    handle,
-    handleError:
-      hooks.handleError ??
-      (({ kind, error }: { kind: string; error: unknown }) => {
-        // Same as SvelteKit's default: expected errors (`error(404)`) are not logged.
-        if (kind === 'unknown') console.error(error);
-      }),
-    handleFetch: ({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) =>
-      fetch(request),
-    reroute: () => {},
-  });
-
   const loader = (hash: string) => async () => ({ default: await loadRemoteModule(hash) });
-  kit.set_manifest({
+  // Without the app's `handleError`, SvelteKit's default: expected errors are not logged.
+  kit.init_remote_server({
+    handleError: hooks.handleError,
+    transport,
     // A proxy, so remote files registered later (lazy imports, HMR) are found too.
     remotes: new Proxy({} as Record<string, () => Promise<{ default: RemoteModule }>>, {
       getOwnPropertyDescriptor: (_, hash) =>

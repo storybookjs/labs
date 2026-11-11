@@ -111,7 +111,7 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
   if (options.serverModule) registryImports.push(`registerRemoteModule as ${registerModule}`);
   if (options.excludedFile) registryImports.push(`registerExcludedModule as ${registerExcluded}`);
 
-  let code = `import * as ${namespace} from ${JSON.stringify(options.kitClientRuntime)};\n`;
+  let code = `import * as ${namespace} from ${JSON.stringify(KIT_REMOTE_CLIENT)};\n`;
   code += `import { ${registryImports.join(', ')} } from ${JSON.stringify(options.registry)};\n\n`;
   code += declarations.join('\n');
   if (reexports.length > 0) code += `\nexport { ${reexports.join(', ')} };`;

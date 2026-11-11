@@ -5,6 +5,7 @@ import { runInRequest, submitForm } from 'vitest-plugin-sveltekit/server.mock';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import {
+  countView,
   getReadingStats,
   listPosts,
   publishPost,
@@ -72,6 +73,14 @@ describe('form', () => {
 });
 
 describe('command', () => {
+  test('refreshes the query.batch it updates, inside its own request', async () => {
+    const select = vi.spyOn(db, 'select');
+    await countView(1);
+    // The only read: `getReadingStats(1).refresh()` ran the batch handler at the end.
+    expect(select).toHaveBeenCalledOnce();
+    expect(await getReadingStats(1)).toMatchObject({ views: seedPosts[0]!.views! + 1 });
+  });
+
   test('changes the database, and error() comes out as SvelteKit’s HttpError', async () => {
     await removePost(1);
     expect(await db.$count(posts)).toBe(seedPosts.length - 1);

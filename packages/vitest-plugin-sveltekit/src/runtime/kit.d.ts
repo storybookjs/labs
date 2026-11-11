@@ -33,8 +33,11 @@ declare module 'virtual:vitest-plugin-sveltekit/kit' {
     handleError?: HandleServerError;
     transport?: Transport;
   }): void;
-  export function set_hooks(hooks: Record<string, unknown>): void;
-  export function init_transport(transport: Record<string, unknown>): void;
+  /** Answers a remote request inside the request store of `event`. */
+  export function handle_remote_request(event: RequestEvent): Promise<Response>;
+  /** The remote function id in a `/_app/remote/...` URL, or `false`. */
+  export function get_remote_id(url: URL): string | false;
+
   /** From sveltejs/kit PR B (SB-2443), `$app/server`. */
   export function withRequestEvent<T>(
     init: {
@@ -49,6 +52,9 @@ declare module 'virtual:vitest-plugin-sveltekit/kit' {
     },
     fn: (event: RequestEvent) => T
   ): T;
+
+  export type RequestState = Record<string, any>;
+  /** `@sveltejs/kit/internal/server`: the event and state of the running request. */
   export function get_request_store(): { event: RequestEvent; state: RequestState };
 
   type Factory = (validate: 'unchecked', fn: (...args: any[]) => any, options?: object) => any;
@@ -66,7 +72,7 @@ declare module 'virtual:vitest-plugin-sveltekit/kit' {
   export function requested(query: unknown, limit: number): RequestedResult;
 }
 
-// App files that `vitestPluginSvelteKit()` finds: hooks and, in server mode, the env setup.
+// App files that `vitestPluginSvelteKit()` finds: the hooks.
 declare module 'virtual:vitest-plugin-sveltekit/app' {
   import type { Handle, HandleServerError, ServerInit, Transport } from '@sveltejs/kit/hooks';
 

@@ -46,7 +46,6 @@ describe('Vitest in Node mode', () => {
       'error() comes out as SvelteKit’s HttpError': 'passed',
       'invalid() becomes issues, redirect() comes out as SvelteKit’s Redirect': 'passed',
       'calls in one runInRequest() share a query.batch run': 'passed',
-      // `test.fails`: passes while SvelteKit PR B still runs refreshes outside the request store.
       'a command that refreshes a query.batch': 'passed',
     });
   }, 120_000);
