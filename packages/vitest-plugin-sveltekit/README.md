@@ -121,7 +121,7 @@ The package handles remote functions. A component often needs more from SvelteKi
 
   ```ts
   vi.mock('$app/state', () => ({
-    page: { url: new URL('http://localhost/'), params: {}, data: { user: { name: 'Ada' } } },
+    page: { url: new URL('http://localhost/'), params: {}, data: { user: { name: 'Svelty' } } },
     navigating: null,
     updated: { current: false },
   }));
