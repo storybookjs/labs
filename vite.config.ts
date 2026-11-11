@@ -17,6 +17,10 @@ export default defineConfig({
     ignorePatterns: [],
   },
   lint: {
+    // SvelteKit wants `"extends": "$app/tsconfig"` (it warns about anything else), and the
+    // type-aware linter cannot resolve it: `svelte-kit sync` writes `node_modules/$app` without a
+    // `package.json`. The example's sources are still linted.
+    ignorePatterns: ['packages/vitest-plugin-sveltekit/examples/kit-app/tsconfig.json'],
     plugins: ['typescript', 'unicorn', 'oxc'],
     categories: {
       correctness: 'error',
@@ -37,18 +41,15 @@ export default defineConfig({
         },
       },
       {
-        files: [
-          'packages/vite-plugin/examples/*/src/**',
-          'packages/vite-plugin/examples/*/.storybook/preview.{js,ts}',
-        ],
+        files: ['packages/*/examples/*/src/**', 'packages/*/examples/*/.storybook/preview.{js,ts}'],
         env: {
           node: false,
           browser: true,
         },
       },
       {
-        // Examples are plain Vite apps, so their configs import `vite` directly.
-        files: ['packages/vite-plugin/examples/**'],
+        // Examples are plain Vite apps, so their configs import `vite` and `vitest` directly.
+        files: ['packages/*/examples/**'],
         rules: {
           'vite-plus/prefer-vite-plus-imports': 'off',
         },
