@@ -118,7 +118,7 @@ The package handles remote functions. A component often needs more from SvelteKi
 - **`$app/state` and `$app/paths` in plain Vitest.** Plain Vitest has no mocks for them. The `page`
   from `vitest-plugin-sveltekit/vitest` only goes to the remote-function requests; a
   component that imports `page` from `$app/state` gets SvelteKit's real, empty one. Mock the module
-  in the test or a setup file:
+  with [`vi.mock`][vi-mock] in the test or a setup file:
 
   ```ts
   vi.mock('$app/state', () => ({
@@ -300,7 +300,7 @@ Use it for:
 - fast tests that need nothing but the mocks.
 
 Server mode (`server: true`) runs the real handlers in the browser, against what you mock, such as
-the database with `sb.mock` or `vi.mock`. Use it for:
+the database with [`sb.mock`][sb-mock] or [`vi.mock`][vi-mock]. Use it for:
 
 - validation as in the app: the schema, its defaults and transforms, and `invalid()` in your
   `.remote.ts` file;
@@ -357,15 +357,16 @@ With server mode on, `storybook build` prints what server code went into the sta
 ```
 
 "Other server-only modules" are the project's `src/lib/server/**` and `*.server.*` modules in the
-build. A module that `sb.mock` replaces is listed under its own path, though the build has the
+build. A module that [`sb.mock`][sb-mock] replaces is listed under its own path, though the build has the
 mock. Packages (a database driver, for example) are not listed. The env keys are names only, never
 values.
 
 ### Replace the data layer
 
 Your server code now runs in the browser, so replace the modules that talk to a database or to
-Node with browser versions. In Storybook, use `sb.mock` in `.storybook/preview.ts` with a file in
-`__mocks__`; in Vitest, use `vi.mock` in a setup file:
+Node with browser versions. In Storybook, use [`sb.mock`][sb-mock] in `.storybook/preview.ts`
+with [a file in `__mocks__`][sb-mock-files]; in Vitest, use [`vi.mock`][vi-mock] in a setup file
+(see Vitest's [module mocking guide][vi-mock-guide]):
 
 ```ts
 // .storybook/preview.ts
@@ -410,7 +411,8 @@ function that runs for real does not record calls.
 This also works through helper modules (`a.remote.ts → helper.ts → b.remote.ts`): server code
 gets its own copy of each project module that leads to a remote file, so a refresh in the helper
 goes into the current response. Modules that lead to no remote file (the data layer) stay one
-module, so `vi.mock` and `sb.mock` replace them for client and server code alike.
+module, so [`vi.mock`][vi-mock] and [`sb.mock`][sb-mock] replace them for client and server code
+alike.
 
 ### The request: `./server.mock`
 
@@ -523,7 +525,7 @@ themselves, without a component or a browser: call a remote function and check w
 throws or writes. It is the fastest way to test validation, auth branches and database effects.
 
 Add a Node project next to the browser ones, with the same plugin and setup file, and replace the
-data layer with `vi.mock`:
+data layer with [`vi.mock`][vi-mock]:
 
 ```ts
 // vite.config.ts, in `test.projects`
@@ -670,3 +672,8 @@ then pnpm applies no patch.
 
 From the repository root: `pnpm --filter vitest-plugin-sveltekit build`, then see
 [`examples/kit-app`](./examples/kit-app/README.md) for the example app and its tests.
+
+[sb-mock]: https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules
+[sb-mock-files]: https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules#mock-files
+[vi-mock]: https://vitest.dev/api/vi#vi-mock
+[vi-mock-guide]: https://vitest.dev/guide/mocking/modules

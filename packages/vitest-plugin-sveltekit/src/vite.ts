@@ -35,8 +35,10 @@ export interface VitestPluginSvelteKitOptions {
   /**
    * Runs the real `.remote.ts` handlers in the page ("server mode"). Remote functions without a
    * `mockRemote(fn)` mock call your server code, with its `$app/server`, `#lib/server/*` and
-   * `$app/env/private` imports. Replace the data layer with `sb.mock` (Storybook) or `vi.mock`
-   * (Vitest). Off by default: every remote function is a mock.
+   * `$app/env/private` imports. Replace the data layer with
+   * [`sb.mock`](https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules)
+   * (Storybook) or [`vi.mock`](https://vitest.dev/api/vi#vi-mock) (Vitest). Off by default: every
+   * remote function is a mock.
    *
    * `true` runs every remote file. `{ include, exclude }` picks the files that bring their server
    * code along (picomatch, relative to the project root, as in `@sveltejs/vite-plugin-svelte`); the
