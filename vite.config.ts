@@ -17,6 +17,10 @@ export default defineConfig({
     ignorePatterns: [],
   },
   lint: {
+    // SvelteKit wants `"extends": "$app/tsconfig"` (it warns about anything else), and the
+    // type-aware linter cannot resolve it: `svelte-kit sync` writes `node_modules/$app` without a
+    // `package.json`. The example's sources are still linted.
+    ignorePatterns: ['packages/vitest-plugin-sveltekit/examples/kit-app/tsconfig.json'],
     plugins: ['typescript', 'unicorn', 'oxc'],
     categories: {
       correctness: 'error',
