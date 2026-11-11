@@ -55,8 +55,12 @@ async function remoteFetch(input: RequestInfo | URL, init?: RequestInit): Promis
   // requests with no await in between (SvelteKit reconnects a `query.live` at once when its
   // stream redirects) runs on microtasks alone and freezes the page.
   await new Promise<void>((resolve) => setTimeout(resolve));
-  // Sent by a story or test that has ended. SvelteKit's client drops the answer (PR A), and
-  // answering would call the spies of the next story or test. So it never gets an answer.
+  // Sent by a story or test that has ended: answering would call the spies of the next one. It
+  // never settles. An `AbortError` would be worse: SvelteKit's client drops a late response
+  // (PR A) but not a rejected fetch, so the rejection reaches the code that sent the request. A
+  // command called from a click handler becomes an unhandled rejection, and a query shows its
+  // error boundary and logs the error. A promise that never settles goes away with the
+  // components that wait for it.
   if (resetGeneration() !== generation) return new Promise<never>(() => {});
   return handleRemoteRequest(request);
 }
