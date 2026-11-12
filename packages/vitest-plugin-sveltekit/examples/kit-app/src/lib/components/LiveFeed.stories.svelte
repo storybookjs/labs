@@ -1,31 +1,52 @@
-import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-import { count, desc, eq } from 'drizzle-orm';
-import { expect } from 'storybook/test';
+<script module lang="ts">
+  import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
+  import { defineMeta } from '@storybook/sveltekit';
+  import { count, desc, eq } from 'drizzle-orm';
+  import { expect } from 'storybook/test';
 
-import { checkFeed, type Feed } from '#lib/feed.ts';
-import { getFeed } from '#lib/feed.remote.ts';
-import { db } from '#lib/server/db.ts';
-import { resetDb, setDatabaseDown } from '#lib/server/mocked-db.ts';
-import { posts } from '#lib/server/schema.ts';
+  import { checkFeed, type Feed } from '#lib/feed.ts';
+  import { getFeed } from '#lib/feed.remote.ts';
+  import { db } from '#lib/server/db.ts';
+  import { resetDb, setDatabaseDown } from '#lib/server/mocked-db.ts';
+  import { posts } from '#lib/server/schema.ts';
 
-import { connectLivePanel } from '../../../.storybook/live-panel/preview.ts';
-import preview from '../../../.storybook/preview';
-import LiveFeed from './LiveFeed.svelte';
+  import { connectLivePanel } from '../../../.storybook/live-panel/preview.ts';
+  import LiveFeed from './LiveFeed.svelte';
 
-// Drive these two from the "Live feed" panel (`.storybook/manager.ts`).
-const meta = preview.meta({ title: 'Live', component: LiveFeed });
+  // Drive these two from the "Live feed" panel (`.storybook/manager.ts`).
+  const { Story } = defineMeta({ title: 'Live', component: LiveFeed });
 
-const seed: Feed = {
-  count: 2,
-  latest: [
-    { id: 2, title: 'Second post' },
-    { id: 1, title: 'First post' },
-  ],
-};
+  const seed: Feed = {
+    count: 2,
+    latest: [
+      { id: 2, title: 'Second post' },
+      { id: 1, title: 'First post' },
+    ],
+  };
 
-/** `getFeed` is a `mockStream`: the panel's values go through SvelteKit's live query runtime. */
-export const Mocked = meta.story({
-  beforeEach: () => {
+  /** Inserts or deletes posts until there are `target`. */
+  async function setCount(target: number): Promise<string> {
+    const [row] = await db.select({ value: count() }).from(posts);
+    const current = row?.value ?? 0;
+    if (target > current) {
+      const titles = Array.from({ length: target - current }, (_, i) => `Post ${current + i + 1}`);
+      await db.insert(posts).values(titles.map((title) => ({ title })));
+    } else if (target < current) {
+      const extra = await db
+        .select({ id: posts.id })
+        .from(posts)
+        .orderBy(desc(posts.id))
+        .limit(current - target);
+      for (const { id } of extra) await db.delete(posts).where(eq(posts.id, id));
+    }
+    return `${current} → ${target} posts`;
+  }
+</script>
+
+<!-- `getFeed` is a `mockStream`: the panel's values go through SvelteKit's live query runtime. -->
+<Story
+  name="Mocked"
+  beforeEach={() => {
     const feed = mockRemote(getFeed).mockStream(seed);
     return connectLivePanel('mocked', (action, payload) => {
       switch (action) {
@@ -53,16 +74,17 @@ export const Mocked = meta.story({
           throw new Error(`Unknown action: ${action}`);
       }
     });
-  },
-  play: async ({ canvas }) => {
+  }}
+  play={async ({ canvas }) => {
     await expect(await canvas.findByText('Second post')).toBeVisible();
     await expect(await canvas.findByText('live')).toBeVisible();
-  },
-});
+  }}
+/>
 
-/** The real `getFeed` follows the mocked database; the panel changes the database. */
-export const Server = meta.story({
-  beforeEach: async () => {
+<!-- The real `getFeed` follows the mocked database; the panel changes the database. -->
+<Story
+  name="Server"
+  beforeEach={async () => {
     await resetDb([{ title: 'First post' }, { title: 'Second post' }]);
     return connectLivePanel('server', async (action, payload) => {
       switch (action) {
@@ -88,27 +110,9 @@ export const Server = meta.story({
           throw new Error(`Unknown action: ${action}`);
       }
     });
-  },
-  play: async ({ canvas }) => {
+  }}
+  play={async ({ canvas }) => {
     await expect(await canvas.findByText('Second post')).toBeVisible();
     await expect(await canvas.findByText('live')).toBeVisible();
-  },
-});
-
-/** Inserts or deletes posts until there are `target`. */
-async function setCount(target: number): Promise<string> {
-  const [row] = await db.select({ value: count() }).from(posts);
-  const current = row?.value ?? 0;
-  if (target > current) {
-    const titles = Array.from({ length: target - current }, (_, i) => `Post ${current + i + 1}`);
-    await db.insert(posts).values(titles.map((title) => ({ title })));
-  } else if (target < current) {
-    const extra = await db
-      .select({ id: posts.id })
-      .from(posts)
-      .orderBy(desc(posts.id))
-      .limit(current - target);
-    for (const { id } of extra) await db.delete(posts).where(eq(posts.id, id));
-  }
-  return `${current} → ${target} posts`;
-}
+  }}
+/>

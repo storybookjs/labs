@@ -1,36 +1,39 @@
-import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
-import { expect, waitFor } from 'storybook/test';
+<script module lang="ts">
+  import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
+  import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
+  import { defineMeta } from '@storybook/sveltekit';
+  import { expect, waitFor } from 'storybook/test';
 
-import { gate, open, resetGates } from '#lib/probes/gate.ts';
-import {
-  addTitle,
-  getTitles,
-  probeCommand,
-  signIn,
-  slowTitles,
-  ticker,
-} from '#lib/probes/probes.remote.ts';
-import { resetDb } from '#lib/server/mocked-db.ts';
+  import { gate, open, resetGates } from '#lib/probes/gate.ts';
+  import {
+    addTitle,
+    getTitles,
+    probeCommand,
+    signIn,
+    slowTitles,
+    ticker,
+  } from '#lib/probes/probes.remote.ts';
+  import { resetDb } from '#lib/server/mocked-db.ts';
 
-import preview from '../../../../.storybook/preview';
-import PostCount from '../PostCount.svelte';
+  import PostCount from '../PostCount.svelte';
 
-const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
+  const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
 
-// The overlap probes of `overlap.server.test.ts`, in Storybook.
-const meta = preview.meta({
-  parameters: { demo: true },
-  title: 'Server/Overlap',
-  component: PostCount,
-  beforeEach: async () => {
-    resetGates();
-    await resetDb([{ title: 'seed' }]);
-  },
-});
+  // The overlap probes of `overlap.server.test.ts`, in Storybook.
+  const { Story } = defineMeta({
+    parameters: { demo: true },
+    title: 'Server/Overlap',
+    component: PostCount,
+    beforeEach: async () => {
+      resetGates();
+      await resetDb([{ title: 'seed' }]);
+    },
+  });
+</script>
 
-export const LiveThenCommand = meta.story({
-  play: async ({ step }) => {
+<Story
+  name="Live then command"
+  play={async ({ step }) => {
     mockRequestEvent({ cookies: { session: 'svelty' } });
     const live = ticker();
     let pending!: ReturnType<typeof probeCommand>;
@@ -57,11 +60,12 @@ export const LiveThenCommand = meta.story({
         cookieSet: true,
       });
     });
-  },
-});
+  }}
+/>
 
-export const TwoRealCommands = meta.story({
-  play: async ({ step }) => {
+<Story
+  name="Two real commands"
+  play={async ({ step }) => {
     let a!: Promise<unknown>;
     let b!: Promise<unknown>;
 
@@ -80,17 +84,18 @@ export const TwoRealCommands = meta.story({
     await step('Both titles are in the database', async () => {
       await expect([...(await getTitles())].sort()).toEqual(['A', 'B', 'seed']);
     });
-  },
-});
+  }}
+/>
 
-export const CookieSurvivesSlowRequest = meta.story({
-  beforeEach: () => {
+<Story
+  name="Cookie survives slow request"
+  beforeEach={() => {
     mockRemote(slowTitles).mockImplementation(async () => {
       await gate('slow');
       return [];
     });
-  },
-  play: async ({ step }) => {
+  }}
+  play={async ({ step }) => {
     let slow!: Promise<unknown>;
 
     await step('A slow query starts and waits at its gate', async () => {
@@ -112,5 +117,5 @@ export const CookieSurvivesSlowRequest = meta.story({
       await slow;
       await expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
     });
-  },
-});
+  }}
+/>

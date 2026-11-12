@@ -1,26 +1,31 @@
-import { httpError, mockRemote, type RemoteStream } from 'vitest-plugin-sveltekit/remote.mock';
-import { expect } from 'storybook/test';
+<script module lang="ts">
+  import { httpError, mockRemote, type RemoteStream } from 'vitest-plugin-sveltekit/remote.mock';
+  import { defineMeta } from '@storybook/sveltekit';
+  import { expect } from 'storybook/test';
 
-import { getPostCount } from '#lib/posts.remote.ts';
+  import { getPostCount } from '#lib/posts.remote.ts';
 
-import preview from '../../../.storybook/preview';
-import PostCount from './PostCount.svelte';
+  import PostCount from './PostCount.svelte';
 
-const meta = preview.meta({
-  parameters: { demo: true },
-  title: 'Remote functions/PostCount',
-  component: PostCount,
-});
+  const { Story } = defineMeta({
+    parameters: { demo: true },
+    title: 'Remote functions/PostCount',
+    component: PostCount,
+  });
 
-export const LiveGenerator = meta.story({
-  beforeEach: () => {
+  let feed: RemoteStream<number>;
+</script>
+
+<Story
+  name="Live generator"
+  beforeEach={() => {
     mockRemote(getPostCount).mockImplementation(async function* () {
       yield 1;
       await new Promise((resolve) => setTimeout(resolve, 200));
       yield 2;
     });
-  },
-  play: async ({ canvas, step }) => {
+  }}
+  play={async ({ canvas, step }) => {
     await step('The generator yields 1', async () => {
       await expect(await canvas.findByText('1')).toBeVisible();
     });
@@ -28,28 +33,28 @@ export const LiveGenerator = meta.story({
       await expect(await canvas.findByText('2')).toBeVisible();
       await expect(await canvas.findByText('done')).toBeVisible();
     });
-  },
-});
+  }}
+/>
 
-export const LiveArray = meta.story({
-  beforeEach: () => {
+<Story
+  name="Live array"
+  beforeEach={() => {
     mockRemote(getPostCount).mockReturnValue([3, 4]);
-  },
-  play: async ({ canvas, step }) => {
+  }}
+  play={async ({ canvas, step }) => {
     await step('The array sends 3, then 4, then the stream is done', async () => {
       await expect(await canvas.findByText('4')).toBeVisible();
       await expect(await canvas.findByText('done')).toBeVisible();
     });
-  },
-});
+  }}
+/>
 
-let feed: RemoteStream<number>;
-
-export const LiveStream = meta.story({
-  beforeEach: () => {
+<Story
+  name="Live stream"
+  beforeEach={() => {
     feed = mockRemote(getPostCount).mockStream(5);
-  },
-  play: async ({ canvas, step }) => {
+  }}
+  play={async ({ canvas, step }) => {
     await expect(await canvas.findByText('5')).toBeVisible();
     await expect(await canvas.findByText('live')).toBeVisible();
 
@@ -62,16 +67,17 @@ export const LiveStream = meta.story({
       feed.error(httpError(503, 'Feed down'));
       await expect(await canvas.findByRole('alert')).toHaveTextContent('Feed down');
     });
-  },
-});
+  }}
+/>
 
-export const LiveStreamOpen = meta.story({
-  beforeEach: () => {
+<!-- Ends with the stream still open. -->
+<Story
+  name="Live stream open"
+  beforeEach={() => {
     mockRemote(getPostCount).mockStream(7);
-  },
-  // Ends with the stream still open.
-  play: async ({ canvas }) => {
+  }}
+  play={async ({ canvas }) => {
     await expect(await canvas.findByText('7')).toBeVisible();
     await expect(await canvas.findByText('live')).toBeVisible();
-  },
-});
+  }}
+/>
