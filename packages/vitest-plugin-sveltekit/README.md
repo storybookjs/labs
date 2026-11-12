@@ -10,7 +10,7 @@ mockRemote(getPosts).mockResolvedValue([{ id: 1, title: 'Hello' }]);
 The component runs SvelteKit's own client code for remote functions. Its requests go to SvelteKit's
 own server code for remote functions, which runs in the same page and calls your mock instead of
 the handler in your `.remote.ts` file. So `invalid()` issues, `error()`, `redirect()`, form state,
-refreshes and `query.live` streams behave as they do in your app. Your schemas do not run (see
+refreshes and `query.live` streams behave as they do in your app. Mocks skip your schemas (see
 [What the spy gets](#what-the-spy-gets)).
 
 > [!WARNING]
@@ -118,7 +118,7 @@ The package handles remote functions. A component often needs more from SvelteKi
 - **`$app/state` and `$app/paths` in plain Vitest.** Plain Vitest has no mocks for them. The `page`
   from `vitest-plugin-sveltekit/vitest` only goes to the remote-function requests; a
   component that imports `page` from `$app/state` gets SvelteKit's real, empty one. Mock the module
-  in the test or a setup file:
+  with [`vi.mock`][vi-mock] in the test or a setup file:
 
   ```ts
   vi.mock('$app/state', () => ({
@@ -133,7 +133,8 @@ The package handles remote functions. A component often needs more from SvelteKi
 
 - **Environment variables.** SvelteKit 3 checks the variables your `src/env.ts` declares, also in
   Storybook. If some are required, `storybook dev` and `storybook build` fail with `env_invalid`
-  until they are set, for example in a `.env` file.
+  until they are set, for example in a `.env` file. In the page, private variables get only the
+  values you pass to the plugin (see [Environment variables](#environment-variables)).
 
 - **Submissions take time.** A form submission or a command goes through a request, so the spy is
   not called yet right after the click. Wait for the UI to change, or wait for the call:
@@ -251,6 +252,349 @@ A `query`, `query.batch`, `query.live` or `prerender` without a mock fails with 
 how to mock it, so the component shows its `failed` state. A `form` or `command` without a mock
 resolves `undefined`.
 
+### Custom types
+
+Arguments and results with custom types work as in your app: the package reads the `transport`
+export of your `src/hooks.ts` and uses it on both sides. Other universal hooks are not used.
+
+## Server mode: run the real remote functions
+
+By default every remote function is a mock. With `server: true`, remote functions without a
+`mockRemote(fn)` mock run the code in your `.remote.ts` file, in the page: its validation schema, its
+`error()`, `redirect()` and `invalid()` calls, `getRequestEvent()`, and your `hooks.server` `handle`
+and `handleError`. You replace the data layer instead of the remote functions.
+
+```ts
+vitestPluginSvelteKit({ server: true });
+```
+
+The option is per Vite config, so a project can have both: for example mocked component tests and
+server mode stories. In Storybook, add the plugin in `.storybook/main.ts` if the server mode is
+only for Storybook:
+
+```ts
+// .storybook/main.ts
+import { vitestPluginSvelteKit } from 'vitest-plugin-sveltekit/vite';
+import { defineMain } from '@storybook/sveltekit/node';
+
+export default defineMain({
+  framework: '@storybook/sveltekit',
+  stories: ['../src/**/*.stories.@(ts|svelte)'],
+  viteFinal: (config) => ({
+    ...config,
+    plugins: [...(config.plugins ?? []), vitestPluginSvelteKit({ server: true })],
+  }),
+});
+```
+
+The Storybook and Vitest entries need no change: they detect the mode.
+
+### Mock mode or server mode?
+
+Mock mode, the default, loads no server module of a `.remote.ts` file: no database driver, no
+private env and no server code in the browser. Every remote function is a `mockRemote(fn)` spy.
+Use it for:
+
+- components in each state (data, loading, empty, errors), set per story or test;
+- a published Storybook that must not contain server code;
+- fast tests that need nothing but the mocks.
+
+Server mode (`server: true`) runs the real handlers in the browser, against what you mock, such as
+the database with [`sb.mock`][sb-mock] or [`vi.mock`][vi-mock]. Use it for:
+
+- validation as in the app: the schema, its defaults and transforms, and `invalid()` in your
+  `.remote.ts` file;
+- auth branches through `locals` (see [The request](#the-request-servermock));
+- a published Storybook whose forms really work, on a mocked database.
+
+What server mode costs:
+
+- **Server code in the browser.** The handlers and the modules they import load in the page, and
+  `storybook build` puts them into the static Storybook. Server packages, such as a database
+  driver, must run in the browser or be mocked.
+- **Env values only from the plugin.** See [Environment variables](#environment-variables).
+- **One request at a time.** The browser has no `AsyncLocalStorage`, so real requests run one
+  after the other (see [Server mode limitations](#server-mode-limitations)).
+
+You can mix both: a function mocked with `mockRemote(fn)` stays a mock in server mode.
+
+To test the handlers themselves, without a component or a browser, see
+[Unit testing remote functions in Node](#unit-testing-remote-functions-in-node).
+
+#### Pick the files
+
+`server: true` takes every remote file, with its imports, into the page and into the build, even
+when every function is mocked. To choose, pass `include` and `exclude` instead. They match the
+remote files as in `@sveltejs/vite-plugin-svelte` (picomatch globs relative to the project root,
+or regular expressions); `include` defaults to every remote file:
+
+```ts
+vitestPluginSvelteKit({
+  server: { include: ['src/lib/blog/**'], exclude: ['src/lib/blog/admin.remote.ts'] },
+});
+```
+
+A file that the filter leaves out is a client stub only: its server code and its imports never
+reach the bundle. Mock its functions with `mockRemote(fn)`; without a mock, a call fails with an
+error that names the file. The server hooks, the lifting of Storybook's guard against server
+modules and the pre-bundling of server packages only happen when the filter takes at least one remote file, so `server: { include: [] }`
+is mock mode.
+
+#### What `storybook build` puts into the output
+
+With server mode on, `storybook build` prints what server code went into the static Storybook:
+
+```text
+[vitest-plugin-sveltekit] Server code in this build (server mode):
+  Remote files with their server code (2):
+    src/lib/blog/blog.remote.ts
+    src/lib/posts.remote.ts
+  Server hooks: src/hooks.server.ts
+  Other server-only modules (2):
+    src/lib/server/db.ts
+    src/lib/server/schema.ts
+  Private env keys with a value: none
+```
+
+"Other server-only modules" are the project's `src/lib/server/**` and `*.server.*` modules in the
+build. A module that [`sb.mock`][sb-mock] replaces is listed under its own path, though the build has the
+mock. Packages (a database driver, for example) are not listed. The env keys are names only, never
+values.
+
+### Replace the data layer
+
+Your server code now runs in the browser, so replace the modules that talk to a database or to
+Node with browser versions. In Storybook, use [`sb.mock`][sb-mock] in `.storybook/preview.ts`
+with [a file in `__mocks__`][sb-mock-files]; in Vitest, use [`vi.mock`][vi-mock] in a setup file
+(see Vitest's [module mocking guide][vi-mock-guide]):
+
+```ts
+// .storybook/preview.ts
+import { sb } from 'storybook/test';
+sb.mock(import('../src/lib/server/db.ts')); // src/lib/server/__mocks__/db.ts
+
+// src/vitest-server.setup.ts (in `test.setupFiles`)
+import { vi } from 'vitest';
+vi.mock('#lib/server/db.ts');
+```
+
+A database that runs in WebAssembly keeps the real queries. The example uses drizzle with PGlite
+in memory, and seeds it in `beforeEach`. Two details:
+
+- Storybook loads a `__mocks__` file under the path of the module it replaces. Use `#lib/...`
+  imports in it, not `../`.
+- Import from the mocked module (`#lib/server/db.ts`), not from the `__mocks__` file: in Storybook a
+  direct import of the mock file is a second module with a second database. The example's
+  `src/lib/server/mocked-db.ts` gives typed access to the mock's helpers.
+
+Node built-ins that your server code uses (`node:fs`, `node:crypto`, ...) do not exist in the
+browser either. Mock the module that uses them in the same way.
+
+### Mix mocks and real functions
+
+A function that a story or test mocks with `mockRemote(fn)` skips the real handler; the others run.
+Both can be used in one story:
+
+```ts
+beforeEach: async () => {
+  await resetDb([{ title: 'From the database' }]); // getPosts runs for real
+  mockRemote(getStats).mockResolvedValue({ views: 99, likes: 9 }); // getStats is mocked
+},
+```
+
+A function counts as mocked as soon as its spy has a behaviour of its own (`mockResolvedValue`,
+`mockImplementation`, `mockPending`, ...). A once-mock (`mockResolvedValueOnce`) answers the next
+call; after it is used up, the real handler runs again. Calls between remote functions on the
+server side (a command that calls `getPosts().refresh()`) use the real functions. The spy of a
+function that runs for real does not record calls.
+
+This also works through helper modules (`a.remote.ts → helper.ts → b.remote.ts`): server code
+gets its own copy of each project module that leads to a remote file, so a refresh in the helper
+goes into the current response. Modules that lead to no remote file (the data layer) stay one
+module, so [`vi.mock`][vi-mock] and [`sb.mock`][sb-mock] replace them for client and server code
+alike.
+
+### The request: `./server.mock`
+
+`getRequestEvent()` in your server code gets an event built from the request event that
+`mockRequestEvent()` sets up. It is reset before each story and test:
+
+```ts
+import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
+
+beforeEach(() => {
+  mockRequestEvent({
+    cookies: { session: 'svelty' }, // sent with each request; `set-cookie` updates it
+    locals: { user: { name: 'Svelty' } }, // copied into `event.locals`
+    params: { id: '1' },
+    url: new URL('http://localhost/posts/1'), // default: the page URL
+  });
+});
+```
+
+Each field you pass replaces the current value: `locals` is not merged, and `cookies` replaces the
+contents of the jar. Fields you leave out keep their value. The fields are `locals`, `cookies`,
+`params`, `route`, `url` and `platform`.
+
+`mockRequestEvent()` returns the live event, like `mockRemote(fn)` returns the spy. Use it to check
+what your server code wrote, or to change the event in a later step. Without arguments, it only
+returns the event:
+
+```ts
+await signIn({ name: 'svelty', password: 'secret' });
+expect(mockRequestEvent().cookies.get('session')).toBe('svelty');
+```
+
+Your `handle` hook runs around each request, as on a server, so it can read the cookies and fill
+`locals`. The cookies work like a browser's: each request sends the cookies of the jar, and when it
+answers, only what its handler set or deleted changes the jar. So a slower request does not undo a
+login that finished first.
+
+### Environment variables
+
+Real `.env` values never reach the browser. In `storybook dev`, `storybook build` and Vitest,
+`$app/env/private` (and the older `$env/static/private` and `$env/dynamic/private`) gives server
+code only the values you pass to the plugin:
+
+```ts
+vitestPluginSvelteKit({ server: true, env: { API_URL: 'https://api.example.test' } });
+```
+
+A private variable without a value gets the default of its schema, or no value, and the plugin
+prints a warning that names it. Public variables (`public: true`) keep the values the app gets,
+from the `.env` files and the shell: SvelteKit sends them to the browser in the app too.
+
+The plugin reads the names, and which variables are public, from `export const variables =
+defineEnvVars({ ... })` in `src/env.ts`. If it cannot (a spread, a computed key), stories and
+tests get no env values, and the plugin prints a warning.
+
+To keep the values in a file, read it in the config:
+
+```ts
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
+
+vitestPluginSvelteKit({ server: true, env: parseEnv(readFileSync('.env.storybook', 'utf8')) });
+```
+
+> [!CAUTION]
+> In server mode, a built Storybook contains the server code of your remote functions, the modules
+> they import, and the values you pass in `env`, for everybody who can open it to read. Pass only
+> values that may be public, and mock the modules that must stay private.
+
+### Live queries and isolation
+
+The request's `signal` is the signal of the client's `fetch`, so a real `query.live` generator that
+watches `getRequestEvent().request.signal` stops when SvelteKit closes the stream: on `reconnect()`,
+when the query's proxy is garbage collected (SvelteKit does not close it at unmount), and before
+each story and test, when the package resets SvelteKit's caches. The example checks that no
+generator still waits for changes between tests.
+
+Before each story and test, the package also clears the request store and loads the server code of
+the remote files the story imports, so the first request does not time out a `findBy`.
+
+### Server mode limitations
+
+- **One real request at a time.** The browser has no async context, so real remote functions run
+  one after the other, as on SvelteKit's server in a webcontainer: a real request waits until the
+  one before it has answered. `getRequestEvent()`, `requested()` and `refresh()` after an `await`
+  then use the running request, also while a mock or a `query.live` stream answers in between.
+  Mocks do not wait, so a `mockPending()` mock holds nothing up. A real handler that never answers
+  holds the real requests after it until the next story or test.
+- **Live generators read the event first.** The other way round does not hold: a `query.live`
+  generator that calls `getRequestEvent()` after an `await` while a command or form runs sees that
+  request's event. Read the event once at the start of the generator, as the example does.
+- **Import cycles in a build.** A helper that imports a remote function from the remote file that
+  imports the helper is an import cycle in the server code. In `storybook build`, such a cycle
+  together with a top-level `await` (a database setup) can keep the stories from loading. Put the
+  remote functions that the helper calls in another remote file.
+- **Module state lives for the page.** In Storybook all stories share one page, in Vitest each test
+  file has its own. Reset module-level state of your server code in `beforeEach`, as the example
+  does for the database.
+- **Pre-bundling.** The plugin follows the imports of your remote files and `hooks.server` to find
+  the packages to pre-bundle. A package that is only reached in other ways may make Vite reload the
+  page once; add it to `optimizeDeps.include`.
+- **Not run:** `reroute`, `handleFetch`, CSRF checks and non-JavaScript form posts. `event.fetch` is
+  the browser's `fetch`.
+
+## Unit testing remote functions in Node
+
+Stories and browser tests render components: their remote functions are mocks, or in server mode
+the real handlers behind SvelteKit's client. A unit test in Vitest's Node mode tests the handlers
+themselves, without a component or a browser: call a remote function and check what it returns,
+throws or writes. It is the fastest way to test validation, auth branches and database effects.
+
+Add a Node project next to the browser ones, with the same plugin and setup file, and replace the
+data layer with [`vi.mock`][vi-mock]:
+
+```ts
+// vite.config.ts, in `test.projects`
+{
+  extends: true,
+  plugins: [vitestPluginSvelteKit()],
+  test: {
+    name: 'unit',
+    environment: 'node',
+    include: ['src/**/*.unit.test.ts'],
+    setupFiles: ['vitest-plugin-sveltekit/vitest', './src/unit.setup.ts'], // vi.mock('$lib/server/db')
+  },
+}
+```
+
+In Node, the plugin leaves each `.remote.ts` file to SvelteKit's own plugin: it is the real server
+module, with SvelteKit's init. A call from a test runs inside a request built from
+`mockRequestEvent()`, through SvelteKit's `withRequestEvent` (from `$app/server`), so
+`getRequestEvent()`, `locals`, cookies, `invalid()`, `error()` and `redirect()` work as in a request.
+A call from server code inside that request runs as it is. The mock request event is reset before
+each test, and live queries stop with the test.
+
+```ts
+import { mockRequestEvent, runInRequest, submitForm } from 'vitest-plugin-sveltekit/server.mock';
+
+// query, and prerender with `dynamic: true`: await the call.
+expect(await getPost(1)).toMatchObject({ title: 'Hello' });
+await expect(getPost(999)).rejects.toMatchObject({ status: 404 }); // error()
+await expect(listPosts({ page: 0 })).rejects.toMatchObject({ issues: [expect.anything()] }); // the schema
+
+// command: the same. `locals` and cookies come from mockRequestEvent().
+mockRequestEvent({ locals: { user: { name: 'Svelty' } } });
+await deletePost(1);
+await signIn({ name: 'svelty', password: 'secret' });
+expect(mockRequestEvent().cookies.get('session')).toBe('svelty'); // set by the handler
+
+// form: submitForm() runs the schema and the handler as SvelteKit does for a submission.
+const { result, issues } = await submitForm(createPost, { title: '' });
+await expect(submitForm(createPost, valid)).rejects.toMatchObject({ status: 303 }); // redirect()
+
+// query.batch: calls batch when they share a request.
+const [a, b] = await runInRequest(() => Promise.all([getStats(1), getStats(2)]));
+
+// query.live: await gives the first value, iteration the ones after.
+const live = getPostCount()[Symbol.asyncIterator]();
+expect((await live.next()).value).toBe(2);
+```
+
+What comes out is what SvelteKit's server code gives: `error()` an `HttpError` (`status`, `body`),
+`redirect()` a `Redirect` (`status`, `location`), and a schema that rejects the argument of a query
+or command a `ValidationError` with the schema's `issues` (SvelteKit's request handling turns it
+into a 400). `submitForm()` returns `{ result }`, or `{ issues }` with each issue's field `name`,
+`path` and `message`. SvelteKit has no public way to submit a form on the server, so `submitForm()`
+calls the form's internal handler, the one SvelteKit's request handling calls.
+
+Without this package, the same works with SvelteKit alone: wrap each call in `withRequestEvent`
+from `$app/server`, which takes `locals`, `cookies` and the other fields directly.
+
+`$app/env/private` gets its values as in SvelteKit, from `.env`, `.env.test` (Vitest's mode is
+`test`) and the shell: the rule that keeps real `.env` values out of the browser (see
+[Environment variables](#environment-variables)) is about the browser, and the `env` option does
+not apply in Node.
+
+Limits:
+
+- **`hooks.server` does not run.** No request goes through `handle`, so set `locals` in the test.
+- **SvelteKit's rules apply**, for example a query cannot read `event.url`, and a `prerender`
+  function's `inputs` do not run.
+
 ## Limitations
 
 - **Static analysis.** The plugin reads which kind of remote function each export is from the
@@ -261,15 +605,13 @@ resolves `undefined`.
 - **Which files are remote.** The same files as in SvelteKit: a name that contains `.remote.` or
   starts with `remote.` (`posts.remote.ts`, `count.remote.svelte.ts`). Remote files inside
   `node_modules` are not handled yet.
-- **Your schemas do not run.** A mock gets the input as sent, before validation, defaults and
-  transforms (see [What the spy gets](#what-the-spy-gets)).
-- **Your handlers do not run.** This package mocks remote functions. Running the real handlers
-  against a mocked database is planned.
+- **Mocks skip your schemas.** A mock gets the input as sent, before validation, defaults and
+  transforms (see [What the spy gets](#what-the-spy-gets)). In server mode, the real handlers run
+  with their schemas.
 - **`getRequestEvent()` after an `await` sees the latest request.** Browsers have no async context,
   so the request store is kept until the next request starts. A mock that reads the event after an
   `await` while other requests run (two commands in flight, a live stream emitting) can get another
   request's event. The package itself reads the store only before the mock's first `await`.
-- **No custom `transport` types.** Values are serialised with devalue's built-in types only.
 - **`.for(id)` forms.** `mockRemote()` takes the form itself, not an instance from `.for(id)`. Both
   instances use the same mock.
 
@@ -286,6 +628,8 @@ except the two below:
 - `@sveltejs/kit/internal/remote-client`: the client remote functions the stubs are built from.
 - `@sveltejs/kit/internal/remote-server`: `init_remote_server`, `handle_remote_request`,
   `get_remote_id` and the server remote functions, to answer each request in the page.
+- `@sveltejs/kit/internal/server` (server mode): `init_remote_functions` for the server copy of
+  each remote file, as SvelteKit's own plugin does, and `get_request_store`.
 
 Each request runs in `withRequestEvent` from `$app/server`, a second proposed change. The page cannot
 import `$app/server`, so the package imports that one file by path until an entry the page can
@@ -328,3 +672,8 @@ then pnpm applies no patch.
 
 From the repository root: `pnpm --filter vitest-plugin-sveltekit build`, then see
 [`examples/kit-app`](./examples/kit-app/README.md) for the example app and its tests.
+
+[sb-mock]: https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules
+[sb-mock-files]: https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules#mock-files
+[vi-mock]: https://vitest.dev/api/vi#vi-mock
+[vi-mock-guide]: https://vitest.dev/guide/mocking/modules

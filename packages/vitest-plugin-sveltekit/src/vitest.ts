@@ -2,7 +2,6 @@
 // oxlint-disable-next-line vite-plus/prefer-vite-plus-imports
 import { beforeEach, type Mock, vi } from 'vitest';
 
-import { installRemoteEnv, resetRemoteState } from './runtime/env.ts';
 import { setSpyFactory } from './runtime/registry.ts';
 
 // Vitest's own spies: `storybook/test` would bring a second `expect` into the test page.
@@ -26,13 +25,26 @@ export const goto: Mock<(url: string, options?: object) => Promise<void>> = vi
   .fn(async (_url: string, _options?: object) => {})
   .mockName('goto');
 
-beforeEach(async () => {
-  page.url = defaultUrl();
-  goto.mockClear();
-  await resetRemoteState();
-  installRemoteEnv({ page, navigating, goto });
-});
+// The same setup file in both modes. In Node (`environment: 'node'`, also `jsdom`), remote functions
+// are the real ones and run in the mock request event; in browser mode they are SvelteKit's
+// client stubs, answered in the page. The browser runtime imports a module that only the browser
+// build resolves, so it loads only there.
+if (
+  typeof (globalThis as { process?: { versions?: { node?: string } } }).process?.versions?.node ===
+  'string'
+) {
+  const { resetNodeRequests } = await import('./runtime/node.ts');
+  beforeEach(() => resetNodeRequests());
+} else {
+  const { installRemoteEnv, resetRemoteState } = await import('./runtime/env.ts');
+  beforeEach(async () => {
+    page.url = defaultUrl();
+    goto.mockClear();
+    await resetRemoteState();
+    installRemoteEnv({ page, navigating, goto });
+  });
+}
 
 function defaultUrl(): URL {
-  return new URL('/', location.origin);
+  return new URL('/', globalThis.location?.origin ?? 'http://localhost');
 }

@@ -6,7 +6,11 @@ import { getPostCount } from '#lib/posts.remote.ts';
 import preview from '../../../.storybook/preview';
 import PostCount from './PostCount.svelte';
 
-const meta = preview.meta({ title: 'PostCount', component: PostCount });
+const meta = preview.meta({
+  parameters: { demo: true },
+  title: 'Remote functions/PostCount',
+  component: PostCount,
+});
 
 export const LiveGenerator = meta.story({
   beforeEach: () => {
@@ -16,10 +20,14 @@ export const LiveGenerator = meta.story({
       yield 2;
     });
   },
-  play: async ({ canvas }) => {
-    await expect(await canvas.findByText('1')).toBeVisible();
-    await expect(await canvas.findByText('2')).toBeVisible();
-    await expect(await canvas.findByText('done')).toBeVisible();
+  play: async ({ canvas, step }) => {
+    await step('The generator yields 1', async () => {
+      await expect(await canvas.findByText('1')).toBeVisible();
+    });
+    await step('200 ms later it yields 2 and returns: the stream is done', async () => {
+      await expect(await canvas.findByText('2')).toBeVisible();
+      await expect(await canvas.findByText('done')).toBeVisible();
+    });
   },
 });
 
@@ -27,9 +35,11 @@ export const LiveArray = meta.story({
   beforeEach: () => {
     mockRemote(getPostCount).mockReturnValue([3, 4]);
   },
-  play: async ({ canvas }) => {
-    await expect(await canvas.findByText('4')).toBeVisible();
-    await expect(await canvas.findByText('done')).toBeVisible();
+  play: async ({ canvas, step }) => {
+    await step('The array sends 3, then 4, then the stream is done', async () => {
+      await expect(await canvas.findByText('4')).toBeVisible();
+      await expect(await canvas.findByText('done')).toBeVisible();
+    });
   },
 });
 
@@ -39,15 +49,19 @@ export const LiveStream = meta.story({
   beforeEach: () => {
     feed = mockRemote(getPostCount).mockStream(5);
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, step }) => {
     await expect(await canvas.findByText('5')).toBeVisible();
     await expect(await canvas.findByText('live')).toBeVisible();
 
-    feed.emit(6);
-    await expect(await canvas.findByText('6')).toBeVisible();
+    await step('The stream sends 6', async () => {
+      feed.emit(6);
+      await expect(await canvas.findByText('6')).toBeVisible();
+    });
 
-    feed.error(httpError(503, 'Feed down'));
-    await expect(await canvas.findByRole('alert')).toHaveTextContent('Feed down');
+    await step('The stream fails with a 503', async () => {
+      feed.error(httpError(503, 'Feed down'));
+      await expect(await canvas.findByRole('alert')).toHaveTextContent('Feed down');
+    });
   },
 });
 

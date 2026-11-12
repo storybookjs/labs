@@ -1,3 +1,4 @@
+import { literal } from './code.ts';
 import type { RemoteExport } from './analyze.ts';
 
 // Copied from `packages/kit/src/core/env.js`, so export names that are reserved words get the
@@ -61,6 +62,10 @@ export interface StubOptions {
   hash: string;
   /** Path of this package's registry module. */
   registry: string;
+  /** Server mode: the id of the module's server copy, loaded when a request needs it. */
+  serverModule?: string;
+  /** Server mode, for a file the `server` filter leaves out: its path, for the error hint. */
+  excludedFile?: string;
 }
 
 /**
@@ -72,6 +77,8 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
   const names = new Set(exports.map((entry) => entry.name));
   const namespace = freeName('__remote', names);
   const registry = freeName('__register', names);
+  const registerModule = freeName('__registerModule', names);
+  const registerExcluded = freeName('__registerExcluded', names);
 
   const aliases = new Map<string, string>();
   let aliasIndex = 0;
@@ -89,7 +96,7 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
   for (const { name, kind } of exports) {
     const id = `${options.hash}/${name}`;
     const local = aliases.get(name) ?? name;
-    const expression = `${namespace}.${kind}(${JSON.stringify(id)})`;
+    const expression = `${namespace}.${kind}(${literal(id)})`;
 
     if (aliases.has(name)) {
       declarations.push(`const ${local} = ${expression};`);
@@ -98,14 +105,26 @@ export function createClientStub(exports: RemoteExport[], options: StubOptions):
       declarations.push(`export const ${name} = ${expression};`);
     }
 
-    registrations.push(`${registry}(${local}, ${JSON.stringify(id)}, ${JSON.stringify(kind)});`);
+    registrations.push(`${registry}(${local}, ${literal(id)}, ${literal(kind)});`);
   }
 
-  let code = `import * as ${namespace} from ${JSON.stringify(KIT_REMOTE_CLIENT)};\n`;
-  code += `import { registerRemoteFunction as ${registry} } from ${JSON.stringify(options.registry)};\n\n`;
+  const registryImports = [`registerRemoteFunction as ${registry}`];
+  if (options.serverModule) registryImports.push(`registerRemoteModule as ${registerModule}`);
+  if (options.excludedFile) registryImports.push(`registerExcludedModule as ${registerExcluded}`);
+
+  let code = `import * as ${namespace} from ${literal(KIT_REMOTE_CLIENT)};\n`;
+  code += `import { ${registryImports.join(', ')} } from ${literal(options.registry)};\n\n`;
   code += declarations.join('\n');
   if (reexports.length > 0) code += `\nexport { ${reexports.join(', ')} };`;
   code += `\n\n${registrations.join('\n')}\n`;
+
+  if (options.serverModule) {
+    code += `${registerModule}(${literal(options.hash)}, () => import(${literal(options.serverModule)}));\n`;
+  }
+  if (options.excludedFile) {
+    code += `${registerExcluded}(${literal(options.hash)}, ${literal(options.excludedFile)});\n`;
+  }
+
   return code;
 }
 

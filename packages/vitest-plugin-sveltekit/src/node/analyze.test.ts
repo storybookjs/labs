@@ -19,12 +19,12 @@ describe('analyzeRemoteModule', () => {
     `;
 
     expect(analyze(code)).toEqual([
-      { name: 'getPosts', kind: 'query' },
-      { name: 'getStats', kind: 'query_batch' },
-      { name: 'getCount', kind: 'query_live' },
-      { name: 'createPost', kind: 'form' },
-      { name: 'deletePost', kind: 'command' },
-      { name: 'getPost', kind: 'prerender' },
+      { name: 'getPosts', local: 'getPosts', kind: 'query' },
+      { name: 'getStats', local: 'getStats', kind: 'query_batch' },
+      { name: 'getCount', local: 'getCount', kind: 'query_live' },
+      { name: 'createPost', local: 'createPost', kind: 'form' },
+      { name: 'deletePost', local: 'deletePost', kind: 'command' },
+      { name: 'getPost', local: 'getPost', kind: 'prerender' },
     ]);
   });
 
@@ -40,10 +40,10 @@ describe('analyzeRemoteModule', () => {
     `;
 
     expect(analyze(code)).toEqual([
-      { name: 'a', kind: 'query' },
-      { name: 'b', kind: 'form' },
-      { name: 'c', kind: 'command' },
-      { name: 'd', kind: 'query_live' },
+      { name: 'a', local: 'a', kind: 'query' },
+      { name: 'b', local: 'b', kind: 'form' },
+      { name: 'c', local: 'c', kind: 'command' },
+      { name: 'd', local: 'd', kind: 'query_live' },
     ]);
   });
 
@@ -56,8 +56,8 @@ describe('analyzeRemoteModule', () => {
     `;
 
     expect(analyze(code)).toEqual([
-      { name: 'getPosts', kind: 'query' },
-      { name: 'getInternal', kind: 'query' },
+      { name: 'getPosts', local: 'getPosts', kind: 'query' },
+      { name: 'getInternal', local: 'internal', kind: 'query' },
     ]);
   });
 
@@ -73,9 +73,9 @@ describe('analyzeRemoteModule', () => {
     `;
 
     expect(analyze(code)).toEqual([
-      { name: 'a', kind: 'query' },
-      { name: 'b', kind: 'query' },
-      { name: 'c', kind: 'query' },
+      { name: 'a', local: 'a', kind: 'query' },
+      { name: 'b', local: 'b', kind: 'query' },
+      { name: 'c', local: 'c', kind: 'query' },
     ]);
   });
 
@@ -84,8 +84,8 @@ describe('analyzeRemoteModule', () => {
       analyze(`import { query, command } from '$app/server';
         export const a = query(() => 1), b = command(() => 1);`)
     ).toEqual([
-      { name: 'a', kind: 'query' },
-      { name: 'b', kind: 'command' },
+      { name: 'a', local: 'a', kind: 'query' },
+      { name: 'b', local: 'b', kind: 'command' },
     ]);
     expect(analyze(`import { query } from '$app/server'; const a = query(() => 1);`)).toEqual([]);
   });
@@ -96,7 +96,7 @@ describe('analyzeRemoteModule', () => {
         `import { query } from '$app/server';\nexport const a = query(() => 1);`,
         'x.remote.js'
       )
-    ).toEqual([{ name: 'a', kind: 'query' }]);
+    ).toEqual([{ name: 'a', local: 'a', kind: 'query' }]);
   });
 
   describe('errors name the file', () => {

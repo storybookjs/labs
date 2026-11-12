@@ -1,12 +1,30 @@
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 import path from 'pathe';
 
-import type { Plugin, ResolvedConfig } from 'vite';
+import type { Plugin, ResolvedConfig, Rollup } from 'vite';
 
-import { analyzeRemoteModule } from './node/analyze.ts';
+import { literal } from './node/code.ts';
+import { analyzeRemoteModule, type RemoteExport } from './node/analyze.ts';
+import { appModule, findAppFiles, type AppFiles } from './node/app.ts';
+import { findRemoteFiles, findServerDependencies } from './node/dependencies.ts';
+import {
+  browserEnv,
+  type BrowserEnv,
+  envConfigModule,
+  generatedEnvModule,
+  missingEnvWarning,
+  privateEnvModule,
+} from './node/env.ts';
+import { REMOTE_MODULE, resolveModule } from './node/files.ts';
 import { hash } from './node/hash.ts';
+import { formatServerBuildReport, serverBuildReport } from './node/report.ts';
+import { resolveIdFilter } from './node/resolve-filter.ts';
+import { isProjectScript, isRemoteModule, reachesRemoteModule } from './node/server-context.ts';
+import { createServerModule, SERVER_QUERY } from './node/server-module.ts';
+import { type ServerOption, serverFilter } from './node/server-option.ts';
 import { createClientStub } from './node/stub.ts';
 
 export interface VitestPluginSvelteKitOptions {
@@ -15,23 +33,78 @@ export interface VitestPluginSvelteKitOptions {
    * so the plugin can stay in `vite.config.ts` without changing `vite dev` and `vite build`.
    */
   enabled?: boolean;
+  /**
+   * Runs the real `.remote.ts` handlers in the page ("server mode"). Remote functions without a
+   * `mockRemote(fn)` mock call your server code, with its `$app/server`, `#lib/server/*` and
+   * `$app/env/private` imports. Replace the data layer with
+   * [`sb.mock`](https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules)
+   * (Storybook) or [`vi.mock`](https://vitest.dev/api/vi#vi-mock) (Vitest). Off by default: every
+   * remote function is a mock.
+   *
+   * `true` runs every remote file. `{ include, exclude }` picks the files that bring their server
+   * code along (picomatch, relative to the project root, as in `@sveltejs/vite-plugin-svelte`); the
+   * others stay mocks, and their server code never reaches the bundle:
+   *
+   * ```ts
+   * vitestPluginSvelteKit({ server: { include: ['src/lib/blog/**'], exclude: [/admin/] } });
+   * ```
+   *
+   * `storybook build` prints what server code went into the output. See "Mock mode or server mode?"
+   * in the README.
+   */
+  server?: ServerOption;
+  /**
+   * The private env values that `$app/env/private` gives server code in stories and tests. Real
+   * `.env` values never reach the browser: a private variable that is not here gets its schema's
+   * default, or no value, with a warning that names it. Public variables keep the app's values.
+   */
+  env?: Record<string, string | undefined>;
 }
 
 const PACKAGE_NAME = 'vitest-plugin-sveltekit';
+const PACKAGE_VERSION: string = createRequire(import.meta.url)('../package.json').version;
 const KIT_VIRTUAL_ID = `virtual:${PACKAGE_NAME}/kit`;
 const RESOLVED_KIT_VIRTUAL_ID = `\0${KIT_VIRTUAL_ID}`;
+const APP_VIRTUAL_ID = `virtual:${PACKAGE_NAME}/app`;
+const RESOLVED_APP_VIRTUAL_ID = `\0${APP_VIRTUAL_ID}`;
 
-/** SvelteKit's remote plugin, replaced by this plugin. */
+/**
+ * SvelteKit's remote plugin. This plugin replaces it in the browser; elsewhere (Vitest's Node mode)
+ * it stays, and turns each remote file into the real server module with SvelteKit's init.
+ */
 const KIT_REMOTE_PLUGIN = 'vite-plugin-sveltekit-remote';
+/**
+ * Node: the virtual module in front of a remote file, which runs direct calls in the mock request
+ * event. The file's path is in the id as base64url, so SvelteKit's `remote_module_pattern` (a
+ * `.remote.` file name) does not match it and its plugin leaves it alone.
+ */
+const CALL_PREFIX = '\0vitest-plugin-sveltekit/remote-call/';
 /** SvelteKit plugins that `@storybook/sveltekit` removes, and that this plugin removes too. */
 const KIT_APP_PLUGINS = ['vite-plugin-sveltekit-compile', 'vite-plugin-sveltekit-guard'];
-
-// SvelteKit's `remote_module_pattern`: `x.remote.ts`, `x.remote.svelte.ts`, `remote.js`, ... SvelteKit's
-// remote plugin matches on this alone; `moduleExtensions` only drive its guard for a disabled flag.
-const REMOTE_MODULE = /[/.]remote\.[^/]+$/;
+/** Blocks `$app/server` and `$app/env/private` in the preview; server mode needs them there. */
+const STORYBOOK_SERVER_GUARD = 'storybook:sveltekit-guard-server-modules';
 
 const distDir = path.dirname(fileURLToPath(import.meta.url));
 const runtimeFile = (name: string) => path.join(distDir, 'internal', `${name}.mjs`);
+
+/**
+ * Vitest keeps transformed modules between runs, keyed by their source. The module in front of a
+ * remote file has none (its exports come from the remote file), and what this plugin resolves and
+ * generates changes with its version. (`configureVitest` is Vitest's hook, unknown to Vite's types.)
+ */
+const vitestCache = {
+  configureVitest({
+    defineCacheKeyGenerator,
+  }: {
+    defineCacheKeyGenerator?: (
+      generator: (context: { id: string }) => string | false | undefined
+    ) => void;
+  }) {
+    defineCacheKeyGenerator?.(({ id }) =>
+      id.startsWith(CALL_PREFIX) ? false : `${PACKAGE_NAME}@${PACKAGE_VERSION}`
+    );
+  },
+};
 
 /**
  * Lets components that use SvelteKit remote functions render in Storybook and in Vitest browser
@@ -43,39 +116,112 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
   let enabled = false;
   let root = '';
   let kitDir = '';
+  let command: 'build' | 'serve' = 'serve';
+  /** Server mode: which remote files bring their server code along. */
+  let filter: ((file: string) => boolean) | null = null;
+  /** Server mode with at least one remote file included. Otherwise the plugin is in mock mode. */
+  let server = false;
+  let app: AppFiles | undefined;
+  let env: BrowserEnv | undefined;
+  let warnedMissingEnv = false;
+  /** Server mode: whether a project script leads to a remote module (see `reachesRemoteModule`). */
+  const reachesRemote = new Map<string, Promise<boolean>>();
+  const leadsToRemote = (file: string, context: Pick<Rollup.PluginContext, 'resolve'>) => {
+    let result = reachesRemote.get(file);
+    if (!result) {
+      result = reachesRemoteModule(file, async (specifier, importer) => {
+        const target = await context.resolve(specifier, importer, { skipSelf: true });
+        return target && !target.external ? cleanId(target.id) : null;
+      });
+      reachesRemote.set(file, result);
+    }
+    return result;
+  };
 
   return {
     name: 'vitest-plugin-sveltekit',
     enforce: 'pre',
 
-    config() {
+    config(userConfig) {
+      // `configResolved` decides again, from the resolved plugin list.
+      enabled = isEnabled(options, userConfig.plugins ?? []);
+      const include = [
+        `${PACKAGE_NAME} > storybook/test`,
+        `${PACKAGE_NAME} > storybook/internal/csf`,
+      ];
+
+      const projectRoot = path.resolve(userConfig.root ?? process.cwd());
+      const included = enabled ? includedRemoteFiles(options.server, projectRoot) : [];
+      if (included.length > 0) {
+        // The server code loads on the first request; pre-bundle its packages up front.
+        const hooks = resolveModule(path.join(projectRoot, 'src', 'hooks.server'));
+        const exclude = new Set(userConfig.optimizeDeps?.exclude ?? []);
+        include.push(
+          ...findServerDependencies(projectRoot, [...included, ...(hooks ? [hooks] : [])]).filter(
+            (dependency) => !exclude.has(packageName(dependency))
+          )
+        );
+      }
+
       return {
         optimizeDeps: {
           // The runtime imports a virtual module, which the dependency optimizer cannot resolve.
           exclude: [PACKAGE_NAME],
           // So the optimizer does not find these in the middle of a run and reload the page.
-          include: [`${PACKAGE_NAME} > storybook/test`, `${PACKAGE_NAME} > storybook/internal/csf`],
+          include,
         },
       };
     },
 
     configResolved(config) {
-      enabled = options.enabled ?? (!!process.env.VITEST || inStorybook(config.plugins));
+      enabled = isEnabled(options, config.plugins);
       if (!enabled) return;
 
       root = config.root;
+      command = config.command;
       kitDir = resolveKitDir(root);
+      filter = serverFilter(options.server, root);
+      // Server hooks, the server guard and the request queue only when some server code runs.
+      server = includedRemoteFiles(options.server, root).length > 0;
+      app = findAppFiles(config, server);
+      env = browserEnv({
+        entry: app.envEntry,
+        envDir: app.envDir,
+        mode: config.mode,
+        env: options.env ?? {},
+      });
 
       // In Storybook, `@storybook/sveltekit` has removed the app plugins already.
-      removePlugins(config, [KIT_REMOTE_PLUGIN, ...KIT_APP_PLUGINS]);
+      removePlugins(config, [...KIT_APP_PLUGINS, ...(server ? [STORYBOOK_SERVER_GUARD] : [])]);
+      onlyOutsideTheBrowser(config, KIT_REMOTE_PLUGIN);
+    },
+
+    watchChange() {
+      reachesRemote.clear();
     },
 
     resolveId: {
-      filter: {
-        id: /^(virtual:vitest-plugin-sveltekit\/kit|node:async_hooks|#app\/env\/server|@storybook\/sveltekit\/.*)$/,
-      },
+      // Server mode filters by importer too, in builds only (see `resolveIdFilter`).
+      filter: resolveIdFilter(!!options.server),
       async handler(id, importer, resolveOptions) {
-        if (!enabled || this.environment.config.consumer !== 'client') return;
+        if (!enabled) return;
+
+        // Node (Vitest's `environment: 'node'`): an import of a remote file gets the module in
+        // front of it, except from the remote file itself (SvelteKit's init imports it) and from
+        // that module. Vitest's module runner resolves ids again with no importer, or `index.html`:
+        // those are ids that are resolved already.
+        if (this.environment.config.consumer !== 'client') {
+          if (id.startsWith(CALL_PREFIX)) return id;
+          if (!importer || importer.startsWith(CALL_PREFIX) || importer.endsWith('.html')) return;
+          if (!/remote/.test(id)) return;
+          const resolved = await this.resolve(id, importer, { ...resolveOptions, skipSelf: true });
+          if (!resolved || resolved.external) return resolved;
+          const file = cleanId(resolved.id);
+          if (!isRemoteModule(file) || file === cleanId(importer) || !isInside(file, root)) {
+            return resolved;
+          }
+          return CALL_PREFIX + Buffer.from(file).toString('base64url');
+        }
 
         // `@storybook/sveltekit` aliases `$app/state` and `$app/navigation` to bare specifiers.
         // This package does not depend on `@storybook/sveltekit`, so resolve them from the project.
@@ -87,6 +233,7 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         }
 
         if (id === KIT_VIRTUAL_ID) return RESOLVED_KIT_VIRTUAL_ID;
+        if (id === APP_VIRTUAL_ID) return RESOLVED_APP_VIRTUAL_ID;
 
         // SvelteKit's request store reads `AsyncLocalStorage`. The browser has none, so it gets a
         // shim that keeps the last store.
@@ -97,13 +244,62 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
         if (id === '#app/env/server' && importer && isInside(importer, kitDir)) {
           return path.join(kitDir, 'src/runtime/app/env/server.js');
         }
+
+        // Server code imports server code, as on SvelteKit's server: a remote module imported by
+        // the server copy of a module gets its server copy too. So does a project script that
+        // leads to a remote module (`a.remote.ts → helper.ts → b.remote.ts`), so its remote
+        // functions are the server ones. Other modules (the data layer) stay one shared module,
+        // so `vi.mock` and `sb.mock` still replace them.
+        if (server && importer?.endsWith(SERVER_QUERY) && !id.endsWith(SERVER_QUERY)) {
+          const resolved = await this.resolve(id, importer, { ...resolveOptions, skipSelf: true });
+          if (!resolved || resolved.external) return resolved;
+          const file = cleanId(resolved.id);
+          // A remote file that the filter leaves out stays the client stub, also here.
+          if (isRemoteModule(file) && !filter?.(file)) return resolved;
+          if (
+            isRemoteModule(file) ||
+            (isProjectScript(file) && (await leadsToRemote(file, this)))
+          ) {
+            return { ...resolved, id: file + SERVER_QUERY };
+          }
+          return resolved;
+        }
       },
     },
 
     load: {
-      filter: { id: /^\0virtual:vitest-plugin-sveltekit\/kit$/ },
+      filter: {
+        id: [
+          /^\0virtual:vitest-plugin-sveltekit\/(kit|app)$/,
+          /^\0vitest-plugin-sveltekit\/remote-call\//,
+          /[/\\]generated[/\\](dev|build)[/\\]env[/\\](config|private[/\\]server)\.js($|\?)/,
+        ],
+      },
       handler(id) {
         if (id === RESOLVED_KIT_VIRTUAL_ID) return kitModule(kitDir);
+        if (id === RESOLVED_APP_VIRTUAL_ID) return appModule(app!, server);
+        if (id.startsWith(CALL_PREFIX)) {
+          if (this.environment.config.consumer === 'client') return;
+          const file = Buffer.from(id.slice(CALL_PREFIX.length), 'base64url').toString();
+          const exports = analyzeRemoteModule(
+            readFileSync(file, 'utf8'),
+            path.relative(root, file)
+          );
+          return callModule(file, exports, runtimeFile('node'));
+        }
+
+        // SvelteKit's generated env modules have the app's values, and server code (and
+        // `storybook build`) would take them into the page. The browser gets its own.
+        if (!enabled || !app || !env || this.environment.config.consumer !== 'client') return;
+        const module = generatedEnvModule(cleanId(id), app.outDir);
+        if (module === 'config') return envConfigModule(env);
+        if (module === 'private') {
+          if (env.missing.length > 0 && !warnedMissingEnv) {
+            warnedMissingEnv = true;
+            this.warn(missingEnvWarning(env.missing));
+          }
+          return privateEnvModule(env);
+        }
       },
     },
 
@@ -114,21 +310,60 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
 
         // This package's own `remote.mock` matches the pattern too.
         if (isInside(id, distDir)) return;
-        const file = path.relative(root, cleanId(id));
+        const source = cleanId(id);
+        const file = path.relative(root, source);
         // Remote files in packages need SvelteKit's per-package opt-in check; not supported yet.
         if (!REMOTE_MODULE.test(file) || file.includes('node_modules')) return;
+
+        const included = server && !!filter?.(source);
+        if (id.endsWith(SERVER_QUERY)) {
+          if (!included) return;
+          const exports = analyzeRemoteModule(code, file);
+          return { code: createServerModule(code, exports, file), map: null };
+        }
 
         const exports = analyzeRemoteModule(code, file);
         let stub = createClientStub(exports, {
           hash: hash(file),
           registry: runtimeFile('registry'),
+          serverModule: included ? source + SERVER_QUERY : undefined,
+          excludedFile: server && !included ? file : undefined,
         });
         if (this.environment.mode === 'dev') stub += '\nimport.meta.hot?.accept();\n';
 
         return { code: stub, map: null };
       },
     },
+
+    ...vitestCache,
+
+    // So a published Storybook can be audited: what server code went into it.
+    generateBundle(_options, bundle) {
+      if (!enabled || !options.server || command !== 'build' || !app || !env) return;
+      if (this.environment.config.consumer !== 'client') return;
+      const outDir = app.outDir;
+      const report = serverBuildReport(
+        Object.values(bundle).flatMap((output) =>
+          output.type === 'chunk' ? output.moduleIds : []
+        ),
+        {
+          root,
+          serverHooks: app.serverHooks,
+          isEnvConfig: (file) => generatedEnvModule(file, outDir) === 'config',
+          privateEnvKeys: env.variables
+            .filter((variable) => !variable.public && variable.name in env!.values)
+            .map((variable) => variable.name),
+        }
+      );
+      console.log(formatServerBuildReport(report));
+    },
   };
+}
+
+/** The remote files under `root/src` whose server code the `server` option takes along. */
+function includedRemoteFiles(option: ServerOption | undefined, root: string): string[] {
+  const filter = serverFilter(option, root);
+  return filter ? findRemoteFiles(path.join(root, 'src')).filter(filter) : [];
 }
 
 /**
@@ -136,10 +371,10 @@ export function vitestPluginSvelteKit(options: VitestPluginSvelteKitOptions = {}
  * (`code/core/src/bin/core.ts` in storybookjs/storybook). The variable is not documented API, so a
  * `storybook:*` plugin in the config also counts, for Storybook started without the CLI.
  */
-function inStorybook(plugins: readonly Plugin[]): boolean {
+function inStorybook(plugins: readonly unknown[]): boolean {
   return (
     process.env.STORYBOOK === 'true' ||
-    plugins.some((plugin) => plugin.name.startsWith('storybook:'))
+    pluginNames(plugins).some((name) => name.startsWith('storybook:'))
   );
 }
 
@@ -152,10 +387,12 @@ function kitModule(kitDir: string): string {
   return [
     `export { set_remote_env, reset_remote_state, refresh_remote_queries } from '@sveltejs/kit/internal/client';`,
     `export { init_remote_server, handle_remote_request, get_remote_id, query, form, command, prerender, requested } from '@sveltejs/kit/internal/remote-server';`,
+    // Server mode pins the running request's state (see `pinRequest`).
+    `export { get_request_store } from '@sveltejs/kit/internal/server';`,
     // sveltejs/kit PR B (SB-2443) adds `withRequestEvent` to `$app/server`, which the page cannot
     // import. By path until an entry the page can import exports it too, for example
     // `@sveltejs/kit/internal/remote-server` once both PRs are merged.
-    `export { withRequestEvent } from ${JSON.stringify(path.join(kitDir, 'src/runtime/app/server/request-event.js'))};`,
+    `export { withRequestEvent } from ${literal(path.join(kitDir, 'src/runtime/app/server/request-event.js'))};`,
     '',
   ].join('\n');
 }
@@ -171,10 +408,62 @@ function resolveKitDir(root: string): string {
   }
 }
 
+/** On in Vitest and Storybook, unless set explicitly. */
+function isEnabled(options: VitestPluginSvelteKitOptions, plugins: readonly unknown[]): boolean {
+  return options.enabled ?? (!!process.env.VITEST || inStorybook(plugins));
+}
+
+/** The names in a Vite `plugins` option, which may nest arrays and contain falsy entries. */
+function pluginNames(plugins: readonly unknown[]): string[] {
+  return plugins.flatMap((plugin) =>
+    Array.isArray(plugin)
+      ? pluginNames(plugin)
+      : typeof (plugin as { name?: unknown } | null)?.name === 'string'
+        ? [(plugin as { name: string }).name]
+        : []
+  );
+}
+
+/** Keeps the plugins named `name` out of the browser environments, and in the others. */
+function onlyOutsideTheBrowser(config: ResolvedConfig, name: string): void {
+  for (const plugin of config.plugins as Plugin[]) {
+    if (plugin.name !== name) continue;
+    const applies = plugin.applyToEnvironment;
+    plugin.applyToEnvironment = (environment) =>
+      environment.config.consumer !== 'client' &&
+      (applies ? applies.call(plugin, environment) : true);
+  }
+}
+
+/**
+ * Node: the module in front of a remote file. Each function runs a call from outside a request
+ * (a test) inside one built from `mockRequestEvent()`, through SvelteKit's `withRequestEvent`.
+ */
+function callModule(file: string, exports: RemoteExport[], runtime: string): string {
+  const lines = [
+    `import * as remote from ${literal(file)};`,
+    `import { getRequestEvent, withRequestEvent } from '$app/server';`,
+    `import { wrapRemoteExport } from ${literal(runtime)};`,
+    '',
+  ];
+  exports.forEach(({ name }, index) => {
+    lines.push(
+      `const _${index} = wrapRemoteExport(remote[${literal(name)}], withRequestEvent, getRequestEvent);`,
+      `export { _${index} as ${name} };`
+    );
+  });
+  return lines.join('\n') + '\n';
+}
+
 function removePlugins(config: ResolvedConfig, names: string[]): void {
   const plugins = config.plugins as Plugin[];
   const kept = plugins.filter((plugin) => !names.includes(plugin.name));
   plugins.splice(0, plugins.length, ...kept);
+}
+
+function packageName(specifier: string): string {
+  const parts = specifier.split('/');
+  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]!;
 }
 
 function cleanId(id: string): string {

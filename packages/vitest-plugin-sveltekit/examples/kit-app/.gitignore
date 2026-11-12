@@ -1,2 +1,4 @@
 .svelte-kit/
 .vitest/
+.pglite/
+storybook-build.log

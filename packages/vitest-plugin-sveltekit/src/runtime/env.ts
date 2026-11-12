@@ -1,8 +1,16 @@
 import * as kit from 'virtual:vitest-plugin-sveltekit/kit';
 
+import { resetRequestEvent } from './request-event.ts';
+import { resetAsyncLocalStorage } from './async-local-storage.ts';
 import { resetGeneration, resetRemoteFunctions } from './registry.ts';
 import { ensureBodyStream } from './request-body.ts';
-import { handleRemoteRequest, isRemoteRequest } from './server.ts';
+import {
+  handleRemoteRequest,
+  isRemoteRequest,
+  prepareServer,
+  runsAlone,
+  transport,
+} from './server.ts';
 
 /** What the host (Storybook or Vitest) provides in place of SvelteKit's router. */
 export interface RemoteHost extends Pick<kit.RemoteEnv, 'page' | 'navigating'> {
@@ -18,9 +26,9 @@ export interface RemoteHost extends Pick<kit.RemoteEnv, 'page' | 'navigating'> {
 export function installRemoteEnv(host: RemoteHost): void {
   kit.set_remote_env({
     fetch: remoteFetch,
-    // Custom types from the `transport` hook are not supported yet.
-    decoders: {},
-    encoders: {},
+    // The custom types of the app's `transport` hook (`src/hooks.ts`).
+    decoders: transportFunctions('decode'),
+    encoders: transportFunctions('encode'),
     // Mutable objects from the host: SvelteKit reads `url` from them on each request.
     page: host.page,
     navigating: host.navigating,
@@ -36,10 +44,24 @@ export function installRemoteEnv(host: RemoteHost): void {
   });
 }
 
+/** The requests that run one at a time (see `runsAlone`). Each story or test starts a new one. */
+let queue: Promise<unknown> = Promise.resolve();
+
 /** Forgets cached query results and form state, and resets every remote function spy. */
 export async function resetRemoteState(): Promise<void> {
   resetRemoteFunctions();
+  queue = Promise.resolve();
+  resetRequestEvent();
+  // Ends the open `query.live` connections: their real generators stop through `request.signal`.
   await kit.reset_remote_state();
+  resetAsyncLocalStorage();
+  await prepareServer();
+}
+
+function transportFunctions(kind: 'encode' | 'decode'): Record<string, (data: any) => any> {
+  return Object.fromEntries(
+    Object.entries(transport).map(([name, transporter]) => [name, transporter[kind]])
+  );
 }
 
 async function remoteFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -62,5 +84,13 @@ async function remoteFetch(input: RequestInfo | URL, init?: RequestInit): Promis
   // error boundary and logs the error. A promise that never settles goes away with the
   // components that wait for it.
   if (resetGeneration() !== generation) return new Promise<never>(() => {});
-  return handleRemoteRequest(request);
+  if (!runsAlone(request)) return handleRemoteRequest(request);
+
+  const turn = queue.then(() =>
+    resetGeneration() === generation
+      ? handleRemoteRequest(request, true)
+      : new Promise<never>(() => {})
+  );
+  queue = turn.catch(() => {});
+  return turn;
 }

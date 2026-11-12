@@ -1,0 +1,56 @@
+name: E2E vitest-plugin-sveltekit
+
+# The tests of `packages/vitest-plugin-sveltekit/examples/kit-app` (`pnpm test:ci` in the package):
+# `svelte-check`, the Vitest browser projects (component tests, server mode tests and every story
+# through `@storybook/addon-vitest`), then Playwright against the app's production build and
+# against `storybook dev` and the static Storybook. Slower than the unit tests, so it runs on its
+# own, and only when the package, the Kit patch or the lockfile change.
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/vitest-plugin-sveltekit/**
+      - patches/**
+      - pnpm-lock.yaml
+      - .github/workflows/e2e-vitest-plugin-sveltekit.yml
+  pull_request:
+    paths:
+      - packages/vitest-plugin-sveltekit/**
+      - patches/**
+      - pnpm-lock.yaml
+      - .github/workflows/e2e-vitest-plugin-sveltekit.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Example app, Storybook and Vitest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Installs vp at the catalog's vite-plus version, then runs `vp install`, which builds the
+      # package (`prepare`) for the example.
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version: 22
+          cache: true
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      # The example pins its own Playwright, so install the browser with that version.
+      - name: Install Playwright Chromium
+        run: pnpm -F vitest-plugin-sveltekit-kit-app-example exec playwright install --with-deps chromium
+
+      - name: Example tests
+        run: pnpm -F vitest-plugin-sveltekit test:ci
+        env:
+          CI: 'true'

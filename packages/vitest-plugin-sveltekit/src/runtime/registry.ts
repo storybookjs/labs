@@ -46,6 +46,10 @@ export function setSpyFactory(factory: () => unknown): void {
 const entries = new Map<string, RemoteEntry>();
 const byClient = new WeakMap<object, RemoteEntry>();
 const listeners = new Set<(hash: string) => void>();
+const serverModules = new Map<string, () => Promise<Record<string, unknown>>>();
+const defaults = new WeakMap<RemoteSpy, Handler>();
+/** Server mode: the remote files that `server.include` / `exclude` leave out, by hash. */
+const excludedFiles = new Map<string, string>();
 
 /**
  * Called by the client stub of each remote file, once per export. Re-registration (after HMR)
@@ -66,7 +70,7 @@ export function registerRemoteFunction(client: object, id: string, kind: RemoteK
       name,
       kind,
       get spy() {
-        return (spy ??= createSpy(this.name, this.kind));
+        return (spy ??= createSpy(this.name, this.kind, this.hash));
       },
     };
     entries.set(id, entry);
@@ -91,8 +95,48 @@ export function getRemoteEntry(client: unknown): RemoteEntry {
   return entry;
 }
 
+/** The entry behind a request id, `<hash>/<name>` (a prerender id carries its argument too). */
+export function getRemoteEntryById(id: string): RemoteEntry | undefined {
+  const [hash, name] = id.split('/');
+  return entries.get(`${hash}/${name}`);
+}
+
 export function getRemoteEntries(hash: string): RemoteEntry[] {
   return [...entries.values()].filter((entry) => entry.hash === hash);
+}
+
+/**
+ * Server mode: called by the client stub of a remote file that the `server` filter leaves out. Its
+ * functions have no server code, so without a mock each one fails with a hint, whatever its kind.
+ */
+export function registerExcludedModule(hash: string, file: string): void {
+  excludedFiles.set(hash, file);
+}
+
+/** Server mode: called by the client stub with a loader for the module's server copy. */
+export function registerRemoteModule(
+  hash: string,
+  load: () => Promise<Record<string, unknown>>
+): void {
+  serverModules.set(hash, load);
+}
+
+export function getServerModuleLoaders(): Array<() => Promise<Record<string, unknown>>> {
+  return [...serverModules.values()];
+}
+
+export function getServerModuleLoader(
+  hash: string
+): (() => Promise<Record<string, unknown>>) | undefined {
+  return serverModules.get(hash);
+}
+
+/**
+ * Whether a story or test gave the spy a behaviour of its own (`mockResolvedValue`,
+ * `mockImplementation`, ...). In server mode, only these functions skip the real handler.
+ */
+export function isMocked(entry: RemoteEntry): boolean {
+  return entry.spy.getMockImplementation() !== defaults.get(entry.spy);
 }
 
 export function registeredHashes(): Set<string> {
@@ -124,11 +168,11 @@ export function resetRemoteFunctions(): void {
   generation++;
   for (const entry of entries.values()) {
     entry.spy.mockReset();
-    applyDefaults(entry.spy, entry.name, entry.kind);
+    applyDefaults(entry.spy, entry.name, entry.kind, entry.hash);
   }
 }
 
-function createSpy(name: string, kind: RemoteKind): RemoteSpy {
+function createSpy(name: string, kind: RemoteKind, hash: string): RemoteSpy {
   if (!spyFactory) {
     throw new Error(
       '[vitest-plugin-sveltekit] remote functions have no spies yet. Add `vitest-plugin-sveltekit/vitest` to `test.setupFiles` (Vitest), or the preview annotations from `vitest-plugin-sveltekit/storybook` (Storybook).'
@@ -159,29 +203,45 @@ function createSpy(name: string, kind: RemoteKind): RemoteSpy {
     return stream.controls;
   };
 
-  applyDefaults(spy, name, kind);
+  applyDefaults(spy, name, kind, hash);
   return spy;
 }
 
-function applyDefaults(spy: RemoteSpy, name: string, kind: RemoteKind): void {
-  spy.mockName(name);
+function applyDefaults(spy: RemoteSpy, name: string, kind: RemoteKind, hash: string): void {
+  const implementation = excludedOr(hash, name, defaultImplementation(name, kind));
+  defaults.set(spy, implementation);
+  spy.mockName(name).mockImplementation(implementation);
+}
 
+/** The default of a function in an excluded file: an error that names the file. */
+function excludedOr(hash: string, name: string, fallback: Handler): Handler {
+  return (...args) => {
+    const file = excludedFiles.get(hash);
+    if (file) {
+      error(
+        500,
+        `\`${name}\` has no mock, and server mode leaves ${file} out. Mock it with \`mockRemote(${name})\`, or add ${file} to \`server.include\`.`
+      );
+    }
+    return fallback(...args);
+  };
+}
+
+function defaultImplementation(name: string, kind: RemoteKind): Handler {
   switch (kind) {
     case 'query':
     case 'query_batch':
     case 'query_live':
     case 'prerender':
-      spy.mockImplementation(() => {
+      return () => {
         error(
           500,
           `\`${name}\` has no mock. Call \`mockRemote(${name}).mockResolvedValue(...)\` in \`beforeEach\`.`
         );
-      });
-      break;
+      };
     case 'form':
     case 'command':
-      spy.mockImplementation(() => undefined);
-      break;
+      return () => undefined;
     default: {
       const unknownKind: never = kind;
       throw new Error(`Unknown remote function kind: ${String(unknownKind)}`);
