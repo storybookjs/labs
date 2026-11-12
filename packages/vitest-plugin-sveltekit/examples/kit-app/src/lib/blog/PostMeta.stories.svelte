@@ -1,10 +1,10 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
 
+  import preview from '../../../.storybook/preview';
   import { postSummaries, published } from './fixtures.ts';
   import PostMeta from './PostMeta.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/PostMeta',
     component: PostMeta,
     parameters: { layout: 'padded' },

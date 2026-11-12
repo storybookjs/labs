@@ -1,6 +1,5 @@
 <script module lang="ts">
   import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { count, desc, eq } from 'drizzle-orm';
   import { expect } from 'storybook/test';
 
@@ -11,10 +10,11 @@
   import { posts } from '#lib/server/schema.ts';
 
   import { connectLivePanel } from '../../../.storybook/live-panel/preview.ts';
+  import preview from '../../../.storybook/preview';
   import LiveFeed from './LiveFeed.svelte';
 
   // Drive these two from the "Live feed" panel (`.storybook/manager.ts`).
-  const { Story } = defineMeta({ title: 'Live', component: LiveFeed });
+  const { Story } = preview.meta({ title: 'Live', component: LiveFeed });
 
   const seed: Feed = {
     count: 2,

@@ -1,15 +1,15 @@
 <script module lang="ts">
   import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, fn, userEvent, waitFor } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import { listPosts, watchNewPosts } from './blog.remote.ts';
   import { postPage, published } from './fixtures.ts';
   import PostFeed from './PostFeed.svelte';
   import { defaultListParams } from './posts.ts';
   import { mockQuietFeed, seedDatabase } from './story-helpers.ts';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/PostFeed',
     component: PostFeed,
     parameters: { layout: 'padded' },

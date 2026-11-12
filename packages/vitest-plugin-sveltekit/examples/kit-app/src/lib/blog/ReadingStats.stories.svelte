@@ -1,13 +1,13 @@
 <script module lang="ts">
   import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import { getReadingStats } from './blog.remote.ts';
   import ReadingStats from './ReadingStats.svelte';
   import { seedDatabase } from './story-helpers.ts';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/ReadingStats',
     component: ReadingStats,
     parameters: { layout: 'padded' },

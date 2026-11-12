@@ -107,7 +107,6 @@ export default definePreview({
 });
 ```
 
-Without `definePreview`, use `export { beforeEach } from 'vitest-plugin-sveltekit/storybook'`.
 Storybook reads the plugin from `vite.config.ts`.
 
 ### Variant: one plugin per project
@@ -286,21 +285,21 @@ test('shows the issue the form handler reports', async () => {
 ```
 
 In a story, put the mock in `beforeEach` too. A story's `beforeEach` runs after the one in
-`defineMeta`, so it can replace the mock:
+`preview.meta`, so it can replace the mock:
 
 ```svelte
 <!-- src/lib/components/PostForm.stories.svelte -->
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { invalid } from '@sveltejs/kit';
   import { expect, waitFor } from 'storybook/test';
 
   import { createPost } from '#lib/posts.remote.ts';
 
+  import preview from '../../../.storybook/preview';
   import PostForm from './PostForm.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostForm',
     component: PostForm,
@@ -416,7 +415,6 @@ The story checks the same issue:
 <!-- src/lib/components/server/Posts.stories.svelte -->
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, waitFor } from 'storybook/test';
 
   import { createPost } from '#lib/posts.remote.ts';
@@ -425,10 +423,11 @@ The story checks the same issue:
   import { resetDb } from '#lib/server/mocked-db.ts';
   import { posts } from '#lib/server/schema.ts';
 
+  import preview from '../../../../.storybook/preview';
   import Posts from '../Posts.svelte';
 
   // The real `createPost`: its valibot schema, its `invalid()` calls, its insert.
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/Posts',
     component: Posts,
@@ -628,14 +627,14 @@ because the component connects when it renders:
 <!-- src/lib/components/PostCount.stories.svelte -->
 <script module lang="ts">
   import { httpError, mockRemote, type RemoteStream } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
   import { getPostCount } from '#lib/posts.remote.ts';
 
+  import preview from '../../../.storybook/preview';
   import PostCount from './PostCount.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostCount',
     component: PostCount,

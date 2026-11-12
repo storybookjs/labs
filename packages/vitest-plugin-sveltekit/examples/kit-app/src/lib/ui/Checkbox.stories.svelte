@@ -1,10 +1,10 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Checkbox from './Checkbox.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Checkbox',
     component: Checkbox,
     parameters: { layout: 'padded' },

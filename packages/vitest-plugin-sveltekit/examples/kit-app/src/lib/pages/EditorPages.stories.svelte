@@ -1,6 +1,5 @@
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { invalid } from '@sveltejs/kit';
   import { expect, userEvent } from 'storybook/test';
 
@@ -9,12 +8,13 @@
   import { postDetails } from '#lib/blog/fixtures.ts';
   import { seedDatabase } from '#lib/blog/story-helpers.ts';
 
+  import preview from '../../../.storybook/preview';
   import EditPostPage from './EditPostPage.svelte';
   import NewPostPage from './NewPostPage.svelte';
 
   const post = postDetails.find((item) => item.title === 'A calmer colour palette')!;
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Pages/Editor',
     parameters: {
       layout: 'fullscreen',

@@ -1,7 +1,6 @@
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
   import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, waitFor } from 'storybook/test';
 
   import { gate, open, resetGates } from '#lib/probes/gate.ts';
@@ -15,12 +14,13 @@
   } from '#lib/probes/probes.remote.ts';
   import { resetDb } from '#lib/server/mocked-db.ts';
 
+  import preview from '../../../../.storybook/preview';
   import PostCount from '../PostCount.svelte';
 
   const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
 
   // The overlap probes of `overlap.server.test.ts`, in Storybook.
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/Overlap',
     component: PostCount,

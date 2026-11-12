@@ -1,15 +1,15 @@
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { invalid } from '@sveltejs/kit';
   import { expect, userEvent, waitFor } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import { editPost, publishPost } from './blog.remote.ts';
   import { postDetails } from './fixtures.ts';
   import PostEditor from './PostEditor.svelte';
   import { seedDatabase } from './story-helpers.ts';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/PostEditor',
     component: PostEditor,
     parameters: { layout: 'padded' },

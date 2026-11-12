@@ -1,12 +1,12 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, waitFor } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Button from './Button.svelte';
   import ToastRegion from './ToastRegion.svelte';
   import { clearToasts, toast } from './toasts.svelte.ts';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/ToastRegion',
     component: ToastRegion,
     parameters: { layout: 'fullscreen' },

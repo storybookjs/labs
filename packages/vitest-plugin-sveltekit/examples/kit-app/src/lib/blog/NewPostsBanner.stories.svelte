@@ -1,16 +1,16 @@
 <script module lang="ts">
   import { mockRemote, type RemoteStream } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, fn, userEvent, waitFor } from 'storybook/test';
 
   import { db } from '#lib/server/db.ts';
   import { posts } from '#lib/server/schema.ts';
 
+  import preview from '../../../.storybook/preview';
   import { watchNewPosts } from './blog.remote.ts';
   import NewPostsBanner from './NewPostsBanner.svelte';
   import { seedDatabase } from './story-helpers.ts';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/NewPostsBanner',
     component: NewPostsBanner,
     parameters: { layout: 'padded' },

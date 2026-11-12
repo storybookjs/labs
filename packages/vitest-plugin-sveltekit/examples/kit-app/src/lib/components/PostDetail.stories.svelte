@@ -1,14 +1,14 @@
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { error } from '@sveltejs/kit';
   import { expect } from 'storybook/test';
 
   import { getPost } from '#lib/posts.remote.ts';
 
+  import preview from '../../../.storybook/preview';
   import PostDetail from './PostDetail.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostDetail',
     component: PostDetail,

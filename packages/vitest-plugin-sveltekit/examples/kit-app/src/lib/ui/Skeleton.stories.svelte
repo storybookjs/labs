@@ -1,10 +1,10 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Skeleton from './Skeleton.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Skeleton',
     component: Skeleton,
     parameters: { layout: 'padded' },

@@ -1,7 +1,6 @@
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
   import { mockRequestEvent } from 'vitest-plugin-sveltekit/server.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, waitFor } from 'storybook/test';
 
   import { getStats } from '#lib/posts.remote.ts';
@@ -9,11 +8,12 @@
   import { resetDb } from '#lib/server/mocked-db.ts';
   import { posts } from '#lib/server/schema.ts';
 
+  import preview from '../../../../.storybook/preview';
   import PostList from '../PostList.svelte';
 
   // No `mockRemote()` mocks here: `getPosts`, `getStats` and `deletePost` run the code in
   // `posts.remote.ts`, on the in-memory database from `__mocks__/db.ts`.
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/PostList',
     component: PostList,

@@ -1,13 +1,13 @@
 <script module lang="ts">
   import { httpError, mockRemote, type RemoteStream } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
   import { getPostCount } from '#lib/posts.remote.ts';
 
+  import preview from '../../../.storybook/preview';
   import PostCount from './PostCount.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostCount',
     component: PostCount,

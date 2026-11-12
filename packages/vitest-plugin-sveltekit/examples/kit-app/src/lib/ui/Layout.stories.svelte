@@ -1,8 +1,7 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
-  import type { ComponentProps } from 'svelte';
   import { expect, waitFor } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Badge from './Badge.svelte';
   import Button from './Button.svelte';
   import Card from './Card.svelte';
@@ -15,10 +14,12 @@
   import Tag from './Tag.svelte';
   import { clearToasts, toast } from './toasts.svelte.ts';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Layout',
     component: Layout,
     parameters: { layout: 'fullscreen' },
+    // The app's header and footer around each story's page content.
+    args: { header: appHeader, footer: appFooter },
     beforeEach: () => {
       clearToasts();
       return clearToasts;
@@ -52,7 +53,7 @@
 
 <Story
   name="Blog index"
-  template={page}
+  args={{ children: postList }}
   play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
     const skip = canvas.getByRole('link', { name: 'Skip to content' });
@@ -64,20 +65,19 @@
 
 <Story
   name="Narrow article"
-  args={{ width: 'narrow' }}
-  template={article}
+  args={{ width: 'narrow', children: article }}
   play={async ({ canvas }) => {
     await expect(canvas.getByRole('main')).toHaveClass('narrow');
   }}
 />
 
-<Story name="Loading" template={loading} />
+<Story name="Loading" args={{ children: loading }} />
 
-<Story name="Empty" template={empty} />
+<Story name="Empty" args={{ children: empty }} />
 
 <Story
   name="With toast"
-  template={page}
+  args={{ children: postList }}
   play={async ({ canvas, step }) => {
     await step('The app shows a toast', async () => {
       toast('Post published', { tone: 'success', timeout: 0 });
@@ -86,68 +86,11 @@
   }}
 />
 
-<Story name="Mobile" template={page} globals={{ viewport: { value: 'mobile1' } }} />
+<Story name="Mobile" args={{ children: postList }} globals={{ viewport: { value: 'mobile1' } }} />
 
-<Story name="Dark" template={page} globals={{ theme: 'dark' }} />
+<Story name="Dark" args={{ children: postList }} globals={{ theme: 'dark' }} />
 
-{#snippet article(args: Partial<ComponentProps<typeof Layout>>)}
-  <Layout {...args}>
-    {#snippet header()}
-      {@render header_()}
-    {/snippet}
-    <article class="article">
-      <p class="meta">Svelty McSvelteface · 31 October 2026</p>
-      <h1>A calm palette for a reading app</h1>
-      {#each { length: 4 } as _, index (index)}
-        <p>
-          Warm paper, ink that is not quite black, and one colour that does the pointing. Paragraph
-          {index + 1} sets the measure at about seventy characters, so the eye finds the next line
-          without effort.
-        </p>
-      {/each}
-    </article>
-    {#snippet footer()}
-      <Footer />
-    {/snippet}
-  </Layout>
-{/snippet}
-
-{#snippet loading(args: Partial<ComponentProps<typeof Layout>>)}
-  <Layout {...args}>
-    {#snippet header()}
-      {@render header_()}
-    {/snippet}
-    <div class="list">
-      {#each { length: 3 } as _, index (index)}
-        <Card>
-          <Skeleton width="60%" height="1.5rem" />
-          <div style="margin-top: var(--space-3)"><Skeleton lines={2} /></div>
-        </Card>
-      {/each}
-    </div>
-    {#snippet footer()}
-      <Footer />
-    {/snippet}
-  </Layout>
-{/snippet}
-
-{#snippet empty(args: Partial<ComponentProps<typeof Layout>>)}
-  <Layout {...args}>
-    {#snippet header()}
-      {@render header_()}
-    {/snippet}
-    <EmptyState title="No posts yet" description="Posts you write show up here.">
-      {#snippet action()}
-        <Button href="/posts/new">Write the first post</Button>
-      {/snippet}
-    </EmptyState>
-    {#snippet footer()}
-      <Footer />
-    {/snippet}
-  </Layout>
-{/snippet}
-
-{#snippet header_()}
+{#snippet appHeader()}
   <Header>
     {#snippet nav()}
       <a href="/posts" aria-current="page">Posts</a>
@@ -160,37 +103,66 @@
   </Header>
 {/snippet}
 
-{#snippet page(args: Partial<ComponentProps<typeof Layout>>)}
-  <Layout {...args}>
-    {#snippet header()}
-      {@render header_()}
-    {/snippet}
-    <h1 class="title">Posts</h1>
-    <div class="list">
-      {#each posts as post (post.id)}
-        <Card as="article" interactive>
-          <div class="post-head">
-            <h2><a href="/posts/{post.id}">{post.title}</a></h2>
-            {#if post.draft}<Badge tone="warning">Draft</Badge>{/if}
+{#snippet appFooter()}
+  <Footer />
+{/snippet}
+
+{#snippet postList()}
+  <h1 class="title">Posts</h1>
+  <div class="list">
+    {#each posts as post (post.id)}
+      <Card as="article" interactive>
+        <div class="post-head">
+          <h2><a href="/posts/{post.id}">{post.title}</a></h2>
+          {#if post.draft}<Badge tone="warning">Draft</Badge>{/if}
+        </div>
+        <p class="excerpt">{post.excerpt}</p>
+        {#snippet footer()}
+          <div class="tags">
+            {#each post.tags as tag (tag)}
+              <Tag href="/tags/{tag}">{tag}</Tag>
+            {/each}
           </div>
-          <p class="excerpt">{post.excerpt}</p>
-          {#snippet footer()}
-            <div class="tags">
-              {#each post.tags as tag (tag)}
-                <Tag href="/tags/{tag}">{tag}</Tag>
-              {/each}
-            </div>
-          {/snippet}
-        </Card>
-      {/each}
-    </div>
-    <div style="margin-top: var(--space-6)">
-      <Pagination page={1} pageCount={4} href={(page) => `/posts?page=${page}`} />
-    </div>
-    {#snippet footer()}
-      <Footer />
+        {/snippet}
+      </Card>
+    {/each}
+  </div>
+  <div style="margin-top: var(--space-6)">
+    <Pagination page={1} pageCount={4} href={(page) => `/posts?page=${page}`} />
+  </div>
+{/snippet}
+
+{#snippet article()}
+  <article class="article">
+    <p class="meta">Svelty McSvelteface · 31 October 2026</p>
+    <h1>A calm palette for a reading app</h1>
+    {#each { length: 4 } as _, index (index)}
+      <p>
+        Warm paper, ink that is not quite black, and one colour that does the pointing. Paragraph
+        {index + 1} sets the measure at about seventy characters, so the eye finds the next line
+        without effort.
+      </p>
+    {/each}
+  </article>
+{/snippet}
+
+{#snippet loading()}
+  <div class="list">
+    {#each { length: 3 } as _, index (index)}
+      <Card>
+        <Skeleton width="60%" height="1.5rem" />
+        <div style="margin-top: var(--space-3)"><Skeleton lines={2} /></div>
+      </Card>
+    {/each}
+  </div>
+{/snippet}
+
+{#snippet empty()}
+  <EmptyState title="No posts yet" description="Posts you write show up here.">
+    {#snippet action()}
+      <Button href="/posts/new">Write the first post</Button>
     {/snippet}
-  </Layout>
+  </EmptyState>
 {/snippet}
 
 <style>

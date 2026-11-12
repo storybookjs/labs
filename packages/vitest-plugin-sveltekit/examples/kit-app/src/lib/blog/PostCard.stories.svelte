@@ -1,8 +1,8 @@
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import { getReadingStats } from './blog.remote.ts';
   import { longPost, postSummaries, published } from './fixtures.ts';
   import PostCard from './PostCard.svelte';
@@ -10,7 +10,7 @@
 
   // `mockQuietFeed` is not on the meta: a reset spy counts as mocked, so the server mode story
   // must start unmocked.
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/PostCard',
     component: PostCard,
     parameters: { layout: 'padded' },

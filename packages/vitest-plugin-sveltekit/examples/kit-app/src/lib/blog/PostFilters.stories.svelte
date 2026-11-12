@@ -1,12 +1,12 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, fn, userEvent, waitFor } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import { tagCounts } from './fixtures.ts';
   import PostFilters from './PostFilters.svelte';
   import { defaultListParams } from './posts.ts';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/PostFilters',
     component: PostFilters,
     parameters: { layout: 'padded' },

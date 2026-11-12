@@ -2,4 +2,4 @@
 'vitest-plugin-sveltekit': patch
 ---
 
-Make the README's Svelte CSF story snippets match the example stories, which are all written in Svelte CSF now.
+Write the README's story snippets in Svelte CSF 4 (`preview.meta`), as exact copies of the example stories.

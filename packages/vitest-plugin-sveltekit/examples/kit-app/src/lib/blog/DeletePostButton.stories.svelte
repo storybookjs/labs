@@ -1,17 +1,17 @@
 <script module lang="ts">
   import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, userEvent, waitFor, within } from 'storybook/test';
 
   import { db } from '#lib/server/db.ts';
   import { posts } from '#lib/server/schema.ts';
   import { toasts } from '#lib/ui/toasts.svelte.ts';
 
+  import preview from '../../../.storybook/preview';
   import { removePost } from './blog.remote.ts';
   import DeletePostButton from './DeletePostButton.svelte';
   import { seedDatabase } from './story-helpers.ts';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/DeletePostButton',
     component: DeletePostButton,
     parameters: { layout: 'centered' },

@@ -1,10 +1,10 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, fn } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Toast from './Toast.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Toast',
     component: Toast,
     parameters: { layout: 'padded' },

@@ -1,14 +1,14 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
   import { db } from '#lib/server/db.ts';
   import { resetDb } from '#lib/server/mocked-db.ts';
   import { posts } from '#lib/server/schema.ts';
 
+  import preview from '../../../../.storybook/preview';
   import PostCount from '../PostCount.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/PostCount',
     component: PostCount,

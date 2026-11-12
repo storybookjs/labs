@@ -1,11 +1,11 @@
 <script module lang="ts">
   import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { error, redirect } from '@sveltejs/kit';
   import { expect, waitFor } from 'storybook/test';
 
   import { deletePost, getPosts, getStats } from '#lib/posts.remote.ts';
 
+  import preview from '../../../.storybook/preview';
   import PostList from './PostList.svelte';
 
   const posts = [
@@ -13,7 +13,7 @@
     { id: 2, title: 'Second post', body: '' },
   ];
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostList',
     component: PostList,

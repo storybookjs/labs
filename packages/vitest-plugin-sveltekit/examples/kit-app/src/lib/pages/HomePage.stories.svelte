@@ -1,6 +1,5 @@
 <script module lang="ts">
   import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import type { ComponentProps } from 'svelte';
   import { expect, fn } from 'storybook/test';
 
@@ -10,9 +9,10 @@
   import { defaultListParams } from '#lib/blog/posts.ts';
   import { mockQuietFeed, seedDatabase } from '#lib/blog/story-helpers.ts';
 
+  import preview from '../../../.storybook/preview';
   import HomePage from './HomePage.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Pages/Home',
     component: HomePage,
     parameters: {

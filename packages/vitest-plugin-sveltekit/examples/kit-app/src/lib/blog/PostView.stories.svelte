@@ -1,8 +1,8 @@
 <script module lang="ts">
   import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, waitFor } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import { countView, readPost } from './blog.remote.ts';
   import { longPost, postDetails } from './fixtures.ts';
   import PostView from './PostView.svelte';
@@ -10,7 +10,7 @@
 
   const typography = postDetails.find((post) => post.title === 'Typography for long reads')!;
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Posts/PostView',
     component: PostView,
     parameters: { layout: 'padded' },

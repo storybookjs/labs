@@ -1,7 +1,7 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Select from './Select.svelte';
 
   const options = [
@@ -10,7 +10,7 @@
     { value: 'title', label: 'Title' },
   ];
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Select',
     component: Select,
     parameters: { layout: 'padded' },
