@@ -16,11 +16,13 @@ behave as they do in your app.
 
 Requirements:
 
-- `@sveltejs/kit` 3.2.0 exactly, with the patch
+- Node 22.19 or later
+- `@sveltejs/kit` 3.2.0 exactly, with the [patch](#sveltekit-patch)
 - Svelte 5.57 or later
 - Vite 8
-- `storybook` 11 (alpha), a peer dependency also when you use only Vitest
-- Vitest 5, Storybook with `@storybook/sveltekit`, or both
+- `storybook` 11 (alpha). It is a required peer dependency, also when you use only Vitest.
+- Vitest 5 with `@vitest/browser-playwright` and `vitest-browser-svelte`, Storybook with
+  `@storybook/sveltekit`, or both
 
 Install the package:
 
@@ -218,14 +220,21 @@ test('only a signed-in user can delete a post', async () => {
 });
 ```
 
-What a call throws is what SvelteKit's server code throws: `error()` gives an `HttpError`
-(`status`, `body`), `redirect()` a `Redirect` (`status`, `location`), and a schema that rejects an
-argument a `ValidationError` (`issues`). Await a `query.live` function for its first value, or
-iterate it for all values. To batch the calls of a `query.batch`, run them in one request with
-[`runInRequest()`](#runinrequestfn):
+A call throws what SvelteKit's server code throws:
+
+- `error()` throws an `HttpError` (`status`, `body`).
+- `redirect()` throws a `Redirect` (`status`, `location`).
+- A schema that rejects an argument throws a `ValidationError` (`issues`).
+
+Await a `query.live` function for its first value, or iterate it for all values. To batch the calls
+of a `query.batch`, run them in one request with [`runInRequest()`](#runinrequestfn):
 
 ```ts
-const [a, b] = await runInRequest(() => Promise.all([getReadingStats(1), getReadingStats(2)]));
+import { runInRequest } from 'vitest-plugin-sveltekit/server.mock';
+
+import { getStats } from '#lib/posts.remote.ts';
+
+const [first, second] = await runInRequest(() => Promise.all([getStats(1), getStats(2)]));
 ```
 
 Your `hooks.server` file does not run in Node mode, so set `locals` in the test. SvelteKit's rules
@@ -330,7 +339,8 @@ In Storybook, the spy's calls show in the Actions panel. For data, errors, redir
 streams, see [`mockRemote(fn)`](#mockremotefn). More examples:
 [`Posts.test.ts`](./examples/kit-app/src/lib/components/Posts.test.ts) and
 [`Posts.stories.svelte`](./examples/kit-app/src/lib/components/Posts.stories.svelte) (a refresh and
-a redirect), and [`PostCount.test.ts`](./examples/kit-app/src/lib/components/PostCount.test.ts) (a
+a redirect), and [`PostCount.test.ts`](./examples/kit-app/src/lib/components/PostCount.test.ts) and
+[`PostCount.stories.svelte`](./examples/kit-app/src/lib/components/PostCount.stories.svelte) (a
 `query.live` stream).
 
 ### Run the real remote functions
@@ -392,7 +402,7 @@ test('shows the issue the real handler reports with invalid()', async () => {
 });
 ```
 
-The story does the same:
+The story checks the same issue:
 
 ```svelte
 <!-- src/lib/components/server/Posts.stories.svelte -->
@@ -415,12 +425,14 @@ The story does the same:
 </script>
 
 <Story
-  name="Create and refresh"
+  name="Handler issue"
   play={async ({ canvas, userEvent }) => {
-    await userEvent.type(await canvas.findByLabelText('Title'), 'Second post');
+    await userEvent.type(await canvas.findByLabelText('Title'), 'First post');
     await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
-    await expect(await canvas.findByRole('link', { name: 'Second post' })).toBeVisible();
-    await expect(await db.$count(posts)).toBe(2);
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      'A post with this title exists'
+    );
+    await expect(await db.$count(posts)).toBe(1);
   }}
 />
 ```
@@ -430,11 +442,12 @@ import of the mock file is a second module with a second database. The example's
 [`mocked-db.ts`](./examples/kit-app/src/lib/server/mocked-db.ts) gives typed access to helpers such
 as `resetDb()`.
 
-To sign a user in, call `mockRequestEvent({ cookies: { session: 'svelty' } })` in `beforeEach`.
+To sign a user in, call `mockRequestEvent({ cookies: { session: 'svelty' } })` from
+`vitest-plugin-sveltekit/server.mock` in `beforeEach`.
 Your `handle` hook runs for each request and can read the cookie. A function that you mock with
 `mockRemote(fn)` skips its real handler, and the others run.
 
-More tests are in [`components/server`](./examples/kit-app/src/lib/components/server).
+More tests and stories are in [`components/server`](./examples/kit-app/src/lib/components/server).
 [`blog.server.test.ts`](./examples/kit-app/src/lib/blog/blog.server.test.ts) calls remote functions
 in the browser without a component. Before you publish a Storybook in server mode, read
 [Server mode caveats](#server-mode-caveats).
@@ -513,8 +526,7 @@ of your `src/hooks.ts`.
 ## Environment variables
 
 Real `.env` values never reach the browser. In Storybook and in Vitest browser mode,
-`$app/env/private` (and `$env/static/private` and `$env/dynamic/private`) gives server code only the
-values of the [`env`](#env) option. Pass only values that may be public:
+`$app/env/private` gives server code only the values of the [`env`](#options) option. Pass only values that may be public:
 
 ```ts
 vitestPluginSvelteKit({ server: true, env: { API_URL: 'https://api.example.test' } });
@@ -591,6 +603,7 @@ On a `query.live` spy. Returns a stream that the story or test drives, with `emi
 because the component connects when it renders:
 
 ```svelte
+<!-- src/lib/components/PostCount.stories.svelte -->
 <script module lang="ts">
   import { httpError, mockRemote, type RemoteStream } from 'vitest-plugin-sveltekit/remote.mock';
   import { defineMeta } from '@storybook/sveltekit';
@@ -662,9 +675,8 @@ The setup file. It also exports stand-ins for what plain Vitest does not have:
 
 ### `vitest-plugin-sveltekit/storybook`
 
-The default export, `remoteFunctions()`, gives the preview annotations for `definePreview`. The
-`beforeEach` export is the same hook. It connects SvelteKit's client runtime to the `$app/state`
-and `$app/navigation` mocks of `@storybook/sveltekit`.
+The preview annotations (see [Storybook](#storybook)). They connect SvelteKit's client runtime to
+the `$app/state` and `$app/navigation` mocks of `@storybook/sveltekit`.
 
 ## SvelteKit patch
 
