@@ -301,6 +301,8 @@ In a story, put the mock in `beforeEach` too. A story's `beforeEach` runs after 
   import PostForm from './PostForm.svelte';
 
   const { Story } = defineMeta({
+    parameters: { demo: true },
+    title: 'Remote functions/PostForm',
     component: PostForm,
     beforeEach: () => {
       mockRemote(createPost).mockImplementation(async (data, issue) => {
@@ -311,11 +313,15 @@ In a story, put the mock in `beforeEach` too. A story's `beforeEach` runs after 
   });
 </script>
 
+<!-- … -->
+
 <Story
   name="Created"
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('Title'), 'A real title');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create: the (mocked) handler accepts the title', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'A real title');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
     await expect(await canvas.findByRole('status')).toHaveTextContent('Created “A real title”');
   }}
 />
@@ -325,9 +331,11 @@ In a story, put the mock in `beforeEach` too. A story's `beforeEach` runs after 
   beforeEach={() => {
     mockRemote(createPost).mockPending();
   }}
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(canvas.getByLabelText('Title'), 'Slow');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create: the (mocked) handler never answers', async () => {
+      await userEvent.type(canvas.getByLabelText('Title'), 'Slow');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Create' })).toBeDisabled());
   }}
 />
@@ -407,8 +415,11 @@ The story checks the same issue:
 ```svelte
 <!-- src/lib/components/server/Posts.stories.svelte -->
 <script module lang="ts">
+  import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
   import { defineMeta } from '@storybook/sveltekit';
-  import { expect } from 'storybook/test';
+  import { expect, waitFor } from 'storybook/test';
+
+  import { createPost } from '#lib/posts.remote.ts';
 
   import { db } from '#lib/server/db.ts';
   import { resetDb } from '#lib/server/mocked-db.ts';
@@ -416,7 +427,10 @@ The story checks the same issue:
 
   import Posts from '../Posts.svelte';
 
+  // The real `createPost`: its valibot schema, its `invalid()` calls, its insert.
   const { Story } = defineMeta({
+    parameters: { demo: true },
+    title: 'Server/Posts',
     component: Posts,
     beforeEach: async () => {
       await resetDb([{ title: 'First post', body: '' }]);
@@ -424,17 +438,25 @@ The story checks the same issue:
   });
 </script>
 
+<!-- … -->
+
 <Story
   name="Handler issue"
-  play={async ({ canvas, userEvent }) => {
-    await userEvent.type(await canvas.findByLabelText('Title'), 'First post');
-    await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
-    await expect(await canvas.findByRole('alert')).toHaveTextContent(
-      'A post with this title exists'
-    );
-    await expect(await db.$count(posts)).toBe(1);
+  play={async ({ canvas, userEvent, step }) => {
+    await step('Create a post with the title of the seeded post', async () => {
+      await userEvent.type(await canvas.findByLabelText('Title'), 'First post');
+      await userEvent.click(canvas.getByRole('button', { name: 'Create' }));
+    });
+    await step('The real handler finds the title and calls invalid(): no insert', async () => {
+      await expect(await canvas.findByRole('alert')).toHaveTextContent(
+        'A post with this title exists'
+      );
+      await expect(await db.$count(posts)).toBe(1);
+    });
   }}
 />
+
+<!-- … -->
 ```
 
 Import the mocked module (`#lib/server/db.ts`), not the `__mocks__` file. In Storybook, a direct
@@ -613,24 +635,39 @@ because the component connects when it renders:
 
   import PostCount from './PostCount.svelte';
 
-  const { Story } = defineMeta({ component: PostCount });
+  const { Story } = defineMeta({
+    parameters: { demo: true },
+    title: 'Remote functions/PostCount',
+    component: PostCount,
+  });
 
   let feed: RemoteStream<number>;
 </script>
+
+<!-- … -->
 
 <Story
   name="Live stream"
   beforeEach={() => {
     feed = mockRemote(getPostCount).mockStream(5);
   }}
-  play={async ({ canvas }) => {
+  play={async ({ canvas, step }) => {
     await expect(await canvas.findByText('5')).toBeVisible();
-    feed.emit(6);
-    await expect(await canvas.findByText('6')).toBeVisible();
-    feed.error(httpError(503, 'Feed down'));
-    await expect(await canvas.findByRole('alert')).toHaveTextContent('Feed down');
+    await expect(await canvas.findByText('live')).toBeVisible();
+
+    await step('The stream sends 6', async () => {
+      feed.emit(6);
+      await expect(await canvas.findByText('6')).toBeVisible();
+    });
+
+    await step('The stream fails with a 503', async () => {
+      feed.error(httpError(503, 'Feed down'));
+      await expect(await canvas.findByRole('alert')).toHaveTextContent('Feed down');
+    });
   }}
 />
+
+<!-- … -->
 ```
 
 ### `mockRequestEvent(init?)`
