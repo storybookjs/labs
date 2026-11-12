@@ -1,11 +1,11 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import type { ComponentProps } from 'svelte';
   import { expect } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Tag from './Tag.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Tag',
     component: Tag,
     parameters: { layout: 'centered' },
@@ -44,7 +44,7 @@
   }}>svelte</Story
 >
 
-<Story name="Long content" args={{ href: '/tags/long' }} template={longName} />
+<Story name="Long content" args={{ href: '/tags/long', children: longName }} template={narrow} />
 
 <!-- Several tags at once: there is no single set of props for Controls to change. -->
 <Story name="Tag list" asChild parameters={{ controls: { disable: true } }}>
@@ -55,11 +55,13 @@
   {@render list()}
 </Story>
 
-{#snippet longName(args: Partial<ComponentProps<typeof Tag>>)}
+{#snippet narrow(args: ComponentProps<typeof Tag>)}
   <div style="max-width: 14rem">
-    <Tag {...args}>a-tag-name-that-is-much-longer-than-the-others</Tag>
+    <Tag {...args} />
   </div>
 {/snippet}
+
+{#snippet longName()}a-tag-name-that-is-much-longer-than-the-others{/snippet}
 
 {#snippet list()}
   <ul style="display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none">

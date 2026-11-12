@@ -1,10 +1,10 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import type { ComponentProps } from 'svelte';
 
+  import preview from '../../../.storybook/preview';
   import Badge from './Badge.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Badge',
     component: Badge,
     parameters: { layout: 'centered' },
@@ -27,7 +27,7 @@
 
 <Story name="Danger" args={{ tone: 'danger' }}>Archived</Story>
 
-<Story name="Long content" args={{ tone: 'accent' }} template={longLabel} />
+<Story name="Long content" args={{ tone: 'accent', children: longLabel }} template={narrow} />
 
 <!-- Every tone at once: there is no single `tone` for Controls to change. -->
 <Story name="All tones" asChild parameters={{ controls: { disable: true } }}>
@@ -43,11 +43,13 @@
   {@render tones()}
 </Story>
 
-{#snippet longLabel(args: Partial<ComponentProps<typeof Badge>>)}
+{#snippet narrow(args: ComponentProps<typeof Badge>)}
   <div style="max-width: 12rem">
-    <Badge {...args}>A very long badge label that does not fit</Badge>
+    <Badge {...args} />
   </div>
 {/snippet}
+
+{#snippet longLabel()}A very long badge label that does not fit{/snippet}
 
 {#snippet tones()}
   <div style="display: flex; flex-wrap: wrap; gap: var(--space-2)">

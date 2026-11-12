@@ -120,7 +120,7 @@ folder, `pnpm test:ci` and `pnpm example:test:app` run the same.
 ## The "Live feed" panel
 
 Storybook has a "Live feed" addon panel that drives the `query.live` of two stories, `Live/Mocked`
-and `Live/Server` (`src/lib/components/LiveFeed.stories.ts`). Both show `LiveFeed.svelte`: the
+and `Live/Server` (`src/lib/components/LiveFeed.stories.svelte`). Both show `LiveFeed.svelte`: the
 post count, the latest three posts, the stream's state and the time of the last update.
 
 Open one of the stories, open the panel, pick a template, edit the JSON and press Send. The log

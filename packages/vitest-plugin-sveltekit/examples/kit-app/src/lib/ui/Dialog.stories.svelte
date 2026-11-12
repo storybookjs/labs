@@ -1,13 +1,13 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import type { ComponentProps } from 'svelte';
   import { expect, waitFor } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import Input from './Input.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Dialog',
     component: Dialog,
     parameters: { layout: 'centered' },

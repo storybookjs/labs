@@ -1,105 +1,114 @@
-import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-import { error, redirect } from '@sveltejs/kit';
-import { expect, waitFor } from 'storybook/test';
+<script module lang="ts">
+  import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
+  import { error, redirect } from '@sveltejs/kit';
+  import { expect, waitFor } from 'storybook/test';
 
-import { deletePost, getPosts, getStats } from '#lib/posts.remote.ts';
+  import { deletePost, getPosts, getStats } from '#lib/posts.remote.ts';
 
-import preview from '../../../.storybook/preview';
-import PostList from './PostList.svelte';
+  import preview from '../../../.storybook/preview';
+  import PostList from './PostList.svelte';
 
-const posts = [
-  { id: 1, title: 'First post', body: '' },
-  { id: 2, title: 'Second post', body: '' },
-];
+  const posts = [
+    { id: 1, title: 'First post', body: '' },
+    { id: 2, title: 'Second post', body: '' },
+  ];
 
-const meta = preview.meta({
-  parameters: { demo: true },
-  title: 'Remote functions/PostList',
-  component: PostList,
-  beforeEach: () => {
-    mockRemote(getStats).mockImplementation(async (id) => ({ views: id * 100, likes: id }));
-  },
-});
+  const { Story } = preview.meta({
+    parameters: { demo: true },
+    title: 'Remote functions/PostList',
+    component: PostList,
+    beforeEach: () => {
+      mockRemote(getStats).mockImplementation(async (id) => ({ views: id * 100, likes: id }));
+    },
+  });
 
-export const Data = meta.story({
-  beforeEach: () => {
+  const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+</script>
+
+<Story
+  name="Data"
+  beforeEach={() => {
     mockRemote(getPosts).mockResolvedValue(posts);
-  },
-  play: async ({ canvas }) => {
+  }}
+  play={async ({ canvas }) => {
     await expect(await canvas.findByRole('link', { name: 'First post' })).toBeVisible();
     await expect(canvas.getByRole('link', { name: 'Second post' })).toBeVisible();
     await expect(mockRemote(getPosts)).toHaveBeenCalledWith('newest');
-  },
-});
+  }}
+/>
 
-export const Pending = meta.story({
-  beforeEach: () => {
+<Story
+  name="Pending"
+  beforeEach={() => {
     mockRemote(getPosts).mockPending();
-  },
-  play: async ({ canvas }) => {
+  }}
+  play={async ({ canvas }) => {
     await expect(await canvas.findByText('Loading posts…')).toBeVisible();
-  },
-});
+  }}
+/>
 
-export const HttpError = meta.story({
-  beforeEach: () => {
+<Story
+  name="HTTP error"
+  beforeEach={() => {
     mockRemote(getPosts).mockImplementation(() => error(503, 'The database is asleep'));
-  },
-  play: async ({ canvas }) => {
+  }}
+  play={async ({ canvas }) => {
     await expect(await canvas.findByRole('alert')).toHaveTextContent('The database is asleep');
-  },
-});
+  }}
+/>
 
-export const RejectedValue = meta.story({
-  beforeEach: () => {
+<Story
+  name="Rejected value"
+  beforeEach={() => {
     mockRemote(getPosts).mockRejectedValue(httpError(404, 'No posts here'));
-  },
-  play: async ({ canvas }) => {
+  }}
+  play={async ({ canvas }) => {
     await expect(await canvas.findByRole('alert')).toHaveTextContent('No posts here');
-  },
-});
+  }}
+/>
 
-export const Batch = meta.story({
-  beforeEach: () => {
+<Story
+  name="Batch"
+  beforeEach={() => {
     mockRemote(getPosts).mockResolvedValue(posts);
-  },
-  play: async ({ canvas }) => {
+  }}
+  play={async ({ canvas }) => {
     await expect(await canvas.findByTestId('stats-2')).toHaveTextContent('200 views, 2 likes');
     // One mock call per argument, although SvelteKit sent a single batched request.
     await expect(mockRemote(getStats)).toHaveBeenCalledTimes(2);
     await expect(mockRemote(getStats)).toHaveBeenCalledWith(1);
     await expect(mockRemote(getStats)).toHaveBeenCalledWith(2);
-  },
-});
+  }}
+/>
 
-export const DeleteWithCommand = meta.story({
-  beforeEach: () => {
+<Story
+  name="Delete with command"
+  beforeEach={() => {
     let current = [...posts];
     mockRemote(getPosts).mockImplementation(async () => current);
     mockRemote(deletePost).mockImplementation(async (id) => {
       current = current.filter((post) => post.id !== id);
     });
-  },
-  play: async ({ canvas, userEvent }) => {
+  }}
+  play={async ({ canvas, userEvent }) => {
     await userEvent.click(await canvas.findByRole('button', { name: 'Delete First post' }));
     await waitFor(() => expect(canvas.queryByText('First post')).toBeNull());
     await expect(mockRemote(deletePost)).toHaveBeenCalledWith(1);
     await expect(mockRemote(getPosts)).toHaveBeenCalledTimes(2);
-  },
-});
+  }}
+/>
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export const TwoCommandsInFlight = meta.story({
-  beforeEach: () => {
+<Story
+  name="Two commands in flight"
+  beforeEach={() => {
     let current = [...posts, { id: 3, title: 'Third post', body: '' }];
     mockRemote(getPosts).mockImplementation(async () => current);
     mockRemote(deletePost).mockImplementation(async (id) => {
       await delay(id === 1 ? 400 : 50);
       current = current.filter((post) => post.id !== id);
     });
-  },
-  play: async ({ canvas, userEvent, step }) => {
+  }}
+  play={async ({ canvas, userEvent, step }) => {
     await expect(await canvas.findByRole('link', { name: 'First post' })).toBeVisible();
     await step(
       'Delete two posts at once: the first delete takes 400 ms, the second 50 ms',
@@ -116,14 +125,15 @@ export const TwoCommandsInFlight = meta.story({
       await expect(canvas.queryByRole('alert')).toBeNull();
       await expect(canvas.getByRole('link', { name: 'Third post' })).toBeVisible();
     });
-  },
-});
+  }}
+/>
 
-export const QueryRedirect = meta.story({
-  beforeEach: () => {
+<Story
+  name="Query redirect"
+  beforeEach={() => {
     mockRemote(getPosts).mockImplementation(() => redirect(303, '/elsewhere'));
-  },
-  play: async ({ step }) => {
+  }}
+  play={async ({ step }) => {
     // `goto` from Storybook's `$app/navigation` mock dispatches this event.
     const seen: unknown[] = [];
     const listener = (event: Event) => seen.push((event as CustomEvent).detail);
@@ -136,5 +146,5 @@ export const QueryRedirect = meta.story({
     } finally {
       window.removeEventListener('storybook:goto', listener);
     }
-  },
-});
+  }}
+/>

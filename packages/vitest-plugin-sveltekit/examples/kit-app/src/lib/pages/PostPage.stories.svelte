@@ -1,6 +1,5 @@
 <script module lang="ts">
   import { httpError, mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
   import AppShell from '#lib/blog/AppShell.svelte';
@@ -8,11 +7,12 @@
   import { postDetails } from '#lib/blog/fixtures.ts';
   import { mockQuietFeed, seedDatabase } from '#lib/blog/story-helpers.ts';
 
+  import preview from '../../../.storybook/preview';
   import PostPage from './PostPage.svelte';
 
   const post = postDetails.find((item) => item.title === 'Remote functions, one month in')!;
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Pages/Post',
     component: PostPage,
     parameters: {

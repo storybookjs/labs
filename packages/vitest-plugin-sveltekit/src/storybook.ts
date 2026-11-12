@@ -18,10 +18,7 @@ export async function beforeEach(): Promise<void> {
   installRemoteEnv({ page, navigating, goto, refreshAll });
 }
 
-/**
- * Preview annotations for `definePreview({ addons: [remoteFunctions()] })`. With a classic
- * `preview.ts`, export `beforeEach` from this module instead.
- */
+/** Preview annotations for `definePreview({ addons: [remoteFunctions()] })`. */
 export default function remoteFunctions(): ReturnType<typeof definePreviewAddon> {
   return definePreviewAddon({ beforeEach });
 }

@@ -1,13 +1,13 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import type { ComponentProps } from 'svelte';
   import { expect } from 'storybook/test';
 
+  import preview from '../../../.storybook/preview';
   import Avatar from './Avatar.svelte';
   import Button from './Button.svelte';
   import Header from './Header.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Header',
     component: Header,
     parameters: { layout: 'fullscreen' },

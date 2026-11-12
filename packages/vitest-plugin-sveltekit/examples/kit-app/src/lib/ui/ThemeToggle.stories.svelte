@@ -1,20 +1,23 @@
-import { expect } from 'storybook/test';
+<script module lang="ts">
+  import { expect } from 'storybook/test';
 
-import preview from '../../../.storybook/preview';
-import ThemeToggle, { THEME_STORAGE_KEY } from './ThemeToggle.svelte';
+  import preview from '../../../.storybook/preview';
+  import ThemeToggle, { THEME_STORAGE_KEY } from './ThemeToggle.svelte';
 
-const meta = preview.meta({
-  title: 'UI/ThemeToggle',
-  component: ThemeToggle,
-  parameters: { layout: 'centered' },
-  beforeEach: () => {
-    localStorage.removeItem(THEME_STORAGE_KEY);
-    return () => localStorage.removeItem(THEME_STORAGE_KEY);
-  },
-});
+  const { Story } = preview.meta({
+    title: 'UI/ThemeToggle',
+    component: ThemeToggle,
+    parameters: { layout: 'centered' },
+    beforeEach: () => {
+      localStorage.removeItem(THEME_STORAGE_KEY);
+      return () => localStorage.removeItem(THEME_STORAGE_KEY);
+    },
+  });
+</script>
 
-export const Default = meta.story({
-  play: async ({ canvas, userEvent, step }) => {
+<Story
+  name="Default"
+  play={async ({ canvas, userEvent, step }) => {
     const root = document.documentElement;
     const toggle = canvas.getByRole('button', { name: 'Dark theme' });
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
@@ -32,22 +35,24 @@ export const Default = meta.story({
       await expect(toggle).toHaveAttribute('aria-pressed', 'false');
       await expect(root.dataset.theme).toBe('light');
     });
-  },
-});
+  }}
+/>
 
-export const Dark = meta.story({
-  globals: { theme: 'dark' },
-  play: async ({ canvas }) => {
+<Story
+  name="Dark"
+  globals={{ theme: 'dark' }}
+  play={async ({ canvas }) => {
     await expect(canvas.getByRole('button', { name: 'Dark theme' })).toHaveAttribute(
       'aria-pressed',
       'true'
     );
-  },
-});
+  }}
+/>
 
-export const Focus = meta.story({
-  play: async ({ canvas, userEvent }) => {
+<Story
+  name="Focus"
+  play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
     await expect(canvas.getByRole('button', { name: 'Dark theme' })).toHaveFocus();
-  },
-});
+  }}
+/>

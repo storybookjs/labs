@@ -1,11 +1,11 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import type { ComponentProps } from 'svelte';
 
+  import preview from '../../../.storybook/preview';
   import Button from './Button.svelte';
   import EmptyState from './EmptyState.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/EmptyState',
     component: EmptyState,
     parameters: { layout: 'padded' },

@@ -56,9 +56,7 @@ test('runs the server mode tests in Vitest browser mode', () => {
 
 test('runs the stories (mocked and server mode) through @storybook/addon-vitest', () => {
   const { status, output, failed, passed } = vitest('storybook');
-  const stories =
-    count(/\.stories\.ts$/, /^export const \w+ = meta\.story\(/gm) +
-    count(/\.stories\.svelte$/, /^<Story\b/gm);
+  const stories = count(/\.stories\.svelte$/, /^<Story\b/gm);
   expect(failed, output).toBe(0);
   expect(passed, output).toBeGreaterThanOrEqual(stories);
   expect(status, output).toBe(0);

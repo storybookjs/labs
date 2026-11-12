@@ -1,7 +1,7 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
+  import preview from '../../../.storybook/preview';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'UI/Tokens',
     parameters: { layout: 'padded' },
   });

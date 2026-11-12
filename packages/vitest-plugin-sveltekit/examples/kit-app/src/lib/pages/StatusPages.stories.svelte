@@ -1,14 +1,14 @@
 <!-- No server mode story: these pages call no remote function, so the real handlers change nothing. -->
 <script module lang="ts">
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect } from 'storybook/test';
 
   import AppShell from '#lib/blog/AppShell.svelte';
 
+  import preview from '../../../.storybook/preview';
   import ErrorPage from './ErrorPage.svelte';
   import NotFoundPage from './NotFoundPage.svelte';
 
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     title: 'Pages/Status',
     parameters: {
       layout: 'fullscreen',

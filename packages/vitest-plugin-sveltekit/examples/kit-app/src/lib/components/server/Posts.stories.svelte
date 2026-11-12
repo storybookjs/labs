@@ -1,6 +1,5 @@
 <script module lang="ts">
   import { mockRemote } from 'vitest-plugin-sveltekit/remote.mock';
-  import { defineMeta } from '@storybook/sveltekit';
   import { expect, waitFor } from 'storybook/test';
 
   import { createPost } from '#lib/posts.remote.ts';
@@ -9,10 +8,11 @@
   import { resetDb } from '#lib/server/mocked-db.ts';
   import { posts } from '#lib/server/schema.ts';
 
+  import preview from '../../../../.storybook/preview';
   import Posts from '../Posts.svelte';
 
   // The real `createPost`: its valibot schema, its `invalid()` calls, its insert.
-  const { Story } = defineMeta({
+  const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/Posts',
     component: Posts,

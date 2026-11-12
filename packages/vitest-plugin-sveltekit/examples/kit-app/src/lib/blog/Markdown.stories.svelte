@@ -1,0 +1,45 @@
+<script module lang="ts">
+  import { expect } from 'storybook/test';
+
+  import preview from '../../../.storybook/preview';
+  import { longPost, postDetails } from './fixtures.ts';
+  import Markdown from './Markdown.svelte';
+
+  const { Story } = preview.meta({
+    title: 'Posts/Markdown',
+    component: Markdown,
+    parameters: { layout: 'padded' },
+  });
+</script>
+
+<Story
+  name="Default"
+  args={{ source: postDetails.find((post) => post.body.includes('| Setting'))!.body }}
+  play={async ({ canvas }) => {
+    await expect(canvas.getByRole('heading', { level: 2 })).toBeVisible();
+    await expect(canvas.getByRole('table')).toBeVisible();
+  }}
+/>
+
+<Story
+  name="Code"
+  args={{ source: postDetails.find((post) => post.body.includes('```ts'))!.body }}
+/>
+
+<!-- Raw HTML is text, and `javascript:` links are not links. -->
+<Story
+  name="Unsafe input"
+  args={{
+    source:
+      'An <img src=x onerror="alert(1)"> image, a <script>alert(1)</script> script and [a link](javascript:alert(1)).',
+  }}
+  play={async ({ canvas, canvasElement }) => {
+    await expect(canvas.getByText(/<img src=x onerror/)).toBeVisible();
+    await expect(canvasElement.querySelector('img, script')).toBeNull();
+    await expect(canvasElement.querySelector('a[href^="javascript:"]')).toBeNull();
+  }}
+/>
+
+<Story name="Long content" args={{ source: longPost.body }} />
+
+<Story name="Empty" args={{ source: '' }} />
