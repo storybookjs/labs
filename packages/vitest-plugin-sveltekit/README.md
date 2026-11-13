@@ -8,6 +8,8 @@ Components use SvelteKit's own client runtime, and their requests go to SvelteKi
 code in the same page. So form issues, `error()`, `redirect()`, refreshes and `query.live` streams
 behave as they do in your app.
 
+To see it in use, open the [Storybook of the example app](https://main--6af5c73fdc9bbd1d937f563a.chromatic.com).
+
 > [!WARNING]
 > Experimental. Remote functions are experimental in SvelteKit, and this package needs a change to
 > SvelteKit that is not released yet. Until then, apply the [SvelteKit patch](#sveltekit-patch).
