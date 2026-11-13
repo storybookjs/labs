@@ -277,9 +277,12 @@ describe('vitestPluginSvelteKit', () => {
       expect(handler.call(context, `${generated}/private/server.js?v=1`)).toContain(
         'export const DATABASE_DIR = env.DATABASE_DIR;'
       );
-      // The example also declares `API_TOKEN`, which `env` leaves out: one warning, at the first load.
+      // The example also declares `API_TOKEN` and `DEMO_PASSWORD`, which `env` leaves out: one
+      // warning, at the first load.
       expect(warn).toHaveBeenCalledOnce();
-      expect(warn.mock.calls[0]?.[0]).toMatch(/no value for API_TOKEN in stories and tests/);
+      expect(warn.mock.calls[0]?.[0]).toMatch(
+        /no value for API_TOKEN, DEMO_PASSWORD in stories and tests/
+      );
       handler.call(context, `${generated}/private/server.js`);
       expect(warn).toHaveBeenCalledOnce();
       // SvelteKit's own modules on the server side.

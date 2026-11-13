@@ -13,7 +13,10 @@
     description={message ?? 'The page could not be shown. Try again in a moment.'}
   >
     {#snippet action()}
-      <Button href="/">Back to all posts</Button>
+      {#if status === 403}
+        <Button href="/sign-in">Sign in</Button>
+      {/if}
+      <Button href="/" variant={status === 403 ? 'secondary' : 'primary'}>Back to all posts</Button>
     {/snippet}
   </EmptyState>
 </div>

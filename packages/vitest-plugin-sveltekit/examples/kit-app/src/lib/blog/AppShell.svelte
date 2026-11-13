@@ -30,7 +30,7 @@
     <Footer>
       <p>
         Field Notes is an example app for <code>vitest-plugin-sveltekit</code>. Its posts
-        live in a PGlite database on this machine.
+        live in a Postgres database.
       </p>
     </Footer>
   {/snippet}

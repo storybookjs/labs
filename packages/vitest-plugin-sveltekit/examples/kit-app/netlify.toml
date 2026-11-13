@@ -1,0 +1,13 @@
+# The Field Notes app on Netlify: https://vitest-plugin-sveltekit.netlify.app
+# The site's base directory is this folder. Netlify installs the workspace with pnpm (the Kit
+# patch applies), and `@sveltejs/adapter-netlify` writes `build` and the function in `.netlify/v1`.
+[build]
+command = "pnpm --filter vitest-plugin-sveltekit build && pnpm build"
+publish = "build"
+ignore = "sh scripts/netlify-ignore.sh"
+
+[build.environment]
+NODE_VERSION = "22"
+PNPM_VERSION = "11.26.0"
+# Installs only this app and the workspace packages it needs, not the other labs packages.
+PNPM_FLAGS = "--filter=vitest-plugin-sveltekit-kit-app-example..."

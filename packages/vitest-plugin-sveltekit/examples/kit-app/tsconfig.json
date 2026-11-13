@@ -1,4 +1,4 @@
 {
   "extends": "$app/tsconfig",
-  "include": ["src", "e2e-tests", ".storybook", "*.config.ts"]
+  "include": ["src", "e2e-tests", ".storybook", "*.config.ts", "netlify"]
 }

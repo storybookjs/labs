@@ -5,6 +5,7 @@ import * as v from 'valibot';
 import { refreshPosts } from '#lib/refresh-posts.ts';
 import { checkPassword } from '#lib/server/auth.ts';
 import { db } from '#lib/server/db.ts';
+import { sessionCookie } from '#lib/server/public-demo.ts';
 import { posts } from '#lib/server/schema.ts';
 
 export const signIn = command(
@@ -13,7 +14,7 @@ export const signIn = command(
     // Before the first `await`: the request store is only this request's until then.
     const { cookies } = getRequestEvent();
     if (!(await checkPassword(name, password))) error(401, 'Wrong name or password');
-    cookies.set('session', name, { path: '/' });
+    cookies.set('session', await sessionCookie(name), { path: '/' });
   }
 );
 

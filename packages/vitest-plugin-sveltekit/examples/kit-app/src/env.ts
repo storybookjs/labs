@@ -13,4 +13,11 @@ export const variables = defineEnvVars({
   API_TOKEN: {
     schema: v.optional(v.string()),
   },
+  /**
+   * Set on the public deploy (Netlify), as a secret. Then only the demo user, signed in with this
+   * password, can write posts (`src/lib/server/public-demo.ts`). Unset, anyone can.
+   */
+  DEMO_PASSWORD: {
+    schema: v.optional(v.string()),
+  },
 });

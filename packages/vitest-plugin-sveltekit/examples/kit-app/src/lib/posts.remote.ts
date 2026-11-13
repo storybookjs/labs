@@ -5,6 +5,7 @@ import * as v from 'valibot';
 
 import { postsChanges } from '#lib/server/changes.ts';
 import { db } from '#lib/server/db.ts';
+import { requireSignIn } from '#lib/server/public-demo.ts';
 import { posts, postStats } from '#lib/server/schema.ts';
 
 // The demo functions read the columns their components show, so their types stay small.
@@ -23,6 +24,7 @@ export const createPost = form(
     body: v.optional(v.string(), ''),
   }),
   async ({ title, body }, issue) => {
+    requireSignIn('create posts');
     if (title.length < 3) invalid(issue.title('Title must be at least 3 characters'));
 
     const [duplicate] = await db.select().from(posts).where(eq(posts.title, title));

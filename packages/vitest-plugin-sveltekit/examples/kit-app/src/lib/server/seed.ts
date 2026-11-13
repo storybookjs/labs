@@ -1,3 +1,6 @@
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+
+import * as schema from './schema.ts';
 import type { NewPost } from './schema.ts';
 
 export type SeedPost = NewPost & { views?: number; likes?: number };
@@ -25,6 +28,21 @@ export function statsRows(ids: number[], posts: SeedPost[]) {
     views: posts[index]?.views ?? 0,
     likes: posts[index]?.likes ?? 0,
   }));
+}
+
+/** A new database starts with the example posts (`db.ts`, and the nightly reset on Netlify). */
+export async function seedIfEmpty(db: PgDatabase<PgQueryResultHKT, typeof schema>): Promise<void> {
+  if ((await db.$count(schema.posts)) > 0) return;
+  const inserted = await db
+    .insert(schema.posts)
+    .values(postRows(seedPosts))
+    .returning({ id: schema.posts.id });
+  await db.insert(schema.postStats).values(
+    statsRows(
+      inserted.map(({ id }) => id),
+      seedPosts
+    )
+  );
 }
 
 const day = (date: string) => new Date(`${date}T09:30:00Z`);
