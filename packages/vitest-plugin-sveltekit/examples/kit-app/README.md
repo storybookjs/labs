@@ -43,15 +43,16 @@ The app runs at https://vitest-plugin-sveltekit.netlify.app, built from `main`. 
 that changes this package, the Kit patch or the lockfile gets a deploy preview
 (`scripts/netlify-ignore.sh` skips the others).
 
-| What           | Where                                                                                      |
-| -------------- | ------------------------------------------------------------------------------------------ |
-| Build          | `netlify.toml`; the site's base directory is this folder                                   |
-| Server         | `@sveltejs/adapter-netlify` in `vite.config.ts`: one function for the whole app            |
-| Database       | Netlify Database (Postgres) through `pg` (`src/lib/server/postgres.ts`), same schema, seed |
-| Deploy preview | Its own database branch, a copy of production taken when the preview is created            |
-| Writes         | Only the `demo` user, with the `DEMO_PASSWORD` secret, on `/sign-in`                       |
-| Nightly reset  | `netlify/functions/reset-database.mts` restores the seed at 03:00 UTC, production only     |
-| Search engines | `static/robots.txt` and a `noindex` meta tag in `src/app.html`                             |
+| What           | Where                                                                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Build          | `netlify.toml`; the site's base directory is this folder                                                                               |
+| Server         | `@sveltejs/adapter-netlify` in `vite.config.ts`: one function for the whole app                                                        |
+| Database       | Netlify Database (Postgres) through `pg` (`src/lib/server/postgres.ts`), same schema, seed                                             |
+| Live queries   | `LISTEN` on the direct host (Netlify's URL goes through a pooler); the banner reconnects when Netlify ends the stream after 60 seconds |
+| Deploy preview | Its own database branch, a copy of production taken when the preview is created                                                        |
+| Writes         | Only the `demo` user, with the `DEMO_PASSWORD` secret, on `/sign-in`                                                                   |
+| Nightly reset  | `netlify/functions/reset-database.mts` restores the seed at 03:00 UTC, production only                                                 |
+| Search engines | `static/robots.txt` and a `noindex` meta tag in `src/app.html`                                                                         |
 
 Without `DEMO_PASSWORD` (local dev, stories and tests), anyone can write, and the `session`
 cookie is the plain name. With it, `src/lib/server/public-demo.ts` signs the cookie and the

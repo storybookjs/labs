@@ -47,9 +47,8 @@ async function openPostgres(url: string): Promise<Database> {
   // Each new function instance runs the schema, and seeds an empty database.
   await prepareDatabase(pool);
 
-  // TEMP: is the runtime URL pooled? Host names only.
-  console.info('db hosts', new URL(url).hostname, new URL(directUrl(url)).hostname);
-  // PGlite's `listen`, on a client of its own: a `LISTEN` belongs to one connection, past the pooler.
+  // PGlite's `listen`, on a client of its own: a `LISTEN` belongs to one connection. Netlify gives
+  // functions the pooled URL, which hears no `NOTIFY`, so the listeners connect directly.
   const listeners = openPool(directUrl(url));
   const listen: Listen = async (channel, callback) => {
     const client = await listeners.connect();

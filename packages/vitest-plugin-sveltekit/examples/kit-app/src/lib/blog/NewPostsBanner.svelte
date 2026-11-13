@@ -14,6 +14,12 @@
 
   // A `query.live`: the server sends the number again whenever it changes.
   const fresh = $derived(watchNewPosts(since));
+
+  // `watchNewPosts` never finishes, but a host can end its response: Netlify ends a streaming
+  // function after 60 seconds. SvelteKit takes a stream that ends as done, so connect again.
+  $effect(() => {
+    if (fresh.done) void fresh.reconnect();
+  });
 </script>
 
 <div class="region" aria-live="polite">
