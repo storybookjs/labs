@@ -29,6 +29,7 @@ import {
 } from '#lib/blog/posts.ts';
 import { postsChanges } from '#lib/server/changes.ts';
 import { db } from '#lib/server/db.ts';
+import { requireSignIn } from '#lib/server/public-demo.ts';
 import { posts, postStats } from '#lib/server/schema.ts';
 
 /** One page of posts, with the filters of the home page. */
@@ -97,6 +98,7 @@ export const countView = command(v.number(), async (id) => {
 });
 
 export const publishPost = form(v.object(postFields), async (post, issue) => {
+  requireSignIn('publish posts');
   if (await titleTaken(post.title)) invalid(issue.title('A post with this title exists'));
   const publishedAt = post.published ? new Date() : null;
   const [{ id }] = (await db
@@ -110,6 +112,7 @@ export const publishPost = form(v.object(postFields), async (post, issue) => {
 export const editPost = form(
   v.object({ id: v.number(), ...postFields }),
   async ({ id, ...post }, issue) => {
+    requireSignIn('edit posts');
     if (await titleTaken(post.title, id)) invalid(issue.title('A post with this title exists'));
     const updated = await db
       .update(posts)
@@ -127,6 +130,7 @@ export const editPost = form(
 );
 
 export const removePost = command(v.number(), async (id) => {
+  requireSignIn('delete posts');
   const deleted = await db.delete(posts).where(eq(posts.id, id)).returning({ id: posts.id });
   if (deleted.length === 0) error(404, 'This post does not exist, or it was deleted.');
 });
