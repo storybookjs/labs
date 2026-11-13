@@ -9,3 +9,5 @@ ignore = "sh scripts/netlify-ignore.sh"
 [build.environment]
 NODE_VERSION = "22"
 PNPM_VERSION = "11.26.0"
+# Installs only this app and the workspace packages it needs, not the other labs packages.
+PNPM_FLAGS = "--filter=vitest-plugin-sveltekit-kit-app-example..."
