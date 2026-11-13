@@ -1,3 +1,4 @@
+import netlify from '@sveltejs/adapter-netlify';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { vitestPluginSvelteKit } from 'vitest-plugin-sveltekit/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -16,6 +17,9 @@ const browser = () => ({
 export default defineConfig({
   plugins: [
     sveltekit({
+      // Writes the Netlify output (`build`, `.netlify`). `vp preview` and the e2e serve the
+      // production build in `.svelte-kit/output` and do not use it.
+      adapter: netlify(),
       experimental: { remoteFunctions: true },
       compilerOptions: { experimental: { async: true } },
     }),

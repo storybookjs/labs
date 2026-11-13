@@ -14,4 +14,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 /** Records what reaches the hook. Returns nothing, so SvelteKit's default error body applies. */
 export const handleError: HandleServerError = ({ kind, error }) => {
   errors.push(`handleError ${kind}: ${(error as { message?: string })?.message ?? String(error)}`);
+  console.error(error);
 };
