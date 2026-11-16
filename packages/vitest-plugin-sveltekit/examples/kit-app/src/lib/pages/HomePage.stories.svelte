@@ -11,13 +11,16 @@
 
   import preview from '../../../.storybook/preview';
   import HomePage from './HomePage.svelte';
+  import { page } from '$app/state';
 
   const { Story } = preview.meta({
     title: 'Pages/Home',
     component: HomePage,
     parameters: {
       layout: 'fullscreen',
-      sveltekit_experimental: { state: { page: { url: new URL('http://localhost/') } } },
+    },
+    beforeEach() {
+      page.url = new URL('http://localhost/');
     },
     args: { params: defaultListParams, onfilter: fn() },
   });

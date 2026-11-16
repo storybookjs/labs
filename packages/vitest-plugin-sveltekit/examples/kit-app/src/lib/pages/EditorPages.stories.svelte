@@ -11,6 +11,7 @@
   import preview from '../../../.storybook/preview';
   import EditPostPage from './EditPostPage.svelte';
   import NewPostPage from './NewPostPage.svelte';
+  import { page } from '$app/state';
 
   const post = postDetails.find((item) => item.title === 'A calmer colour palette')!;
 
@@ -18,7 +19,9 @@
     title: 'Pages/Editor',
     parameters: {
       layout: 'fullscreen',
-      sveltekit_experimental: { state: { page: { url: new URL('http://localhost/posts/new') } } },
+    },
+    beforeEach() {
+      page.url = new URL('http://localhost/posts/new');
     },
   });
 </script>

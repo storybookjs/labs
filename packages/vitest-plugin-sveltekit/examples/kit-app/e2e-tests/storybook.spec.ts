@@ -49,10 +49,8 @@ const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> =
   ],
   [
     'remote-functions-postlist--query-redirect',
-    (page) =>
-      expect
-        .poll(() => page.evaluate(() => (window as { navigations?: unknown[] }).navigations))
-        .toContainEqual(['/elsewhere', undefined]),
+    // The play function asserts on the `goto` mock; `expectPlayed` checks that it passed.
+    async () => {},
   ],
   [
     'remote-functions-postform--validation-issue',
@@ -72,11 +70,8 @@ const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> =
   ],
   [
     'remote-functions-posts--redirect',
-    // `goto` from Storybook's `$app/navigation` mock dispatches `storybook:goto`.
-    (page) =>
-      expect
-        .poll(() => page.evaluate(() => (window as { navigations?: unknown[] }).navigations))
-        .toEqual([['/posts/42', expect.anything()]]),
+    // The play function asserts on the `goto` mock; `expectPlayed` checks that it passed.
+    async () => {},
   ],
   [
     'remote-functions-postdetail--prerendered',
@@ -178,14 +173,9 @@ const stories: Array<[id: string, check: (preview: Preview) => Promise<void>]> =
 /** Records the phases and play errors that the preview reports on its channel. */
 async function watchStories(page: Page) {
   await page.addInitScript(() => {
-    const navigations: unknown[] = [];
     const phases: string[] = [];
     const playErrors: string[] = [];
-    Object.assign(window, { navigations, phases, playErrors });
-
-    window.addEventListener('storybook:goto', (event) => {
-      navigations.push((event as CustomEvent<unknown[]>).detail);
-    });
+    Object.assign(window, { phases, playErrors });
 
     // The preview reports each phase of the story (`playing`, `errored`, `finished`, ...) on its
     // channel. Listen as soon as the preview exists, before the story starts.
