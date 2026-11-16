@@ -5,6 +5,7 @@ or content that did not load. It has a title, and an optional description, icon 
 Use it in place of the empty list, for example "No posts yet" with a New post button.
 
 @summary a message, with an optional action, for a place that has no content
+@import import EmptyState from '#lib/ui/EmptyState.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

@@ -5,6 +5,7 @@ The views and likes of a post, such as "1.3K views" and "96 likes". It loads the
 skeleton, and when they fail, "Stats unavailable".
 
 @summary the views and likes of a post, which load on their own
+@import import ReadingStats from '#lib/blog/ReadingStats.svelte';
 -->
 <script lang="ts">
   import Skeleton from '#lib/ui/Skeleton.svelte';

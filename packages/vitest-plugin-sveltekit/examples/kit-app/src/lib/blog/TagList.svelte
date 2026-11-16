@@ -4,6 +4,7 @@ The tags of a post, as a row of `Tag` links to the posts with that tag. It marks
 filters the list now. With no tags, it shows nothing.
 
 @summary the tags of a post, as links to the posts with each tag
+@import import TagList from '#lib/blog/TagList.svelte';
 -->
 <script lang="ts">
   import Tag from '#lib/ui/Tag.svelte';

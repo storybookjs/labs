@@ -8,6 +8,7 @@ Set `interactive` when the card holds the link to a page of its own: the card th
 hover. The card itself is not a link, so put the link in its content.
 
 @summary a surface that groups content, with an optional header and footer
+@import import Card from '#lib/ui/Card.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

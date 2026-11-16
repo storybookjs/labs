@@ -6,6 +6,7 @@ per visit. While it loads, it shows skeletons. When the post does not exist or d
 it shows an `EmptyState` with a way back.
 
 @summary the full post for the post page, which loads its own data
+@import import PostView from '#lib/blog/PostView.svelte';
 -->
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';

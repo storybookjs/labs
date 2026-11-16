@@ -5,6 +5,7 @@ A Delete button that asks for confirmation in a `Dialog`, then deletes the post 
 delete fails, an error toast gives the reason and the post stays.
 
 @summary deletes a post after the reader confirms it in a dialog
+@import import DeletePostButton from '#lib/blog/DeletePostButton.svelte';
 -->
 <script lang="ts">
   import { goto } from '$app/navigation';

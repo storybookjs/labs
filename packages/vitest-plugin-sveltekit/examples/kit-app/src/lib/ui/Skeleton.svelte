@@ -5,6 +5,7 @@ paragraph, a heading or an avatar. Screen readers skip it, so tell them what loa
 way, such as `aria-busy` and `aria-label` on the parent.
 
 @summary a placeholder in the shape of content that is still loading
+@import import Skeleton from '#lib/ui/Skeleton.svelte';
 -->
 <script lang="ts">
   interface Props {

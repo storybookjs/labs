@@ -1,14 +1,15 @@
 <!--
-  @component
-  The button of the design system. It starts an action, such as Publish or Delete. With `href`
-  it is a link that looks like a button, for navigation such as New post.
+@component
+The button of the design system. It starts an action, such as Publish or Delete. With `href`
+it is a link that looks like a button, for navigation such as New post.
 
-  Use one `primary` button per view, for its main action. Use `secondary` for the other actions,
-  `ghost` for actions of low importance such as Cancel, and `danger` for actions that delete
-  data. Set `loading` while the action runs. All other attributes, such as `onclick` or
-  `aria-pressed`, go to the `<button>` or `<a>` element.
+Use one `primary` button per view, for its main action. Use `secondary` for the other actions,
+`ghost` for actions of low importance such as Cancel, and `danger` for actions that delete
+data. Set `loading` while the action runs. All other attributes, such as `onclick` or
+`aria-pressed`, go to the `<button>` or `<a>` element.
 
-  @summary starts an action, or links to a page with the look of a button
+@summary starts an action, or links to a page with the look of a button
+@import import Button from '#lib/ui/Button.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

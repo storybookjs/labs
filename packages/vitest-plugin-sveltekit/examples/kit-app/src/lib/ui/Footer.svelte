@@ -4,6 +4,7 @@ The page footer. It shows the tagline of the site, or your own content. Put it i
 snippet of `Layout`.
 
 @summary the page footer, with the site's tagline or your own content
+@import import Footer from '#lib/ui/Footer.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

@@ -8,6 +8,7 @@ The parent owns `open`: use `bind:open`. Put the buttons in the `actions` snippe
 main action last.
 
 @summary a modal dialog for a confirmation or a short task
+@import import Dialog from '#lib/ui/Dialog.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

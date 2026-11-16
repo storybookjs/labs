@@ -5,6 +5,7 @@ name. The same name always gets the same colour, and the initials always have en
 Use it next to an author's name, as `PostMeta` does.
 
 @summary a person's photo, or their initials on a colour that comes from their name
+@import import Avatar from '#lib/ui/Avatar.svelte';
 -->
 <script lang="ts">
   interface Props {

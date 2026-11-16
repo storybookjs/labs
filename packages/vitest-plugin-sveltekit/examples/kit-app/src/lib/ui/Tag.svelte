@@ -4,6 +4,7 @@ A topic label with a `#`, such as #svelte. With `href` it is a link, usually to 
 this tag. For a status, such as Draft, use `Badge`. For the tags of a post, use `TagList`.
 
 @summary a #topic label that can link to the posts with this tag
+@import import Tag from '#lib/ui/Tag.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

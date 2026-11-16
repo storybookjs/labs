@@ -5,6 +5,7 @@ notification, do not render this component: call `toast(message, { tone })` from
 `#lib/ui/toasts.svelte.ts`, and the `ToastRegion` of `Layout` shows it.
 
 @summary one notification message; to show one, call `toast()`
+@import import Toast from '#lib/ui/Toast.svelte';
 -->
 <script lang="ts">
   import type { ToastTone } from './toasts.svelte.ts';

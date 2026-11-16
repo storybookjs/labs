@@ -7,6 +7,7 @@ attributes, such as `type`, `name` and `autocomplete`, go to the `<input>`. For 
 line, use `Textarea`.
 
 @summary a labelled one-line text field, with a hint and error messages
+@import import Input from '#lib/ui/Input.svelte';
 -->
 <script lang="ts">
   import type { HTMLInputAttributes } from 'svelte/elements';

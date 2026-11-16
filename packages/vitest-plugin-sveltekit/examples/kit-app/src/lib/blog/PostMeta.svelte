@@ -4,6 +4,7 @@ The line under the title of a post: the author with an `Avatar`, the date, the r
 when it was edited, and a Draft badge for a post that is not published.
 
 @summary the author, date, reading time and draft status of a post
+@import import PostMeta from '#lib/blog/PostMeta.svelte';
 -->
 <script lang="ts">
   import Avatar from '#lib/ui/Avatar.svelte';

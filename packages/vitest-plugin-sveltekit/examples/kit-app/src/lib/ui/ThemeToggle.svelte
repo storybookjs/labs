@@ -5,6 +5,7 @@ A button that switches the page between the light and the dark theme. It sets `d
 setting. `Header` already has one.
 
 @summary switches the page between the light and the dark theme
+@import import ThemeToggle from '#lib/ui/ThemeToggle.svelte';
 -->
 <script module lang="ts">
   // The theme is `<html data-theme>`. `src/app.html` reads this key before the first paint and

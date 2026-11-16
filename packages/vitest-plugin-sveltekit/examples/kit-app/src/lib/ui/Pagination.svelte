@@ -5,6 +5,7 @@ is a link, so it works without JavaScript and the page is in the URL. With one p
 it renders nothing.
 
 @summary links to the pages of a long list
+@import import Pagination from '#lib/ui/Pagination.svelte';
 -->
 <script lang="ts">
   import { pageItems } from './pagination.ts';

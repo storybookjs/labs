@@ -6,6 +6,7 @@ form field: `<Checkbox label="Published" {...fields.published.as('checkbox')} />
 attributes, such as `name`, go to the `<input>`.
 
 @summary a labelled checkbox for one yes-or-no choice in a form
+@import import Checkbox from '#lib/ui/Checkbox.svelte';
 -->
 <script lang="ts">
   import type { HTMLInputAttributes } from 'svelte/elements';

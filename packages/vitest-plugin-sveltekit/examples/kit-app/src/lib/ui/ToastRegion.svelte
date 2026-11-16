@@ -7,6 +7,7 @@ the toasts stay. `Layout` already has one.
 To show a toast, call `toast(message, { tone, timeout })` from `#lib/ui/toasts.svelte.ts`.
 
 @summary shows the toasts that `toast()` adds; `Layout` already has one
+@import import ToastRegion from '#lib/ui/ToastRegion.svelte';
 -->
 <script lang="ts">
   import Toast from './Toast.svelte';

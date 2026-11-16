@@ -5,6 +5,7 @@ with a `ThemeToggle` at the end. Put it in the `header` snippet of `Layout`. For
 this app, use `AppShell`, which already has the header, its links and the footer.
 
 @summary the site header, with the brand, the main navigation and actions
+@import import Header from '#lib/ui/Header.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

@@ -5,6 +5,7 @@ source shows as text, and unsafe links are not links, so it is safe for text tha
 write.
 
 @summary shows the Markdown of a post as safe, styled HTML
+@import import Markdown from '#lib/blog/Markdown.svelte';
 -->
 <script lang="ts">
   import { renderMarkdown } from './markdown.ts';

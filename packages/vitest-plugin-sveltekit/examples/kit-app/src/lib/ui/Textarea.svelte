@@ -5,6 +5,7 @@ screen readers. Bind `value`, or spread the props of a SvelteKit remote form fie
 for Markdown or code. For one line, use `Input`.
 
 @summary a labelled multi-line text field, with a hint and error messages
+@import import Textarea from '#lib/ui/Textarea.svelte';
 -->
 <script lang="ts">
   import type { HTMLTextareaAttributes } from 'svelte/elements';

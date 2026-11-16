@@ -5,6 +5,7 @@ uses the native `<select>`. Use it for one choice from a known list, such as a s
 Bind `value`, or spread the props of a SvelteKit remote form field.
 
 @summary a labelled drop-down list for one choice from a known list
+@import import Select from '#lib/ui/Select.svelte';
 -->
 <script lang="ts">
   import type { HTMLSelectAttributes } from 'svelte/elements';

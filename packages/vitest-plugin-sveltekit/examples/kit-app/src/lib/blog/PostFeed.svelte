@@ -8,6 +8,7 @@ The parent owns the filters: it gives `params` and changes them in `onfilter`, f
 the URL, as `HomePage` does.
 
 @summary the list of posts, with filters and pagination, that loads its own data
+@import import PostFeed from '#lib/blog/PostFeed.svelte';
 -->
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';

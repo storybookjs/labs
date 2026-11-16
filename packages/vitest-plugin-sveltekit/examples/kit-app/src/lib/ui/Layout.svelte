@@ -5,6 +5,7 @@ The frame of a page: a skip link, the header, the main content, the footer, and 
 is this layout with the Field Notes header and footer.
 
 @summary the page frame: header, main content, footer and the toast region
+@import import Layout from '#lib/ui/Layout.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

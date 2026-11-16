@@ -5,6 +5,7 @@ The search waits until the reader stops typing. Each change goes to `onfilter`, 
 1`. `PostFeed` already has one.
 
 @summary search, tag, status and sort controls for the list of posts
+@import import PostFilters from '#lib/blog/PostFilters.svelte';
 -->
 <script lang="ts">
   import Input from '#lib/ui/Input.svelte';

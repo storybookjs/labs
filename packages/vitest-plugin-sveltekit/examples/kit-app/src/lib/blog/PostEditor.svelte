@@ -8,6 +8,7 @@ saves the changes with `editPost`. It checks the fields in the browser before it
 shows each issue under its field, and moves the focus to the first issue.
 
 @summary the form that writes a new post or edits an existing one
+@import import PostEditor from '#lib/blog/PostEditor.svelte';
 -->
 <script lang="ts">
   import { tick } from 'svelte';

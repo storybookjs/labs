@@ -6,6 +6,7 @@ content of the page in it. The Posts link is marked as the current page on the h
 on the post pages.
 
 @summary the frame of every page: header, navigation, main content and footer
+@import import AppShell from '#lib/blog/AppShell.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

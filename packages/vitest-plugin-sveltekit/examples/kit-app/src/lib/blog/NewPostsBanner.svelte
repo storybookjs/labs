@@ -5,6 +5,7 @@ query, `watchNewPosts`, keeps the number up to date. With no new posts, it shows
 `PostFeed` already has one.
 
 @summary a live "3 new posts" notice with a Show button
+@import import NewPostsBanner from '#lib/blog/NewPostsBanner.svelte';
 -->
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';

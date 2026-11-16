@@ -4,6 +4,7 @@ A short label for a status, such as Draft, New or Published. It is not interacti
 topic that links to a filtered list, use `Tag`.
 
 @summary a short, non-interactive status label, such as Draft or Published
+@import import Badge from '#lib/ui/Badge.svelte';
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
