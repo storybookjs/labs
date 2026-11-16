@@ -8,8 +8,12 @@
 
   const { Story } = preview.meta({
     title: 'UI/ToastRegion',
+    tags: ['autodocs'],
     component: ToastRegion,
-    parameters: { layout: 'fullscreen' },
+    parameters: {
+      layout: 'fullscreen',
+      docs: { story: { inline: false, height: '320px' } },
+    },
     beforeEach: () => {
       clearToasts();
       return clearToasts;
@@ -17,6 +21,7 @@
   });
 </script>
 
+<!-- Call `toast(message, { tone })`: the region shows the toast, and the reader can dismiss it. -->
 <Story
   name="Show and dismiss"
   asChild
@@ -35,6 +40,7 @@
   {@render triggers()}
 </Story>
 
+<!-- An error toast goes in the `alert` region, so screen readers read it at once. -->
 <Story
   name="Error"
   asChild
@@ -47,6 +53,7 @@
   {@render triggers()}
 </Story>
 
+<!-- A toast goes away after its `timeout`: 5 seconds by default, or never with `0`. -->
 <Story
   name="Timeout"
   asChild
@@ -64,6 +71,7 @@
   {@render triggers()}
 </Story>
 
+<!-- Toasts stack, with the errors first. -->
 <Story
   name="Stack"
   asChild
@@ -78,6 +86,7 @@
 
 <Story
   name="Dark"
+  tags={['!manifest']}
   asChild
   globals={{ theme: 'dark' }}
   beforeEach={() => {

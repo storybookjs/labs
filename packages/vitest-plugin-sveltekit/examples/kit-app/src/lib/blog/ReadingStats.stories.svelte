@@ -9,8 +9,12 @@
 
   const { Story } = preview.meta({
     title: 'Posts/ReadingStats',
+    tags: ['autodocs'],
     component: ReadingStats,
-    parameters: { layout: 'padded' },
+    parameters: {
+      layout: 'padded',
+      docs: { story: { inline: false, height: '80px' } },
+    },
     args: { id: 2 },
   });
 </script>
@@ -33,6 +37,7 @@
   }}
 />
 
+<!-- When the stats do not load, the line says so in place of the numbers. -->
 <Story
   name="Error"
   exportName="Failed"
@@ -46,6 +51,7 @@
 
 <Story
   name="Server mode"
+  tags={['!manifest', '!autodocs']}
   beforeEach={seedDatabase}
   play={async ({ canvas }) => {
     // The second seed post: 1280 views, 96 likes.

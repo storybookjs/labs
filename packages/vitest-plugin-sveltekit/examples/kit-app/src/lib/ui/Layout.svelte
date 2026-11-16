@@ -1,10 +1,10 @@
 <!--
-  @component
-  The frame of a page: a skip link, the header, the main content, the footer, and the
-  `ToastRegion` that shows toasts. Use one per page. For a page of this app, use `AppShell`: it
-  is this layout with the Field Notes header and footer.
+@component
+The frame of a page: a skip link, the header, the main content, the footer, and the
+`ToastRegion` that shows toasts. Use one per page. For a page of this app, use `AppShell`: it
+is this layout with the Field Notes header and footer.
 
-  @summary the page frame: header, main content, footer and the toast region
+@summary the page frame: header, main content, footer and the toast region
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

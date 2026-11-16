@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'Posts/PostMeta',
+    tags: ['autodocs'],
     component: PostMeta,
     parameters: { layout: 'padded' },
     args: { post: published[0]! },
@@ -23,6 +24,7 @@
 
 <Story
   name="Long name"
+  tags={['!manifest']}
   args={{
     post: { ...published[0]!, author: 'Professor Hydration von Rehydrate-Smithington the Third' },
   }}

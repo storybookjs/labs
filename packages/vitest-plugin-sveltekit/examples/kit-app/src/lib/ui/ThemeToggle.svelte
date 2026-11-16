@@ -1,10 +1,10 @@
 <!--
-  @component
-  A button that switches the page between the light and the dark theme. It sets `data-theme` on
-  `<html>` and keeps the choice in `localStorage`. Without a choice, the page follows the system
-  setting. `Header` already has one.
+@component
+A button that switches the page between the light and the dark theme. It sets `data-theme` on
+`<html>` and keeps the choice in `localStorage`. Without a choice, the page follows the system
+setting. `Header` already has one.
 
-  @summary switches the page between the light and the dark theme
+@summary switches the page between the light and the dark theme
 -->
 <script module lang="ts">
   // The theme is `<html data-theme>`. `src/app.html` reads this key before the first paint and

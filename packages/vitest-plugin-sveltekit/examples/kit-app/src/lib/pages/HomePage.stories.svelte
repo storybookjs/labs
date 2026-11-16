@@ -15,6 +15,7 @@
 
   const { Story } = preview.meta({
     title: 'Pages/Home',
+    tags: ['!manifest'],
     component: HomePage,
     parameters: {
       layout: 'fullscreen',

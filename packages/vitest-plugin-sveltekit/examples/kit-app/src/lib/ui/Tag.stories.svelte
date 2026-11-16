@@ -7,6 +7,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Tag',
+    tags: ['autodocs'],
     component: Tag,
     parameters: { layout: 'centered' },
   });
@@ -24,6 +25,7 @@
   }}>svelte</Story
 >
 
+<!-- The tag that filters the list now. -->
 <Story
   name="Active"
   args={{ href: '/tags/svelte', active: true }}
@@ -37,6 +39,7 @@
 
 <Story
   name="Focus"
+  tags={['!manifest']}
   args={{ href: '/tags/svelte' }}
   play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
@@ -44,14 +47,14 @@
   }}>svelte</Story
 >
 
-<Story name="Long content" args={{ href: '/tags/long', children: longName }} template={narrow} />
+<Story name="Long content" tags={['!manifest']} args={{ href: '/tags/long', children: longName }} template={narrow} />
 
 <!-- Several tags at once: there is no single set of props for Controls to change. -->
 <Story name="Tag list" asChild parameters={{ controls: { disable: true } }}>
   {@render list()}
 </Story>
 
-<Story name="Dark" asChild globals={{ theme: 'dark' }} parameters={{ controls: { disable: true } }}>
+<Story name="Dark" tags={['!manifest']} asChild globals={{ theme: 'dark' }} parameters={{ controls: { disable: true } }}>
   {@render list()}
 </Story>
 

@@ -1,10 +1,10 @@
 <!--
-  @component
-  Links to the pages of a long list: Previous, the page numbers with gaps, and Next. Each page
-  is a link, so it works without JavaScript and the page is in the URL. With one page or less,
-  it renders nothing.
+@component
+Links to the pages of a long list: Previous, the page numbers with gaps, and Next. Each page
+is a link, so it works without JavaScript and the page is in the URL. With one page or less,
+it renders nothing.
 
-  @summary links to the pages of a long list
+@summary links to the pages of a long list
 -->
 <script lang="ts">
   import { pageItems } from './pagination.ts';

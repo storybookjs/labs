@@ -9,8 +9,12 @@
 
   const { Story } = preview.meta({
     title: 'UI/Dialog',
+    tags: ['autodocs'],
     component: Dialog,
-    parameters: { layout: 'centered' },
+    parameters: {
+      layout: 'centered',
+      docs: { story: { inline: false, height: '420px' } },
+    },
   });
 </script>
 
@@ -19,8 +23,7 @@
   let deleted = $state(false);
 </script>
 
-<!-- The first four stories are a page with a dialog in it: the page owns `open`, so there is
-     nothing for Controls to change. -->
+<!-- The page owns `open` and opens the dialog from a button. Controls have nothing to change. -->
 <Story
   name="Open and close"
   asChild
@@ -52,6 +55,7 @@
   {@render confirm()}
 </Story>
 
+<!-- The focus starts on the dialog. Tab and Shift+Tab go round its controls. -->
 <Story
   name="Keyboard"
   asChild
@@ -84,6 +88,7 @@
   {@render confirm()}
 </Story>
 
+<!-- To confirm an action that deletes data. The danger button closes the dialog and acts. -->
 <Story
   name="Confirm action"
   asChild
@@ -104,6 +109,7 @@
   {@render confirm()}
 </Story>
 
+<!-- A click on the backdrop closes the dialog, as Escape does. -->
 <Story
   name="Backdrop click"
   asChild
@@ -124,6 +130,7 @@
   {@render confirm()}
 </Story>
 
+<!-- A dialog with a short form in it. -->
 <Story
   name="Opened"
   args={{
@@ -136,6 +143,7 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{
     open: true,
     title: 'Terms for contributors to Field Notes, version three, with a long title',
@@ -145,6 +153,7 @@
 
 <Story
   name="Dark"
+  tags={['!manifest']}
   args={{
     open: true,
     title: 'Rename tag',

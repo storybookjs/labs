@@ -15,6 +15,7 @@
 
   const { Story } = preview.meta({
     title: 'Pages/Post',
+    tags: ['!manifest'],
     component: PostPage,
     parameters: {
       layout: 'fullscreen',

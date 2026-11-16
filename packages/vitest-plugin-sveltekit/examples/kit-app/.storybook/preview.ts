@@ -1,3 +1,4 @@
+import addonDocs from '@storybook/addon-docs';
 import { definePreview } from '@storybook/sveltekit';
 import remoteFunctions from 'vitest-plugin-sveltekit/storybook';
 import { sb } from 'storybook/test';
@@ -9,7 +10,7 @@ import '../src/lib/ui/demo.css';
 sb.mock(import('../src/lib/server/db.ts'));
 
 export default definePreview({
-  addons: [remoteFunctions()],
+  addons: [addonDocs(), remoteFunctions()],
   globalTypes: {
     theme: {
       description: 'Colour theme of the Field Notes UI',

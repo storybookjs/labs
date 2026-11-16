@@ -11,6 +11,7 @@
 
   const { Story } = preview.meta({
     title: 'Pages/Status',
+    tags: ['!manifest'],
     parameters: {
       layout: 'fullscreen',
     },

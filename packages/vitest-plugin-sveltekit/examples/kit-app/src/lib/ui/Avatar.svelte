@@ -1,10 +1,10 @@
 <!--
-  @component
-  A round picture of a person: their photo, or their initials on a colour that comes from their
-  name. The same name always gets the same colour, and the initials always have enough contrast.
-  Use it next to an author's name, as `PostMeta` does.
+@component
+A round picture of a person: their photo, or their initials on a colour that comes from their
+name. The same name always gets the same colour, and the initials always have enough contrast.
+Use it next to an author's name, as `PostMeta` does.
 
-  @summary a person's photo, or their initials on a colour that comes from their name
+@summary a person's photo, or their initials on a colour that comes from their name
 -->
 <script lang="ts">
   interface Props {

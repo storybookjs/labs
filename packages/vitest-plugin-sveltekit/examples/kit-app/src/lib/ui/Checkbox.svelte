@@ -1,11 +1,11 @@
 <!--
-  @component
-  A checkbox with its label, hint and error messages. It connects them for screen readers, so do
-  not add a `<label>` of your own. Bind `checked`, or spread the props of a SvelteKit remote
-  form field: `<Checkbox label="Published" {...fields.published.as('checkbox')} />`. Other
-  attributes, such as `name`, go to the `<input>`.
+@component
+A checkbox with its label, hint and error messages. It connects them for screen readers, so do
+not add a `<label>` of your own. Bind `checked`, or spread the props of a SvelteKit remote
+form field: `<Checkbox label="Published" {...fields.published.as('checkbox')} />`. Other
+attributes, such as `name`, go to the `<input>`.
 
-  @summary a labelled checkbox for one yes-or-no choice in a form
+@summary a labelled checkbox for one yes-or-no choice in a form
 -->
 <script lang="ts">
   import type { HTMLInputAttributes } from 'svelte/elements';

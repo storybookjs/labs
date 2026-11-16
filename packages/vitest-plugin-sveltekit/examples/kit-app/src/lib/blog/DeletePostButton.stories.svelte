@@ -13,8 +13,12 @@
 
   const { Story } = preview.meta({
     title: 'Posts/DeletePostButton',
+    tags: ['autodocs'],
     component: DeletePostButton,
-    parameters: { layout: 'centered' },
+    parameters: {
+      layout: 'centered',
+      docs: { story: { inline: false, height: '360px' } },
+    },
     args: { id: 3, title: 'A calmer colour palette' },
   });
 
@@ -34,8 +38,10 @@
   }
 </script>
 
+<!-- Click Delete: a dialog asks for confirmation before the post is deleted. -->
 <Story name="Default" beforeEach={mockRemovePost} />
 
+<!-- Cancel closes the dialog, and nothing is deleted. -->
 <Story
   name="Cancel keeps the post"
   beforeEach={mockRemovePost}
@@ -49,6 +55,7 @@
   }}
 />
 
+<!-- Confirm deletes the post with `removePost`, shows a toast and goes to the home page. -->
 <Story
   name="Confirm"
   beforeEach={mockRemovePost}
@@ -62,6 +69,7 @@
   }}
 />
 
+<!-- When the delete fails, an error toast gives the reason, and the post stays. -->
 <Story
   name="Failure"
   beforeEach={() => {
@@ -83,6 +91,7 @@
 
 <Story
   name="Server mode"
+  tags={['!manifest', '!autodocs']}
   beforeEach={seedDatabase}
   play={async ({ canvas, step }) => {
     await step('Open the confirmation', () => openDialog(canvas));

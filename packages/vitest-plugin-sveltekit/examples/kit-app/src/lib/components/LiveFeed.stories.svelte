@@ -14,7 +14,7 @@
   import LiveFeed from './LiveFeed.svelte';
 
   // Drive these two from the "Live feed" panel (`.storybook/manager.ts`).
-  const { Story } = preview.meta({ title: 'Live', component: LiveFeed });
+  const { Story } = preview.meta({ title: 'Live', tags: ['!manifest'], component: LiveFeed });
 
   const seed: Feed = {
     count: 2,

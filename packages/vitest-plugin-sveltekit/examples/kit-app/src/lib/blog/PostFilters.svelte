@@ -1,10 +1,10 @@
 <!--
-  @component
-  The controls above the list of posts: search, tag, status (published, drafts or all) and sort.
-  The search waits until the reader stops typing. Each change goes to `onfilter`, with `page:
-  1`. `PostFeed` already has one.
+@component
+The controls above the list of posts: search, tag, status (published, drafts or all) and sort.
+The search waits until the reader stops typing. Each change goes to `onfilter`, with `page:
+1`. `PostFeed` already has one.
 
-  @summary search, tag, status and sort controls for the list of posts
+@summary search, tag, status and sort controls for the list of posts
 -->
 <script lang="ts">
   import Input from '#lib/ui/Input.svelte';

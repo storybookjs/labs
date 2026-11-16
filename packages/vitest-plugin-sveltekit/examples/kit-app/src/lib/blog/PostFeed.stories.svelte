@@ -11,12 +11,17 @@
 
   const { Story } = preview.meta({
     title: 'Posts/PostFeed',
+    tags: ['autodocs'],
     component: PostFeed,
-    parameters: { layout: 'padded' },
+    parameters: {
+      layout: 'padded',
+      docs: { story: { inline: false, height: '820px' } },
+    },
     args: { params: defaultListParams, onfilter: fn() },
   });
 </script>
 
+<!-- The first page of published posts, newest first, as the home page shows it. -->
 <Story
   name="Data"
   beforeEach={() => {
@@ -38,6 +43,7 @@
   }}
 />
 
+<!-- With no posts at all, the feed offers to write the first one. -->
 <Story
   name="Empty"
   beforeEach={() => {
@@ -53,6 +59,7 @@
   }}
 />
 
+<!-- When no post matches the filters, the feed offers to clear them. -->
 <Story
   name="No matches"
   args={{ params: { ...defaultListParams, q: 'nothing like this' } }}
@@ -79,6 +86,7 @@
   }}
 />
 
+<!-- When posts are published after the list loaded, a banner offers to show them. -->
 <Story
   name="New posts waiting"
   beforeEach={() => {
@@ -107,6 +115,7 @@
   }}
 />
 
+<!-- When the posts do not load, the feed shows the reason. -->
 <Story
   name="Error"
   exportName="Failed"
@@ -123,6 +132,7 @@
 <!-- The real `listPosts`: `%` matches only itself, so nothing matches. -->
 <Story
   name="Wildcard search (server mode)"
+  tags={['!manifest', '!autodocs']}
   exportName="WildcardSearch"
   args={{ params: { ...defaultListParams, q: '%' } }}
   beforeEach={seedDatabase}
@@ -133,6 +143,7 @@
 
 <Story
   name="Server mode"
+  tags={['!manifest', '!autodocs']}
   beforeEach={seedDatabase}
   play={async ({ canvas }) => {
     await expect(await canvas.findByText('10 posts', {}, { timeout: 5000 })).toBeVisible();

@@ -1,10 +1,10 @@
 <!--
-  @component
-  One notification, with an icon for its tone and an optional dismiss button. To show a
-  notification, do not render this component: call `toast(message, { tone })` from
-  `#lib/ui/toasts.svelte.ts`, and the `ToastRegion` of `Layout` shows it.
+@component
+One notification, with an icon for its tone and an optional dismiss button. To show a
+notification, do not render this component: call `toast(message, { tone })` from
+`#lib/ui/toasts.svelte.ts`, and the `ToastRegion` of `Layout` shows it.
 
-  @summary one notification message; to show one, call `toast()`
+@summary one notification message; to show one, call `toast()`
 -->
 <script lang="ts">
   import type { ToastTone } from './toasts.svelte.ts';

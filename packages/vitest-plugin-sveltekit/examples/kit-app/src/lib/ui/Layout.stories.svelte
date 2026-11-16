@@ -16,8 +16,12 @@
 
   const { Story } = preview.meta({
     title: 'UI/Layout',
+    tags: ['autodocs'],
     component: Layout,
-    parameters: { layout: 'fullscreen' },
+    parameters: {
+      layout: 'fullscreen',
+      docs: { story: { inline: false, height: '560px' } },
+    },
     // The app's header and footer around each story's page content.
     args: { header: appHeader, footer: appFooter },
     beforeEach: () => {
@@ -51,6 +55,8 @@
   ];
 </script>
 
+<!-- A page with a list: the default `wide` width, with the header and the footer in their
+     snippets. -->
 <Story
   name="Blog index"
   args={{ children: postList }}
@@ -63,6 +69,7 @@
   }}
 />
 
+<!-- A page with one post or a form: `width="narrow"`. -->
 <Story
   name="Narrow article"
   args={{ width: 'narrow', children: article }}
@@ -75,6 +82,7 @@
 
 <Story name="Empty" args={{ children: empty }} />
 
+<!-- `Layout` has the `ToastRegion`: a `toast()` call shows on every page. -->
 <Story
   name="With toast"
   args={{ children: postList }}
@@ -86,9 +94,9 @@
   }}
 />
 
-<Story name="Mobile" args={{ children: postList }} globals={{ viewport: { value: 'mobile1' } }} />
+<Story name="Mobile" tags={['!manifest']} args={{ children: postList }} globals={{ viewport: { value: 'mobile1' } }} />
 
-<Story name="Dark" args={{ children: postList }} globals={{ theme: 'dark' }} />
+<Story name="Dark" tags={['!manifest']} args={{ children: postList }} globals={{ theme: 'dark' }} />
 
 {#snippet appHeader()}
   <Header>

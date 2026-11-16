@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Pagination',
+    tags: ['autodocs'],
     component: Pagination,
     parameters: { layout: 'padded' },
     args: { page: 3, pageCount: 5, href: (page: number) => `/posts?page=${page}` },
@@ -74,8 +75,9 @@
 
 <Story
   name="Mobile"
+  tags={['!manifest']}
   args={{ page: 4, pageCount: 12 }}
   globals={{ viewport: { value: 'mobile1' } }}
 />
 
-<Story name="Dark" args={{ page: 4, pageCount: 12 }} globals={{ theme: 'dark' }} />
+<Story name="Dark" tags={['!manifest']} args={{ page: 4, pageCount: 12 }} globals={{ theme: 'dark' }} />

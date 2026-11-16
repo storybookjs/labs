@@ -9,6 +9,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Header',
+    tags: ['autodocs'],
     component: Header,
     parameters: { layout: 'fullscreen' },
   });
@@ -22,6 +23,7 @@
   }}
 />
 
+<!-- The main links in `nav`, and controls such as a New post button in `actions`. -->
 <Story
   name="With nav and actions"
   template={full}
@@ -39,6 +41,7 @@
 
 <Story
   name="Mobile"
+  tags={['!manifest']}
   template={full}
   globals={{ viewport: { value: 'mobile1' } }}
   play={async ({ canvas }) => {
@@ -47,7 +50,7 @@
   }}
 />
 
-<Story name="Dark" template={full} globals={{ theme: 'dark' }} />
+<Story name="Dark" tags={['!manifest']} template={full} globals={{ theme: 'dark' }} />
 
 {#snippet full(args: Partial<ComponentProps<typeof Header>>)}
   <Header {...args}>

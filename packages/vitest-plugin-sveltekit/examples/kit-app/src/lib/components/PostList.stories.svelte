@@ -18,6 +18,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostList',
+    tags: ['!manifest'],
     component: PostList,
     beforeEach: () => {
       mockRemote(getStats).mockImplementation(async (id) => ({ views: id * 100, likes: id }));

@@ -15,6 +15,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/Posts',
+    tags: ['!manifest'],
     component: Posts,
     beforeEach: async () => {
       await resetDb([{ title: 'First post', body: '' }]);

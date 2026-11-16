@@ -1,9 +1,9 @@
 <!--
-  @component
-  The tags of a post, as a row of `Tag` links to the posts with that tag. It marks the tag that
-  filters the list now. With no tags, it shows nothing.
+@component
+The tags of a post, as a row of `Tag` links to the posts with that tag. It marks the tag that
+filters the list now. With no tags, it shows nothing.
 
-  @summary the tags of a post, as links to the posts with each tag
+@summary the tags of a post, as links to the posts with each tag
 -->
 <script lang="ts">
   import Tag from '#lib/ui/Tag.svelte';

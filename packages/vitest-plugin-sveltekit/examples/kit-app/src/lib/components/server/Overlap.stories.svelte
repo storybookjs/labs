@@ -23,6 +23,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/Overlap',
+    tags: ['!manifest'],
     component: PostCount,
     beforeEach: async () => {
       resetGates();

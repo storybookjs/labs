@@ -1,10 +1,10 @@
 <!--
-  @component
-  A Delete button that asks for confirmation in a `Dialog`, then deletes the post with the
-  `removePost` command. After the delete, it shows a toast and goes to the home page. When the
-  delete fails, an error toast gives the reason and the post stays.
+@component
+A Delete button that asks for confirmation in a `Dialog`, then deletes the post with the
+`removePost` command. After the delete, it shows a toast and goes to the home page. When the
+delete fails, an error toast gives the reason and the post stays.
 
-  @summary deletes a post after the reader confirms it in a dialog
+@summary deletes a post after the reader confirms it in a dialog
 -->
 <script lang="ts">
   import { goto } from '$app/navigation';

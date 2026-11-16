@@ -12,12 +12,17 @@
   // must start unmocked.
   const { Story } = preview.meta({
     title: 'Posts/PostCard',
+    tags: ['autodocs'],
     component: PostCard,
-    parameters: { layout: 'padded' },
+    parameters: {
+      layout: 'padded',
+      docs: { story: { inline: false, height: '280px' } },
+    },
     args: { post: published[0]! },
   });
 </script>
 
+<!-- A published post, as the home page lists it. The reading stats load on their own. -->
 <Story
   name="Default"
   beforeEach={mockQuietFeed}
@@ -30,6 +35,7 @@
   }}
 />
 
+<!-- A post that is not published gets a Draft badge. -->
 <Story
   name="Draft"
   beforeEach={mockQuietFeed}
@@ -39,6 +45,7 @@
   }}
 />
 
+<!-- In a list filtered by a tag, the card marks that tag. -->
 <Story
   name="Active tag"
   beforeEach={mockQuietFeed}
@@ -47,10 +54,12 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   beforeEach={mockQuietFeed}
   args={{ post: { ...longPost, excerpt: longPost.excerpt.repeat(2) } }}
 />
 
+<!-- The card shows at once. The reading stats show a skeleton until they load. -->
 <Story
   name="Stats loading"
   beforeEach={() => {
@@ -60,6 +69,7 @@
 
 <Story
   name="Server mode"
+  tags={['!manifest', '!autodocs']}
   beforeEach={seedDatabase}
   play={async ({ canvas }) => {
     // The real `getReadingStats` reads the seed: 266 views, 19 likes.

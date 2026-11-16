@@ -11,6 +11,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostForm',
+    tags: ['!manifest'],
     component: PostForm,
     beforeEach: () => {
       mockRemote(createPost).mockImplementation(async (data, issue) => {

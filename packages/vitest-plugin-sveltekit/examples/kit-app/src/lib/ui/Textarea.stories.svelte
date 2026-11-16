@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Textarea',
+    tags: ['autodocs'],
     component: Textarea,
     parameters: { layout: 'padded' },
     args: { label: 'Body', name: 'body' },
@@ -19,6 +20,7 @@
   }}
 />
 
+<!-- For Markdown or code: `mono`, with the syntax in the hint. -->
 <Story
   name="Markdown"
   args={{
@@ -43,6 +45,7 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{
     rows: 4,
     value: Array.from({ length: 12 }, (_, index) => `Line ${index + 1} of a long draft.`).join(
@@ -53,6 +56,7 @@
 
 <Story
   name="Focus"
+  tags={['!manifest']}
   play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
     await expect(canvas.getByLabelText('Body')).toHaveFocus();

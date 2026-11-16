@@ -1,10 +1,10 @@
 <!--
-  @component
-  Shows the Markdown of a post as HTML, in the serif reading style of a post. Raw HTML in the
-  source shows as text, and unsafe links are not links, so it is safe for text that readers
-  write.
+@component
+Shows the Markdown of a post as HTML, in the serif reading style of a post. Raw HTML in the
+source shows as text, and unsafe links are not links, so it is safe for text that readers
+write.
 
-  @summary shows the Markdown of a post as safe, styled HTML
+@summary shows the Markdown of a post as safe, styled HTML
 -->
 <script lang="ts">
   import { renderMarkdown } from './markdown.ts';

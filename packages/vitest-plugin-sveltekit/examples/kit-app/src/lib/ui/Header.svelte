@@ -1,10 +1,10 @@
 <!--
-  @component
-  The site header: the brand, which links to the home page, the main navigation and the actions,
-  with a `ThemeToggle` at the end. Put it in the `header` snippet of `Layout`. For a page of
-  this app, use `AppShell`, which already has the header, its links and the footer.
+@component
+The site header: the brand, which links to the home page, the main navigation and the actions,
+with a `ThemeToggle` at the end. Put it in the `header` snippet of `Layout`. For a page of
+this app, use `AppShell`, which already has the header, its links and the footer.
 
-  @summary the site header, with the brand, the main navigation and actions
+@summary the site header, with the brand, the main navigation and actions
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

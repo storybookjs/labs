@@ -7,6 +7,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/EmptyState',
+    tags: ['autodocs'],
     component: EmptyState,
     parameters: { layout: 'padded' },
   });
@@ -19,6 +20,7 @@
   args={{ title: 'No posts yet', description: 'Posts you write show up here.' }}
 />
 
+<!-- An empty list with a way forward, such as a button that adds the first item. -->
 <Story
   name="With icon and action"
   args={{ title: 'No drafts', description: 'Start a post and save it as a draft to finish later.' }}
@@ -27,6 +29,7 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{
     title: 'Nothing matches “a-search-term-that-is-unusually-long-and-specific”',
     description:
@@ -37,6 +40,7 @@
 
 <Story
   name="Dark"
+  tags={['!manifest']}
   args={{ title: 'No drafts', description: 'Start a post and save it as a draft to finish later.' }}
   template={full}
   globals={{ theme: 'dark' }}

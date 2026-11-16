@@ -12,12 +12,17 @@
 
   const { Story } = preview.meta({
     title: 'Posts/PostView',
+    tags: ['autodocs'],
     component: PostView,
-    parameters: { layout: 'padded' },
+    parameters: {
+      layout: 'padded',
+      docs: { story: { inline: false, height: '720px' } },
+    },
     args: { id: typography.id },
   });
 </script>
 
+<!-- A published post: its body, meta, stats, and the Edit and Delete actions. -->
 <Story
   name="Data"
   beforeEach={() => {
@@ -48,6 +53,7 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{ id: longPost.id }}
   beforeEach={() => {
     mockQuietFeed();
@@ -58,6 +64,7 @@
 <!-- A long code line wraps; the page does not scroll sideways on a phone. -->
 <Story
   name="Mobile with code"
+  tags={['!manifest']}
   globals={{ viewport: { value: 'mobile1' } }}
   args={{ id: 2 }}
   beforeEach={() => {
@@ -81,6 +88,7 @@
   }}
 />
 
+<!-- A post that does not exist: an empty state with a link back to all posts. -->
 <Story
   name="Not found"
   args={{ id: 404 }}
@@ -98,6 +106,7 @@
   }}
 />
 
+<!-- When the post does not load: an empty state with Try again. -->
 <Story
   name="Error"
   exportName="Failed"
@@ -112,6 +121,7 @@
 
 <Story
   name="Server mode"
+  tags={['!manifest', '!autodocs']}
   beforeEach={seedDatabase}
   play={async ({ canvas }) => {
     await expect(

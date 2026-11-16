@@ -8,6 +8,7 @@
 
   const { Story } = preview.meta({
     title: 'Posts/PostFilters',
+    tags: ['autodocs'],
     component: PostFilters,
     parameters: { layout: 'padded' },
     args: { params: defaultListParams, tags: tagCounts, onfilter: fn() },
@@ -38,4 +39,4 @@
   }}
 />
 
-<Story name="Mobile" globals={{ viewport: { value: 'mobile1' } }} />
+<Story name="Mobile" tags={['!manifest']} globals={{ viewport: { value: 'mobile1' } }} />

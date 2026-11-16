@@ -11,6 +11,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/PostCount',
+    tags: ['!manifest'],
     component: PostCount,
     beforeEach: async () => {
       await resetDb([{ title: 'One' }, { title: 'Two' }]);

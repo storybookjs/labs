@@ -9,6 +9,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/PostDetail',
+    tags: ['!manifest'],
     component: PostDetail,
     args: { id: 1 },
     beforeEach: async () => {

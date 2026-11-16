@@ -1,10 +1,10 @@
 <!--
-  @component
-  A shimmering placeholder in the shape of content that is still loading: a line of text, a
-  paragraph, a heading or an avatar. Screen readers skip it, so tell them what loads in another
-  way, such as `aria-busy` and `aria-label` on the parent.
+@component
+A shimmering placeholder in the shape of content that is still loading: a line of text, a
+paragraph, a heading or an avatar. Screen readers skip it, so tell them what loads in another
+way, such as `aria-busy` and `aria-label` on the parent.
 
-  @summary a placeholder in the shape of content that is still loading
+@summary a placeholder in the shape of content that is still loading
 -->
 <script lang="ts">
   interface Props {

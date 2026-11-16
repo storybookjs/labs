@@ -10,6 +10,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Card',
+    tags: ['autodocs'],
     component: Card,
     parameters: { layout: 'padded' },
   });
@@ -17,11 +18,13 @@
 
 <Story name="Default" args={{ children: plain }} />
 
+<!-- A group with a title: `as="section"`, with a header and a footer. -->
 <Story
   name="Header and footer"
   args={{ as: 'section', header: draftsHeader, children: drafts, footer: draftsFooter }}
 />
 
+<!-- One item of a list that links to its own page: `as="article"` and `interactive`. -->
 <Story
   name="Interactive"
   args={{
@@ -40,12 +43,14 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{ as: 'article', header: longTitle, children: longText, footer: readMore }}
   template={narrow}
 />
 
 <Story
   name="Dark"
+  tags={['!manifest']}
   args={{
     as: 'article',
     interactive: true,

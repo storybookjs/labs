@@ -3,8 +3,8 @@ import { defineMain } from '@storybook/sveltekit/node';
 
 export default defineMain({
   framework: '@storybook/sveltekit',
-  stories: ['../src/**/*.stories.svelte'],
-  addons: ['@storybook/addon-vitest'],
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.svelte'],
+  addons: ['@storybook/addon-docs', '@storybook/addon-vitest'],
   core: { disableTelemetry: true },
   // Server mode: remote functions without a `mockRemote(fn)` mock run the real handlers.
   viteFinal: (config) => ({

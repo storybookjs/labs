@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Toast',
+    tags: ['autodocs'],
     component: Toast,
     parameters: { layout: 'padded' },
     args: { message: 'Post published', ondismiss: fn() },
@@ -33,6 +34,7 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{
     tone: 'error',
     message:
@@ -40,4 +42,4 @@
   }}
 />
 
-<Story name="Dark" args={{ tone: 'success' }} globals={{ theme: 'dark' }} />
+<Story name="Dark" tags={['!manifest']} args={{ tone: 'success' }} globals={{ theme: 'dark' }} />

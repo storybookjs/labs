@@ -1,12 +1,12 @@
 <!--
-  @component
-  A one-line text field with its label, hint and error messages, connected for screen readers.
-  Do not add a `<label>` of your own. Bind `value`, or spread the props of a SvelteKit remote
-  form field: `<Input label="Title" {...fields.title.as('text')} error={...} />`. Other
-  attributes, such as `type`, `name` and `autocomplete`, go to the `<input>`. For more than one
-  line, use `Textarea`.
+@component
+A one-line text field with its label, hint and error messages, connected for screen readers.
+Do not add a `<label>` of your own. Bind `value`, or spread the props of a SvelteKit remote
+form field: `<Input label="Title" {...fields.title.as('text')} error={...} />`. Other
+attributes, such as `type`, `name` and `autocomplete`, go to the `<input>`. For more than one
+line, use `Textarea`.
 
-  @summary a labelled one-line text field, with a hint and error messages
+@summary a labelled one-line text field, with a hint and error messages
 -->
 <script lang="ts">
   import type { HTMLInputAttributes } from 'svelte/elements';

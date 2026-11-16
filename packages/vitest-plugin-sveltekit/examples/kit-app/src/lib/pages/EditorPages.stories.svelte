@@ -17,6 +17,7 @@
 
   const { Story } = preview.meta({
     title: 'Pages/Editor',
+    tags: ['!manifest'],
     parameters: {
       layout: 'fullscreen',
     },

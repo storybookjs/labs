@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/ThemeToggle',
+    tags: ['autodocs'],
     component: ThemeToggle,
     parameters: { layout: 'centered' },
     beforeEach: () => {
@@ -40,6 +41,7 @@
 
 <Story
   name="Dark"
+  tags={['!manifest']}
   globals={{ theme: 'dark' }}
   play={async ({ canvas }) => {
     await expect(canvas.getByRole('button', { name: 'Dark theme' })).toHaveAttribute(
@@ -51,6 +53,7 @@
 
 <Story
   name="Focus"
+  tags={['!manifest']}
   play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
     await expect(canvas.getByRole('button', { name: 'Dark theme' })).toHaveFocus();

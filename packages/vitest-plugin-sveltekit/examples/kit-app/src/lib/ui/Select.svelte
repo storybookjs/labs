@@ -1,10 +1,10 @@
 <!--
-  @component
-  A drop-down list with its label, hint and error messages, connected for screen readers. It
-  uses the native `<select>`. Use it for one choice from a known list, such as a sort order.
-  Bind `value`, or spread the props of a SvelteKit remote form field.
+@component
+A drop-down list with its label, hint and error messages, connected for screen readers. It
+uses the native `<select>`. Use it for one choice from a known list, such as a sort order.
+Bind `value`, or spread the props of a SvelteKit remote form field.
 
-  @summary a labelled drop-down list for one choice from a known list
+@summary a labelled drop-down list for one choice from a known list
 -->
 <script lang="ts">
   import type { HTMLSelectAttributes } from 'svelte/elements';

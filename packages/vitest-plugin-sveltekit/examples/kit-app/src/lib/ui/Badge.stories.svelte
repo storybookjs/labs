@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Badge',
+    tags: ['autodocs'],
     component: Badge,
     parameters: { layout: 'centered' },
     argTypes: {
@@ -27,7 +28,7 @@
 
 <Story name="Danger" args={{ tone: 'danger' }}>Archived</Story>
 
-<Story name="Long content" args={{ tone: 'accent', children: longLabel }} template={narrow} />
+<Story name="Long content" tags={['!manifest']} args={{ tone: 'accent', children: longLabel }} template={narrow} />
 
 <!-- Every tone at once: there is no single `tone` for Controls to change. -->
 <Story name="All tones" asChild parameters={{ controls: { disable: true } }}>
@@ -36,6 +37,7 @@
 
 <Story
   name="Dark"
+  tags={['!manifest']}
   asChild
   globals={{ theme: 'dark' }}
   parameters={{ controls: { disable: true } }}

@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Footer',
+    tags: ['autodocs'],
     component: Footer,
     // The footer's only prop is its content, a snippet: Controls has nothing to change.
     parameters: { layout: 'fullscreen', controls: { disable: true } },
@@ -23,7 +24,7 @@
   {@render links()}
 </Story>
 
-<Story name="Dark" asChild globals={{ theme: 'dark' }}>
+<Story name="Dark" tags={['!manifest']} asChild globals={{ theme: 'dark' }}>
   {@render links()}
 </Story>
 

@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Checkbox',
+    tags: ['autodocs'],
     component: Checkbox,
     parameters: { layout: 'padded' },
     args: { label: 'Save as draft', name: 'draft' },
@@ -58,6 +59,7 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{
     label:
       'Send me an email when someone comments on one of my posts, replies to my comment, or mentions me',
@@ -67,6 +69,7 @@
 
 <Story
   name="Focus"
+  tags={['!manifest']}
   play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
     await expect(canvas.getByRole('checkbox')).toHaveFocus();

@@ -1,10 +1,10 @@
 <!--
-  @component
-  One post in a list: the title, which links to the post, the author, the date, the excerpt, the
-  tags and the reading stats, in an interactive `Card`. Give it a post from `listPosts`. It
-  loads the reading stats itself, with `ReadingStats`.
+@component
+One post in a list: the title, which links to the post, the author, the date, the excerpt, the
+tags and the reading stats, in an interactive `Card`. Give it a post from `listPosts`. It
+loads the reading stats itself, with `ReadingStats`.
 
-  @summary one post in a list, with its title link, excerpt, meta and tags
+@summary one post in a list, with its title link, excerpt, meta and tags
 -->
 <script lang="ts">
   import Card from '#lib/ui/Card.svelte';

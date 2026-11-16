@@ -1,0 +1,64 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta
+  title="UI/Design tokens"
+  summary="The CSS custom properties for colour, type, space, radius, shadow and motion. Use them in place of raw values."
+/>
+
+# Design tokens
+
+The tokens are CSS custom properties in `src/lib/ui/tokens.css`. The app and Storybook load the file once, so every component can use them. In a component's `<style>`, write `var(--color-text)` and `var(--space-4)`, never a raw colour or size. The [Tokens](?path=/story/ui-tokens--overview) story shows them.
+
+## Colour
+
+Each colour has a light and a dark value (`light-dark()`), so a component needs no styles of its own for the dark theme. Every pair of text and background colours meets WCAG AA.
+
+- `--color-background`: the page behind everything.
+- `--color-surface`: cards and panels.
+- `--color-surface-raised`: above a surface, such as controls, dialogs and toasts.
+- `--color-surface-sunken`: below a surface, such as the footer, a neutral badge or a hovered control.
+- `--color-text`: body text.
+- `--color-text-muted`: secondary text, such as dates and hints.
+- `--color-border`: borders of cards and dividers.
+- `--color-border-strong`: borders of controls (3:1 against every surface).
+- `--color-accent`, `--color-accent-hover`: links, the primary button, the current item.
+- `--color-accent-contrast`: text on `--color-accent`.
+- `--color-accent-subtle`: a light accent background, such as an accent badge or a hovered ghost button.
+- `--color-success`, `--color-success-subtle`: a good state, such as Published (`-subtle`: a badge background).
+- `--color-warning`, `--color-warning-subtle`: a risky state, such as Draft.
+- `--color-danger`, `--color-danger-hover`, `--color-danger-subtle`: errors, and actions that delete data.
+- `--color-danger-contrast`: text on `--color-danger`.
+- `--color-focus`: the focus outline.
+- `--color-backdrop`: behind a modal dialog.
+- `--color-skeleton`, `--color-skeleton-shine`: loading placeholders.
+
+## Type
+
+- `--font-sans`: the interface, such as page and card titles, labels, buttons, forms and dialogs.
+- `--font-serif`: the brand, and the words of a post (its title on the post page, and its body).
+- `--font-mono`: code and Markdown source.
+
+Sizes: `--text-xs` (0.75rem), `--text-sm` (0.875rem), `--text-md` (1rem, body text), `--text-lg` (1.125rem), `--text-xl` (1.375rem), `--text-2xl` (1.75rem), `--text-3xl` (2.25rem), `--text-4xl` (2.875rem).
+
+Line heights: `--leading-tight` (1.2, headings and buttons), `--leading-normal` (1.5, the interface), `--leading-relaxed` (1.7, the body of a post and Markdown source).
+
+Weights: `--weight-normal` (400), `--weight-medium` (500), `--weight-semibold` (600), `--weight-bold` (700).
+
+## Space
+
+`--space-0` (0), `--space-1` (0.25rem), `--space-2` (0.5rem), `--space-3` (0.75rem), `--space-4` (1rem), `--space-5` (1.5rem), `--space-6` (2rem), `--space-7` (3rem), `--space-8` (4rem). Use them for padding, margins and gaps.
+
+## Radius, shadow and motion
+
+- Radius: `--radius-sm` (0.25rem), `--radius-md` (0.5rem, controls), `--radius-lg` (0.875rem, cards, dialogs and empty states), `--radius-full` (circles and pills).
+- Shadow: `--shadow-sm` (a card), `--shadow-md` (a card on hover), `--shadow-lg` (a dialog or a toast).
+- Motion: `--duration-fast` (120ms), `--duration-normal` (200ms), `--duration-slow` (320ms), with `--easing-standard`. The page turns motion off for readers who ask for less motion.
+
+## Width and breakpoints
+
+- `--width-narrow` (42rem): a post or a form. `--width-wide` (72rem): a list. `Layout` sets them with its `width` prop.
+- Breakpoints, for `@media (max-width: …)`: 30rem (phones), 40rem (small tablets), 48rem (tablets). Media queries cannot read custom properties, so write these values. `tokens.test.ts` checks that components use no others.
+
+## Theme
+
+`<html data-theme="light">` or `data-theme="dark"` forces a theme. Without it, the page follows the system. `ThemeToggle` sets it, and Storybook's Theme toolbar does the same.

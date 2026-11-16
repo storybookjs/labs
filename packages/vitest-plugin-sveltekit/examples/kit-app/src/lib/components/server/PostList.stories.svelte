@@ -16,6 +16,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Server/PostList',
+    tags: ['!manifest'],
     component: PostList,
     beforeEach: async () => {
       await resetDb([

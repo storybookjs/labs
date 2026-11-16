@@ -1,13 +1,13 @@
 <!--
-  @component
-  A surface that groups related content, with an optional header and footer. Set `as` to give it
-  the right element: `article` for one item of a list, such as a post, and `section` for a group
-  with a title.
+@component
+A surface that groups related content, with an optional header and footer. Set `as` to give it
+the right element: `article` for one item of a list, such as a post, and `section` for a group
+with a title.
 
-  Set `interactive` when the card holds the link to a page of its own: the card then lifts on
-  hover. The card itself is not a link, so put the link in its content.
+Set `interactive` when the card holds the link to a page of its own: the card then lifts on
+hover. The card itself is not a link, so put the link in its content.
 
-  @summary a surface that groups content, with an optional header and footer
+@summary a surface that groups content, with an optional header and footer
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

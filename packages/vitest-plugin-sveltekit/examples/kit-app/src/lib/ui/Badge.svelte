@@ -1,9 +1,9 @@
 <!--
-  @component
-  A short label for a status, such as Draft, New or Published. It is not interactive. For a
-  topic that links to a filtered list, use `Tag`.
+@component
+A short label for a status, such as Draft, New or Published. It is not interactive. For a
+topic that links to a filtered list, use `Tag`.
 
-  @summary a short, non-interactive status label, such as Draft or Published
+@summary a short, non-interactive status label, such as Draft or Published
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

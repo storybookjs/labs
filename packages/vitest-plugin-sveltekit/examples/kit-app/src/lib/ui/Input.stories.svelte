@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Input',
+    tags: ['autodocs'],
     component: Input,
     parameters: { layout: 'padded' },
     args: { label: 'Title', name: 'title' },
@@ -32,6 +33,8 @@
   }}
 />
 
+<!-- Give `error` the messages of the field, such as a remote form field's `issues()`. The field
+     gets `aria-invalid`. -->
 <Story
   name="With error"
   args={{ value: 'Hi', hint: 'Keep it under 80 characters.', error: 'Title is too short' }}
@@ -84,6 +87,7 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{
     label: 'A label that is long enough to wrap onto a second line on a small phone screen',
     value:
@@ -94,6 +98,7 @@
 
 <Story
   name="Focus"
+  tags={['!manifest']}
   play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
     await expect(canvas.getByLabelText('Title')).toHaveFocus();
@@ -102,6 +107,7 @@
 
 <Story
   name="Dark"
+  tags={['!manifest']}
   args={{ hint: 'Keep it under 80 characters.', error: 'Title is too short', value: 'Hi' }}
   globals={{ theme: 'dark' }}
 />

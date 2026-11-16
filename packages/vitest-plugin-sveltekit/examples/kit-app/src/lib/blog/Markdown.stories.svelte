@@ -7,6 +7,7 @@
 
   const { Story } = preview.meta({
     title: 'Posts/Markdown',
+    tags: ['autodocs'],
     component: Markdown,
     parameters: { layout: 'padded' },
   });
@@ -40,6 +41,6 @@
   }}
 />
 
-<Story name="Long content" args={{ source: longPost.body }} />
+<Story name="Long content" tags={['!manifest']} args={{ source: longPost.body }} />
 
 <Story name="Empty" args={{ source: '' }} />

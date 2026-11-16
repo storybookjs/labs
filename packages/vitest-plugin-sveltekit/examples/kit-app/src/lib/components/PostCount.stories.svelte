@@ -10,6 +10,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostCount',
+    tags: ['!manifest'],
     component: PostCount,
   });
 

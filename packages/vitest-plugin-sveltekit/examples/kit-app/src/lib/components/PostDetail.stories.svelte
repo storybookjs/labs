@@ -11,6 +11,7 @@
   const { Story } = preview.meta({
     parameters: { demo: true },
     title: 'Remote functions/PostDetail',
+    tags: ['!manifest'],
     component: PostDetail,
     args: { id: 7 },
   });

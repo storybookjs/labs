@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Avatar',
+    tags: ['autodocs'],
     component: Avatar,
     parameters: { layout: 'centered' },
     args: { name: 'Svelty McSvelteface' },

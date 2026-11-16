@@ -1,11 +1,11 @@
 <!--
-  @component
-  The frame of every page of Field Notes: `Layout` with the site `Header`, its Posts link and
-  New post button, and the `Footer`. Use it as the outer element of a new page, and put the
-  content of the page in it. The Posts link is marked as the current page on the home page and
-  on the post pages.
+@component
+The frame of every page of Field Notes: `Layout` with the site `Header`, its Posts link and
+New post button, and the `Footer`. Use it as the outer element of a new page, and put the
+content of the page in it. The Posts link is marked as the current page on the home page and
+on the post pages.
 
-  @summary the frame of every page: header, navigation, main content and footer
+@summary the frame of every page: header, navigation, main content and footer
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

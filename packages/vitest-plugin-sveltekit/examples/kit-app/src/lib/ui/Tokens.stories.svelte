@@ -3,6 +3,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Tokens',
+    tags: ['!manifest'],
     parameters: { layout: 'padded' },
   });
 

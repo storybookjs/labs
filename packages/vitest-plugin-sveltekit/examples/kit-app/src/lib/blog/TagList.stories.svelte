@@ -6,6 +6,7 @@
 
   const { Story } = preview.meta({
     title: 'Posts/TagList',
+    tags: ['autodocs'],
     component: TagList,
     parameters: { layout: 'padded' },
     args: { tags: ['design', 'writing', 'notes'] },

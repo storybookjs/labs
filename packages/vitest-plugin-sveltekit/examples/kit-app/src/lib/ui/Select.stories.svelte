@@ -12,6 +12,7 @@
 
   const { Story } = preview.meta({
     title: 'UI/Select',
+    tags: ['autodocs'],
     component: Select,
     parameters: { layout: 'padded' },
     args: { label: 'Sort by', name: 'order', options },
@@ -50,6 +51,7 @@
 
 <Story
   name="Long content"
+  tags={['!manifest']}
   args={{
     options: [
       { value: 'a', label: 'An option label that is far too long to fit in a narrow select box' },
@@ -60,6 +62,7 @@
 
 <Story
   name="Focus"
+  tags={['!manifest']}
   play={async ({ canvas, userEvent }) => {
     await userEvent.tab();
     await expect(canvas.getByLabelText('Sort by')).toHaveFocus();

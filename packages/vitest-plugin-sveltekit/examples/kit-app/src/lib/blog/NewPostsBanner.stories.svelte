@@ -12,14 +12,19 @@
 
   const { Story } = preview.meta({
     title: 'Posts/NewPostsBanner',
+    tags: ['autodocs'],
     component: NewPostsBanner,
-    parameters: { layout: 'padded' },
+    parameters: {
+      layout: 'padded',
+      docs: { story: { inline: false, height: '120px' } },
+    },
     args: { since: 12, onshow: fn() },
   });
 
   let feed: RemoteStream<number>;
 </script>
 
+<!-- With no new posts, the banner shows nothing. -->
 <Story
   name="No new posts"
   beforeEach={() => {
@@ -30,6 +35,7 @@
   }}
 />
 
+<!-- The number of new posts and a Show button, which calls `onshow`. -->
 <Story
   name="New posts"
   beforeEach={() => {
@@ -74,6 +80,7 @@
 
 <Story
   name="Server mode"
+  tags={['!manifest', '!autodocs']}
   args={{
     // After the newest seed post.
     since: Date.parse('2026-10-15T00:00:00Z'),

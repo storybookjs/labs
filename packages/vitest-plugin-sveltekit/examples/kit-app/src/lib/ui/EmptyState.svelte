@@ -1,10 +1,10 @@
 <!--
-  @component
-  A message for a place that has no content: a list with no items yet, a search with no results,
-  or content that did not load. It has a title, and an optional description, icon and action.
-  Use it in place of the empty list, for example "No posts yet" with a New post button.
+@component
+A message for a place that has no content: a list with no items yet, a search with no results,
+or content that did not load. It has a title, and an optional description, icon and action.
+Use it in place of the empty list, for example "No posts yet" with a New post button.
 
-  @summary a message, with an optional action, for a place that has no content
+@summary a message, with an optional action, for a place that has no content
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

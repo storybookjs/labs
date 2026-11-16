@@ -1,10 +1,10 @@
 <!--
-  @component
-  A text field for more than one line, with its label, hint and error messages, connected for
-  screen readers. Bind `value`, or spread the props of a SvelteKit remote form field. Set `mono`
-  for Markdown or code. For one line, use `Input`.
+@component
+A text field for more than one line, with its label, hint and error messages, connected for
+screen readers. Bind `value`, or spread the props of a SvelteKit remote form field. Set `mono`
+for Markdown or code. For one line, use `Input`.
 
-  @summary a labelled multi-line text field, with a hint and error messages
+@summary a labelled multi-line text field, with a hint and error messages
 -->
 <script lang="ts">
   import type { HTMLTextareaAttributes } from 'svelte/elements';

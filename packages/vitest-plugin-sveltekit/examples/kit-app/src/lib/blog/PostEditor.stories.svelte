@@ -11,11 +11,16 @@
 
   const { Story } = preview.meta({
     title: 'Posts/PostEditor',
+    tags: ['autodocs'],
     component: PostEditor,
-    parameters: { layout: 'padded' },
+    parameters: {
+      layout: 'padded',
+      docs: { story: { inline: false, height: '720px' } },
+    },
   });
 </script>
 
+<!-- Without `post`: an empty form that publishes a new post. -->
 <Story
   name="New post"
   play={async ({ canvas }) => {
@@ -25,6 +30,7 @@
   }}
 />
 
+<!-- With `post`: the form starts with the post and saves the changes. -->
 <Story
   name="Edit post"
   args={{ post: postDetails[3]! }}
@@ -98,6 +104,7 @@
   }}
 />
 
+<!-- While the form sends, the submit button is busy and cannot be clicked again. -->
 <Story
   name="Submitting"
   args={{ post: postDetails[3]! }}
@@ -126,6 +133,7 @@
 <!-- The real `publishPost` and its valibot schema, which also runs in the browser first. -->
 <Story
   name="Server mode"
+  tags={['!manifest', '!autodocs']}
   beforeEach={seedDatabase}
   play={async ({ canvas, step }) => {
     await step('Publish a short title, bad tags and no body', async () => {
