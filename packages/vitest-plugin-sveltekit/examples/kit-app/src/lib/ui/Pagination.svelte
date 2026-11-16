@@ -1,10 +1,22 @@
+<!--
+  @component
+  Links to the pages of a long list: Previous, the page numbers with gaps, and Next. Each page
+  is a link, so it works without JavaScript and the page is in the URL. With one page or less,
+  it renders nothing.
+
+  @summary links to the pages of a long list
+-->
 <script lang="ts">
   import { pageItems } from './pagination.ts';
 
   interface Props {
+    /** The current page, from 1. */
     page: number;
+    /** The number of pages. */
     pageCount: number;
+    /** Makes the URL of a page from its number, such as `?page=2` for page 2. */
     href: (page: number) => string;
+    /** The accessible name of the `<nav>`. Change it when a page has two paginations. */
     label?: string;
   }
 

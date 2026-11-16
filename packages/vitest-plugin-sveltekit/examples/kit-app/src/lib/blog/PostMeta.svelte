@@ -1,3 +1,10 @@
+<!--
+  @component
+  The line under the title of a post: the author with an `Avatar`, the date, the reading time,
+  when it was edited, and a Draft badge for a post that is not published.
+
+  @summary the author, date, reading time and draft status of a post
+-->
 <script lang="ts">
   import Avatar from '#lib/ui/Avatar.svelte';
   import Badge from '#lib/ui/Badge.svelte';
@@ -6,8 +13,10 @@
 
   let {
     post,
-  }: { post: Pick<PostSummary, 'author' | 'createdAt' | 'updatedAt' | 'readingMinutes' | 'published'> } =
-    $props();
+  }: {
+    /** The post, or only the fields that the line shows. */
+    post: Pick<PostSummary, 'author' | 'createdAt' | 'updatedAt' | 'readingMinutes' | 'published'>;
+  } = $props();
 
   // Edited at least a minute after it was written.
   const edited = $derived(post.updatedAt.getTime() - post.createdAt.getTime() > 60_000);

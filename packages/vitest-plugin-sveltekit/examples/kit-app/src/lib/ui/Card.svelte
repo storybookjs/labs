@@ -1,11 +1,33 @@
+<!--
+  @component
+  A surface that groups related content, with an optional header and footer. Set `as` to give it
+  the right element: `article` for one item of a list, such as a post, and `section` for a group
+  with a title.
+
+  Set `interactive` when the card holds the link to a page of its own: the card then lifts on
+  hover. The card itself is not a link, so put the link in its content.
+
+  @summary a surface that groups content, with an optional header and footer
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   interface Props {
+    /**
+     * The element: `article` for one item of a list, `section` for a group with a title, `div` for
+     * other content.
+     */
     as?: 'article' | 'div' | 'section';
+    /**
+     * Lifts the card on hover. Use it when the card holds the link to a page of its own, as
+     * `PostCard` does.
+     */
     interactive?: boolean;
+    /** The main content. */
     children: Snippet;
+    /** Content above the main content, such as a title or a badge. Rendered in a `<header>`. */
     header?: Snippet;
+    /** Content below the main content, such as tags or links. Rendered in a `<footer>`. */
     footer?: Snippet;
   }
 

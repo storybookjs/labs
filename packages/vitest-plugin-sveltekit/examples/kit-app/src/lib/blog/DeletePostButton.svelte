@@ -1,3 +1,11 @@
+<!--
+  @component
+  A Delete button that asks for confirmation in a `Dialog`, then deletes the post with the
+  `removePost` command. After the delete, it shows a toast and goes to the home page. When the
+  delete fails, an error toast gives the reason and the post stays.
+
+  @summary deletes a post after the reader confirms it in a dialog
+-->
 <script lang="ts">
   import { goto } from '$app/navigation';
   import Button from '#lib/ui/Button.svelte';
@@ -6,7 +14,15 @@
 
   import { removePost } from './blog.remote.ts';
 
-  let { id, title }: { id: number; title: string } = $props();
+  let {
+    id,
+    title,
+  }: {
+    /** The id of the post to delete. */
+    id: number;
+    /** The title of the post. The dialog and the toast show it. */
+    title: string;
+  } = $props();
 
   let open = $state(false);
   let deleting = $state(false);

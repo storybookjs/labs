@@ -1,8 +1,20 @@
+<!--
+  @component
+  A shimmering placeholder in the shape of content that is still loading: a line of text, a
+  paragraph, a heading or an avatar. Screen readers skip it, so tell them what loads in another
+  way, such as `aria-busy` and `aria-label` on the parent.
+
+  @summary a placeholder in the shape of content that is still loading
+-->
 <script lang="ts">
   interface Props {
+    /** Any CSS width. The default is the full width. */
     width?: string;
+    /** Any CSS height, for one bar. The default is the height of a line of text. */
     height?: string;
+    /** The number of bars, for a paragraph. The last bar is shorter. */
     lines?: number;
+    /** The corner radius. Use `var(--radius-full)` for a circle, such as an avatar. */
     radius?: string;
   }
 

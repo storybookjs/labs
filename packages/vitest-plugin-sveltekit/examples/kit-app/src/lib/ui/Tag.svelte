@@ -1,9 +1,19 @@
+<!--
+  @component
+  A topic label with a `#`, such as #svelte. With `href` it is a link, usually to the posts with
+  this tag. For a status, such as Draft, use `Badge`. For the tags of a post, use `TagList`.
+
+  @summary a #topic label that can link to the posts with this tag
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   interface Props {
+    /** Makes the tag a link. */
     href?: string;
+    /** Marks the tag that filters the list now. A link also gets `aria-current`. */
     active?: boolean;
+    /** The tag name, without the `#`. */
     children: Snippet;
   }
 

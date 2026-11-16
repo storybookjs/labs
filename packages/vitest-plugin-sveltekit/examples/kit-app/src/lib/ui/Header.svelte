@@ -1,11 +1,28 @@
+<!--
+  @component
+  The site header: the brand, which links to the home page, the main navigation and the actions,
+  with a `ThemeToggle` at the end. Put it in the `header` snippet of `Layout`. For a page of
+  this app, use `AppShell`, which already has the header, its links and the footer.
+
+  @summary the site header, with the brand, the main navigation and actions
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   import ThemeToggle from './ThemeToggle.svelte';
 
   interface Props {
+    /** The brand name next to the logo. */
     title?: string;
+    /**
+     * The links of the main navigation. Mark the link of the current page with
+     * `aria-current="page"`.
+     */
     nav?: Snippet;
+    /**
+     * Controls at the end of the header, such as a New post button. The theme toggle comes after
+     * them.
+     */
     actions?: Snippet;
   }
 

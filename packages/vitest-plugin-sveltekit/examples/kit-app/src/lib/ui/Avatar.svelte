@@ -1,7 +1,20 @@
+<!--
+  @component
+  A round picture of a person: their photo, or their initials on a colour that comes from their
+  name. The same name always gets the same colour, and the initials always have enough contrast.
+  Use it next to an author's name, as `PostMeta` does.
+
+  @summary a person's photo, or their initials on a colour that comes from their name
+-->
 <script lang="ts">
   interface Props {
+    /** The person's full name. It gives the initials, the colour and the accessible name. */
     name: string;
+    /**
+     * `sm` (1.75rem) next to a line of text, `md` (2.5rem) in a list, `lg` (3.5rem) for a profile.
+     */
     size?: 'sm' | 'md' | 'lg';
+    /** URL of a photo. Without it, the avatar shows the initials. */
     src?: string;
   }
 

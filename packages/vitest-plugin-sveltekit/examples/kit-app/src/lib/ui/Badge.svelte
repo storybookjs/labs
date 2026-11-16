@@ -1,8 +1,20 @@
+<!--
+  @component
+  A short label for a status, such as Draft, New or Published. It is not interactive. For a
+  topic that links to a filtered list, use `Tag`.
+
+  @summary a short, non-interactive status label, such as Draft or Published
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   interface Props {
+    /**
+     * The colour, by meaning: `neutral` for a plain state, `accent` for something new, `success`,
+     * `warning` and `danger` for a good, a risky and a bad state.
+     */
     tone?: 'neutral' | 'accent' | 'success' | 'warning' | 'danger';
+    /** The label: one or two words. */
     children: Snippet;
   }
 

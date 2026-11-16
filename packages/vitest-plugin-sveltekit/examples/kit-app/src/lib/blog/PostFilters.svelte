@@ -1,3 +1,11 @@
+<!--
+  @component
+  The controls above the list of posts: search, tag, status (published, drafts or all) and sort.
+  The search waits until the reader stops typing. Each change goes to `onfilter`, with `page:
+  1`. `PostFeed` already has one.
+
+  @summary search, tag, status and sort controls for the list of posts
+-->
 <script lang="ts">
   import Input from '#lib/ui/Input.svelte';
   import Select from '#lib/ui/Select.svelte';
@@ -9,7 +17,9 @@
     tags,
     onfilter,
   }: {
+    /** The current filters. The controls show them. */
     params: ListParams;
+    /** The tags to offer, with the number of posts of each. */
     tags: TagCount[];
     /** A filter changed; the list goes back to its first page. */
     onfilter: (next: Partial<ListParams>) => void;

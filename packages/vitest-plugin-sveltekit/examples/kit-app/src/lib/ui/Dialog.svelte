@@ -1,12 +1,29 @@
+<!--
+  @component
+  A modal dialog for a confirmation or a short task, such as "Delete this post?". It uses the
+  native `<dialog>` element. It keeps the focus inside, closes on Escape, on its close button
+  and on a click on the backdrop, and then gives the focus back to the element that opened it.
+
+  The parent owns `open`: use `bind:open`. Put the buttons in the `actions` snippet, with the
+  main action last.
+
+  @summary a modal dialog for a confirmation or a short task
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   interface Props {
+    /** Whether the dialog shows. Bindable: the dialog sets it to `false` when it closes. */
     open: boolean;
+    /** The heading. It is also the accessible name of the dialog. */
     title: string;
+    /** A sentence under the title. Screen readers read it with the title. */
     description?: string;
+    /** More content, such as a short form. */
     children?: Snippet;
+    /** The buttons at the bottom. Put the main action last. */
     actions?: Snippet;
+    /** Called after the dialog closes, however it closes. */
     onclose?: () => void;
   }
 

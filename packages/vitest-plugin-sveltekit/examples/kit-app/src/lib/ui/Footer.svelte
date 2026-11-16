@@ -1,7 +1,15 @@
+<!--
+  @component
+  The page footer. It shows the tagline of the site, or your own content. Put it in the `footer`
+  snippet of `Layout`.
+
+  @summary the page footer, with the site's tagline or your own content
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   interface Props {
+    /** Content in place of the tagline, such as links. */
     children?: Snippet;
   }
 

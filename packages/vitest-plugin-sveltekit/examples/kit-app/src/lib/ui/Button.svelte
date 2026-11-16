@@ -1,3 +1,15 @@
+<!--
+  @component
+  The button of the design system. It starts an action, such as Publish or Delete. With `href`
+  it is a link that looks like a button, for navigation such as New post.
+
+  Use one `primary` button per view, for its main action. Use `secondary` for the other actions,
+  `ghost` for actions of low importance such as Cancel, and `danger` for actions that delete
+  data. Set `loading` while the action runs. All other attributes, such as `onclick` or
+  `aria-pressed`, go to the `<button>` or `<a>` element.
+
+  @summary starts an action, or links to a page with the look of a button
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
@@ -5,12 +17,28 @@
   type SharedAttributes = Omit<HTMLButtonAttributes & HTMLAnchorAttributes, 'type' | 'children'>;
 
   interface Props extends SharedAttributes {
+    /**
+     * How strong the button looks. `primary`: the main action of the view, one per view.
+     * `secondary`: other actions. `ghost`: actions of low importance, such as Cancel. `danger`:
+     * actions that delete data.
+     */
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+    /** `sm` for small places, such as a header or a toolbar. */
     size?: 'sm' | 'md';
+    /** Makes the button a link (`<a>`). Use it for navigation, not for actions. */
     href?: string;
+    /**
+     * The type of the `<button>`. Use `submit` for the button that sends a form. A link ignores it.
+     */
     type?: 'button' | 'submit' | 'reset';
+    /** Stops the button. A link loses its `href` and gets `aria-disabled`. */
     disabled?: boolean;
+    /**
+     * Shows a spinner and stops the button while its action runs, for example while a form submits.
+     * The button keeps its colour and gets `aria-busy`.
+     */
     loading?: boolean;
+    /** The label: a verb, such as Publish or Save changes. */
     children: Snippet;
   }
 

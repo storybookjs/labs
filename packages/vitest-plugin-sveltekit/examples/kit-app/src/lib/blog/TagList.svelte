@@ -1,9 +1,24 @@
+<!--
+  @component
+  The tags of a post, as a row of `Tag` links to the posts with that tag. It marks the tag that
+  filters the list now. With no tags, it shows nothing.
+
+  @summary the tags of a post, as links to the posts with each tag
+-->
 <script lang="ts">
   import Tag from '#lib/ui/Tag.svelte';
 
   import { listHref } from './posts.ts';
 
-  let { tags, active }: { tags: string[]; active?: string } = $props();
+  let {
+    tags,
+    active,
+  }: {
+    /** The tag names, without `#`. */
+    tags: string[];
+    /** The tag that filters the list now. */
+    active?: string;
+  } = $props();
 </script>
 
 {#if tags.length > 0}

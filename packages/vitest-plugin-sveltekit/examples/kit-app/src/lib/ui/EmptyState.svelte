@@ -1,10 +1,22 @@
+<!--
+  @component
+  A message for a place that has no content: a list with no items yet, a search with no results,
+  or content that did not load. It has a title, and an optional description, icon and action.
+  Use it in place of the empty list, for example "No posts yet" with a New post button.
+
+  @summary a message, with an optional action, for a place that has no content
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   interface Props {
+    /** What is missing, in a few words, such as "No posts yet". Rendered as an `<h2>`. */
     title: string;
+    /** One sentence: why it is empty, or what to do. */
     description?: string;
+    /** A decorative icon above the title. Screen readers skip it. */
     icon?: Snippet;
+    /** A button or link that fixes the empty state, such as "Write a post". */
     action?: Snippet;
   }
 

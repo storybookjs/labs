@@ -1,3 +1,14 @@
+<!--
+  @component
+  The list of posts, with its filters, pagination and the banner for new posts. It loads the
+  posts itself with `listPosts(params)`. While they load, it shows skeletons. It also has empty
+  states, and an error with a Try again button.
+
+  The parent owns the filters: it gives `params` and changes them in `onfilter`, for example in
+  the URL, as `HomePage` does.
+
+  @summary the list of posts, with filters and pagination, that loads its own data
+-->
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import Card from '#lib/ui/Card.svelte';
@@ -12,7 +23,12 @@
   let {
     params,
     onfilter,
-  }: { params: ListParams; onfilter: (next: Partial<ListParams>) => void } = $props();
+  }: {
+    /** The search, tag, status, sort and page to show. */
+    params: ListParams;
+    /** Called when the reader changes a filter or the page, with the values that changed. */
+    onfilter: (next: Partial<ListParams>) => void;
+  } = $props();
 
   // The newest publication the reader sees, from the results once they are on screen. The banner
   // lives outside the boundary: inside, its live query joined the list's async update, and the old

@@ -1,3 +1,11 @@
+<!--
+  @component
+  Tells the reader how many posts were published after `since`, with a Show button. A live
+  query, `watchNewPosts`, keeps the number up to date. With no new posts, it shows nothing.
+  `PostFeed` already has one.
+
+  @summary a live "3 new posts" notice with a Show button
+-->
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
 
@@ -9,6 +17,7 @@
   }: {
     /** When the newest post the reader already sees was published (ms since 1970). */
     since: number;
+    /** Called when the reader clicks Show. */
     onshow: () => void;
   } = $props();
 

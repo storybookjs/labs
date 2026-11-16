@@ -1,3 +1,14 @@
+<!--
+  @component
+  The form that writes a new post or edits an existing one: title, body with a Write and a
+  Preview tab, tags, author and Published. Use it for the New post and Edit post pages.
+
+  Without `post`, it publishes a new post with the `publishPost` remote form. With `post`, it
+  saves the changes with `editPost`. It checks the fields in the browser before it sends them,
+  shows each issue under its field, and moves the focus to the first issue.
+
+  @summary the form that writes a new post or edits an existing one
+-->
 <script lang="ts">
   import { tick } from 'svelte';
   import * as v from 'valibot';
@@ -12,7 +23,12 @@
   import Markdown from './Markdown.svelte';
   import { type PostDetail, postFields } from './posts.ts';
 
-  let { post }: { post?: PostDetail } = $props();
+  let {
+    post,
+  }: {
+    /** The post to edit, as `readPost` gives it. Leave it out to write a new post. */
+    post?: PostDetail;
+  } = $props();
 
   // One form for new posts, one instance per post for edits.
   // svelte-ignore state_referenced_locally

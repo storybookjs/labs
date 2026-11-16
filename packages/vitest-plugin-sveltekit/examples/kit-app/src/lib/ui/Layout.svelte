@@ -1,12 +1,27 @@
+<!--
+  @component
+  The frame of a page: a skip link, the header, the main content, the footer, and the
+  `ToastRegion` that shows toasts. Use one per page. For a page of this app, use `AppShell`: it
+  is this layout with the Field Notes header and footer.
+
+  @summary the page frame: header, main content, footer and the toast region
+-->
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
   import ToastRegion from './ToastRegion.svelte';
 
   interface Props {
+    /** The page header, usually a `Header`. */
     header?: Snippet;
+    /** The page footer, usually a `Footer`. */
     footer?: Snippet;
+    /** The main content. Rendered in `<main id="main">`, where the skip link goes. */
     children: Snippet;
+    /**
+     * The width of the main content: `narrow` (42rem) for a post or a form, `wide` (72rem) for a
+     * list.
+     */
     width?: 'narrow' | 'wide';
   }
 

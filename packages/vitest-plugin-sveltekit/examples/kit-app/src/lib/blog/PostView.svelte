@@ -1,3 +1,12 @@
+<!--
+  @component
+  The full post for the post page: title, meta, the body as Markdown, tags, reading stats, and
+  the Edit and Delete actions. It loads the post itself with `readPost(id)`, and counts one view
+  per visit. While it loads, it shows skeletons. When the post does not exist or does not load,
+  it shows an `EmptyState` with a way back.
+
+  @summary the full post for the post page, which loads its own data
+-->
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -5,7 +14,12 @@
 
   import PostArticle from './PostArticle.svelte';
 
-  let { id }: { id: number } = $props();
+  let {
+    id,
+  }: {
+    /** The id of the post to show. */
+    id: number;
+  } = $props();
 </script>
 
 <svelte:boundary>

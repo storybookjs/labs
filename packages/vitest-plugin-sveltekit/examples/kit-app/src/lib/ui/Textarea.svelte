@@ -1,3 +1,11 @@
+<!--
+  @component
+  A text field for more than one line, with its label, hint and error messages, connected for
+  screen readers. Bind `value`, or spread the props of a SvelteKit remote form field. Set `mono`
+  for Markdown or code. For one line, use `Input`.
+
+  @summary a labelled multi-line text field, with a hint and error messages
+-->
 <script lang="ts">
   import type { HTMLTextareaAttributes } from 'svelte/elements';
 
@@ -5,9 +13,13 @@
   import { fieldIds, joinIds } from './field.ts';
 
   interface Props extends Omit<HTMLTextareaAttributes, 'children'> {
+    /** The visible label. It is also the accessible name. */
     label: string;
+    /** Help text under the label, such as the syntax to use. */
     hint?: string;
+    /** One or more error messages. With an error, the field gets `aria-invalid`. */
     error?: string | string[];
+    /** Uses the mono font, for Markdown or code. */
     mono?: boolean;
   }
 

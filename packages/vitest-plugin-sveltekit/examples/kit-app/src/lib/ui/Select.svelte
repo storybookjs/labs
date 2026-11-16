@@ -1,3 +1,11 @@
+<!--
+  @component
+  A drop-down list with its label, hint and error messages, connected for screen readers. It
+  uses the native `<select>`. Use it for one choice from a known list, such as a sort order.
+  Bind `value`, or spread the props of a SvelteKit remote form field.
+
+  @summary a labelled drop-down list for one choice from a known list
+-->
 <script lang="ts">
   import type { HTMLSelectAttributes } from 'svelte/elements';
 
@@ -5,10 +13,15 @@
   import { fieldIds, joinIds } from './field.ts';
 
   interface Props extends Omit<HTMLSelectAttributes, 'children' | 'value'> {
+    /** The visible label. It is also the accessible name. */
     label: string;
+    /** The choices, in order. `value` is what the form sends, `label` is what the reader sees. */
     options: Array<{ value: string; label: string }>;
+    /** The `value` of the chosen option. Bindable. */
     value?: string;
+    /** Help text under the label. */
     hint?: string;
+    /** One or more error messages. With an error, the list gets `aria-invalid`. */
     error?: string | string[];
   }
 
