@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
-import type { fn } from 'storybook/test';
+import type { Mock } from 'storybook/test';
 
 import type { RemoteKind } from '../node/analyze.ts';
 
 type Handler = (...args: any[]) => any;
-type Spy = ReturnType<typeof fn<Handler>>;
+type Spy = Mock<Handler>;
 
 /** Controls for a mocked `query.live` stream, returned by `mockStream()`. */
 export interface RemoteStream<T> {

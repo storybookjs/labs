@@ -8,14 +8,14 @@ import type {
   RemoteResource,
 } from '$app/server';
 import { error } from '@sveltejs/kit';
-import type { fn } from 'storybook/test';
+import type { Mock as StorybookMock } from 'storybook/test';
 
 import { getRemoteEntry, type RemoteStream } from './runtime/registry.ts';
 
 export type { RemoteStream };
 
 type MaybePromise<T> = T | Promise<T>;
-type Mock<T extends (...args: any[]) => any> = ReturnType<typeof fn<T>>;
+type Mock<T extends (...args: any[]) => any> = StorybookMock<T>;
 
 /** The argument a remote function is called with, `undefined` when it takes none. */
 type Arg<F> = F extends (arg: infer A) => any ? OrUndefined<Exclude<A, void>> : never;
