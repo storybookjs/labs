@@ -18,7 +18,7 @@ Field Notes, a SvelteKit blog. Its data comes from SvelteKit remote functions in
 
 These project rules come first where the Storybook skills give general advice:
 
-- **Story files** are Svelte CSF: `X.stories.svelte` next to `X.svelte`, with `const { Story } = preview.meta({ ... })` in `<script module>` and one `<Story>` element per story. Copy the shape of `src/lib/blog/AppShell.stories.svelte`. A story's description is the HTML comment above its `<Story>`.
+- **Story files** are Svelte CSF: `X.stories.svelte` next to `X.svelte`, with `const { Story } = preview.meta({ ... })` in `<script module>` and one `<Story>` element per story. Copy the shape of `src/lib/blog/AppShell.stories.svelte`. Give each story that shows a state or a use a one-line description, as an HTML comment directly above its `<Story>`: agents and Autodocs read it.
 - **Data in stories**: mock remote functions with `mockRemote` from `vitest-plugin-sveltekit/remote.mock`, in the story's `beforeEach`. It returns a `fn()` mock, plus `mockPending()` for the loading state: `mockRemote(readPost).mockResolvedValue(post)`, `mockRemote(publishPost).mockImplementation(async (data, issue) => invalid(issue.title('Taken')))`. Take data from `src/lib/blog/fixtures.ts`. The app makes no `fetch` calls of its own, so remote function mocks are the only data mocks it needs.
 - **SvelteKit modules** in stories are mocks already: set `page.url` (from `$app/state`) in `beforeEach`, and check navigation with `expect(goto).toHaveBeenCalledWith(...)` (`goto` from `$app/navigation`).
 - **Imports in app code** use the `#lib` alias: `import Button from '#lib/ui/Button.svelte'`. The usage examples in the docs show `./Button.svelte`; translate them.
