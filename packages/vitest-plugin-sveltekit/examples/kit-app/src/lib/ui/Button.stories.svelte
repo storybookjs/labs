@@ -14,6 +14,8 @@
       size: { control: 'inline-radio', options: ['sm', 'md'] },
     },
   });
+
+  const sizes: ('md' | 'sm')[] = ['md', 'sm'];
 </script>
 
 <!-- The main action of a view, such as Publish. Use one primary button per view. -->
@@ -103,7 +105,7 @@
 
 {#snippet variants()}
   <div class="grid">
-    {#each ['md', 'sm'] as const as size (size)}
+    {#each sizes as size (size)}
       <div class="row">
         <Button {size}>Publish</Button>
         <Button {size} variant="secondary">Save draft</Button>
