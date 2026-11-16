@@ -13,51 +13,121 @@ The tokens are CSS custom properties in `src/lib/ui/tokens.css`. The app and Sto
 
 Each colour has a light and a dark value (`light-dark()`), so a component needs no styles of its own for the dark theme. Every pair of text and background colours meets WCAG AA.
 
-- `--color-background`: the page behind everything.
-- `--color-surface`: cards and panels.
-- `--color-surface-raised`: above a surface, such as controls, dialogs and toasts.
-- `--color-surface-sunken`: below a surface, such as the footer, a neutral badge or a hovered control.
-- `--color-text`: body text.
-- `--color-text-muted`: secondary text, such as dates and hints.
-- `--color-border`: borders of cards and dividers.
-- `--color-border-strong`: borders of controls (3:1 against every surface).
-- `--color-accent`, `--color-accent-hover`: links, the primary button, the current item.
-- `--color-accent-contrast`: text on `--color-accent`.
-- `--color-accent-subtle`: a light accent background, such as an accent badge or a hovered ghost button.
-- `--color-success`, `--color-success-subtle`: a good state, such as Published (`-subtle`: a badge background).
-- `--color-warning`, `--color-warning-subtle`: a risky state, such as Draft.
-- `--color-danger`, `--color-danger-hover`, `--color-danger-subtle`: errors, and actions that delete data.
-- `--color-danger-contrast`: text on `--color-danger`.
-- `--color-focus`: the focus outline.
-- `--color-backdrop`: behind a modal dialog.
-- `--color-skeleton`, `--color-skeleton-shine`: loading placeholders.
+| Token                                                             | Use                                                                           |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `--color-background`                                              | The page behind everything.                                                   |
+| `--color-surface`                                                 | Cards and panels.                                                             |
+| `--color-surface-raised`                                          | Above a surface, such as controls, dialogs and toasts.                        |
+| `--color-surface-sunken`                                          | Below a surface, such as the footer, a neutral badge or a hovered control.    |
+| `--color-text`                                                    | Body text.                                                                    |
+| `--color-text-muted`                                              | Secondary text, such as dates and hints.                                      |
+| `--color-border`                                                  | Borders of cards and dividers.                                                |
+| `--color-border-strong`                                           | Borders of controls (3:1 against every surface).                              |
+| `--color-accent`, `--color-accent-hover`                          | Links, the primary button, the current item.                                  |
+| `--color-accent-contrast`                                         | Text on `--color-accent`.                                                     |
+| `--color-accent-subtle`                                           | A light accent background, such as an accent badge or a hovered ghost button. |
+| `--color-success`, `--color-success-subtle`                       | A good state, such as Published (`-subtle`: a badge background).              |
+| `--color-warning`, `--color-warning-subtle`                       | A risky state, such as Draft.                                                 |
+| `--color-danger`, `--color-danger-hover`, `--color-danger-subtle` | Errors, and actions that delete data.                                         |
+| `--color-danger-contrast`                                         | Text on `--color-danger`.                                                     |
+| `--color-focus`                                                   | The focus outline.                                                            |
+| `--color-backdrop`                                                | Behind a modal dialog.                                                        |
+| `--color-skeleton`, `--color-skeleton-shine`                      | Loading placeholders.                                                         |
 
 ## Type
 
-- `--font-sans`: the interface, such as page and card titles, labels, buttons, forms and dialogs.
-- `--font-serif`: the brand, and the words of a post (its title on the post page, and its body).
-- `--font-mono`: code and Markdown source.
+| Font           | Use                                                                              |
+| -------------- | -------------------------------------------------------------------------------- |
+| `--font-sans`  | The interface, such as page and card titles, labels, buttons, forms and dialogs. |
+| `--font-serif` | The brand, and the words of a post (its title on the post page, and its body).   |
+| `--font-mono`  | Code and Markdown source.                                                        |
 
-Sizes: `--text-xs` (0.75rem), `--text-sm` (0.875rem), `--text-md` (1rem, body text), `--text-lg` (1.125rem), `--text-xl` (1.375rem), `--text-2xl` (1.75rem), `--text-3xl` (2.25rem), `--text-4xl` (2.875rem).
+Body text is `--text-md`.
 
-Line heights: `--leading-tight` (1.2, headings and buttons), `--leading-normal` (1.5, the interface), `--leading-relaxed` (1.7, the body of a post and Markdown source).
+| Size         | Value    |
+| ------------ | -------- |
+| `--text-xs`  | 0.75rem  |
+| `--text-sm`  | 0.875rem |
+| `--text-md`  | 1rem     |
+| `--text-lg`  | 1.125rem |
+| `--text-xl`  | 1.375rem |
+| `--text-2xl` | 1.75rem  |
+| `--text-3xl` | 2.25rem  |
+| `--text-4xl` | 2.875rem |
 
-Weights: `--weight-normal` (400), `--weight-medium` (500), `--weight-semibold` (600), `--weight-bold` (700).
+| Line height         | Value | Use                                      |
+| ------------------- | ----- | ---------------------------------------- |
+| `--leading-tight`   | 1.2   | Headings and buttons.                    |
+| `--leading-normal`  | 1.5   | The interface.                           |
+| `--leading-relaxed` | 1.7   | The body of a post, and Markdown source. |
+
+| Weight              | Value |
+| ------------------- | ----- |
+| `--weight-normal`   | 400   |
+| `--weight-medium`   | 500   |
+| `--weight-semibold` | 600   |
+| `--weight-bold`     | 700   |
 
 ## Space
 
-`--space-0` (0), `--space-1` (0.25rem), `--space-2` (0.5rem), `--space-3` (0.75rem), `--space-4` (1rem), `--space-5` (1.5rem), `--space-6` (2rem), `--space-7` (3rem), `--space-8` (4rem). Use them for padding, margins and gaps.
+Use them for padding, margins and gaps.
 
-## Radius, shadow and motion
+| Token       | Value   |
+| ----------- | ------- |
+| `--space-0` | 0       |
+| `--space-1` | 0.25rem |
+| `--space-2` | 0.5rem  |
+| `--space-3` | 0.75rem |
+| `--space-4` | 1rem    |
+| `--space-5` | 1.5rem  |
+| `--space-6` | 2rem    |
+| `--space-7` | 3rem    |
+| `--space-8` | 4rem    |
 
-- Radius: `--radius-sm` (0.25rem), `--radius-md` (0.5rem, controls), `--radius-lg` (0.875rem, cards, dialogs and empty states), `--radius-full` (circles and pills).
-- Shadow: `--shadow-sm` (a card), `--shadow-md` (a card on hover), `--shadow-lg` (a dialog or a toast).
-- Motion: `--duration-fast` (120ms), `--duration-normal` (200ms), `--duration-slow` (320ms), with `--easing-standard`. The page turns motion off for readers who ask for less motion.
+## Radius
+
+| Token           | Value    | Use                                                          |
+| --------------- | -------- | ------------------------------------------------------------ |
+| `--radius-sm`   | 0.25rem  | Small parts, such as a badge, inline code or a skeleton bar. |
+| `--radius-md`   | 0.5rem   | Controls.                                                    |
+| `--radius-lg`   | 0.875rem | Cards, dialogs and empty states.                             |
+| `--radius-full` | 999px    | Circles and pills.                                           |
+
+## Shadow
+
+| Token         | Use                  |
+| ------------- | -------------------- |
+| `--shadow-sm` | A card.              |
+| `--shadow-md` | A card on hover.     |
+| `--shadow-lg` | A dialog or a toast. |
+
+## Motion
+
+Use `--easing-standard` with every duration. The page turns motion off for readers who ask for less motion.
+
+| Token               | Value                        |
+| ------------------- | ---------------------------- |
+| `--duration-fast`   | 120ms                        |
+| `--duration-normal` | 200ms                        |
+| `--duration-slow`   | 320ms                        |
+| `--easing-standard` | `cubic-bezier(0.2, 0, 0, 1)` |
 
 ## Width and breakpoints
 
-- `--width-narrow` (42rem): a post or a form. `--width-wide` (72rem): a list. `Layout` sets them with its `width` prop.
-- Breakpoints, for `@media (max-width: …)`: 30rem (phones), 40rem (small tablets), 48rem (tablets). Media queries cannot read custom properties, so write these values. `tokens.test.ts` checks that components use no others.
+`Layout` sets the width with its `width` prop.
+
+| Width            | Value | Use               |
+| ---------------- | ----- | ----------------- |
+| `--width-narrow` | 42rem | A post or a form. |
+| `--width-wide`   | 72rem | A list.           |
+
+Media queries cannot read custom properties, so write these values in `@media (max-width: …)`. `tokens.test.ts` checks that components use no others.
+
+| Breakpoint | For            |
+| ---------- | -------------- |
+| 30rem      | Phones.        |
+| 40rem      | Small tablets. |
+| 48rem      | Tablets.       |
 
 ## Theme
 
