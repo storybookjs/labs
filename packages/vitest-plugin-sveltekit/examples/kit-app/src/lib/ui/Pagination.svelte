@@ -125,9 +125,9 @@ it renders nothing.
     font-weight: var(--weight-semibold);
   }
 
+  /* Muted, with no border or hover: the colour alone keeps AA contrast, so no opacity. */
   .disabled {
     color: var(--color-text-muted);
-    opacity: 0.6;
     cursor: not-allowed;
   }
 

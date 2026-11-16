@@ -1,3 +1,4 @@
+import addonA11y from '@storybook/addon-a11y';
 import addonDocs from '@storybook/addon-docs';
 import { definePreview } from '@storybook/sveltekit';
 import remoteFunctions from 'vitest-plugin-sveltekit/storybook';
@@ -10,7 +11,9 @@ import '../src/lib/ui/demo.css';
 sb.mock(import('../src/lib/server/db.ts'));
 
 export default definePreview({
-  addons: [addonDocs(), remoteFunctions()],
+  addons: [addonA11y(), addonDocs(), remoteFunctions()],
+  // Story tests fail on accessibility violations, in both themes.
+  parameters: { a11y: { test: 'error' } },
   globalTypes: {
     theme: {
       description: 'Colour theme of the Field Notes UI',

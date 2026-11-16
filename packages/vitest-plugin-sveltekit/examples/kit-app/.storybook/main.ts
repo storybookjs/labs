@@ -12,6 +12,7 @@ export default defineMain({
       options: { mdxPluginOptions: { mdxCompileOptions: { remarkPlugins: [remarkGfm] } } },
     },
     '@storybook/addon-vitest',
+    '@storybook/addon-a11y',
   ],
   core: { disableTelemetry: true },
   // Server mode: remote functions without a `mockRemote(fn)` mock run the real handlers.
