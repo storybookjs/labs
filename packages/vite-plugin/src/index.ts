@@ -48,13 +48,14 @@ import {
 import { createPrefixGuard } from './prefix-guard.ts';
 import type { VitePluginPresetOptions } from './preset.ts';
 import { startPreview } from './preview-lifecycle.ts';
-import { isPluginDisabled, withPluginDisabled } from './self-guard.ts';
+import { isInVitePluginScope, runInVitePluginScope } from './plugin-scope.ts';
 import { normalizeBase } from './base-path.ts';
 import { getSocketPaths } from './socket-paths.ts';
 import { markPluginTelemetry } from './telemetry.ts';
 import type { UserOptions } from './types.ts';
 
 export type { UserOptions as experimental_VitePluginUserOptions } from './types.ts';
+export { isInVitePluginScope } from './plugin-scope.ts';
 
 type StorybookApp = {
   options: Options;
@@ -82,7 +83,7 @@ const GLOBAL_WITH_CHANNEL = globalThis as typeof globalThis & {
 
 export function experimental_vitePlugin(options?: UserOptions): PluginOption {
   // Avoid nested activation and activation through the Storybook CLI.
-  if (isPluginDisabled() || optionalEnvToBoolean(process.env.STORYBOOK_CLI)) {
+  if (isInVitePluginScope() || optionalEnvToBoolean(process.env.STORYBOOK_CLI)) {
     return [];
   }
   return main(options);
@@ -113,7 +114,7 @@ function main(options?: UserOptions): PluginOption {
     server: HttpServer,
     vitePlugin: VitePluginPresetOptions['vitePlugin']
   ): Promise<StorybookApp> =>
-    (storybookPromise ??= withPluginDisabled(async () => {
+    (storybookPromise ??= runInVitePluginScope(async () => {
       const sb = await experimental_loadStorybook({
         configDir: finalOptions.configDir,
         channel,
@@ -181,7 +182,7 @@ function main(options?: UserOptions): PluginOption {
       return {
         builder: {
           buildApp: async (builder: ViteBuilder): Promise<void> => {
-            await withPluginDisabled(() =>
+            await runInVitePluginScope(() =>
               withTelemetry('build', telemetryOptions, () =>
                 buildStaticStandalone({
                   configDir: finalOptions.configDir,
@@ -259,7 +260,7 @@ function main(options?: UserOptions): PluginOption {
         }
 
         previewApp = polka();
-        const closePreview = await withPluginDisabled(() =>
+        const closePreview = await runInVitePluginScope(() =>
           startPreview(storybook.previewBuilder, {
             startTime: process.hrtime(),
             options: storybook.options,
