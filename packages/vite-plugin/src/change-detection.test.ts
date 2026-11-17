@@ -8,7 +8,7 @@ import { createServer, type ViteDevServer } from 'vite';
 import { experimental_getChangeDetectionReadiness } from 'storybook/internal/core-server';
 
 // The example's own `vite.config.ts` imports the built plugin, so the nested preview server must
-// see the same module copy as this test for the self-guard to disable it. `prepare` builds `dist`.
+// see the same module copy as this test for the plugin scope to disable it. `prepare` builds `dist`.
 const { experimental_vitePlugin } = await import('../dist/index.mjs').catch((error: unknown) => {
   throw new Error('Build the plugin first (`vp pack`) so dist/index.mjs exists.', { cause: error });
 });
