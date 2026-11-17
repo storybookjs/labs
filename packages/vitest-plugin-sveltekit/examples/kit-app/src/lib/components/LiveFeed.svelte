@@ -6,13 +6,13 @@
 
   const feed = getFeed();
 
-  // When the last value arrived, so each change is easy to see.
-  let updatedAt = $state<string>();
-  $effect(() => {
-    if (feed.current !== undefined || feed.error !== undefined) {
-      updatedAt = new Date().toISOString().slice(11, 23);
-    }
-  });
+  // When the last value arrived, so each change is easy to see. It runs again whenever the feed
+  // sends a value or an error.
+  const updatedAt = $derived(
+    feed.current !== undefined || feed.error !== undefined
+      ? new Date().toISOString().slice(11, 23)
+      : undefined
+  );
 </script>
 
 <section class="feed" aria-label="Live feed">

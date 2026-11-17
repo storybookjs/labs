@@ -30,7 +30,7 @@ way, such as `aria-busy` and `aria-label` on the parent.
   style:--skeleton-radius={radius}
 >
   {#each { length: Math.max(1, lines) } as _, index (index)}
-    <span class="bar" class:last={lines > 1 && index === lines - 1}></span>
+    <span class={['bar', { last: lines > 1 && index === lines - 1 }]}></span>
   {/each}
 </div>
 

@@ -58,6 +58,9 @@ shows each issue under its field, and moves the focus to the first issue.
 
   let element: HTMLFormElement;
 
+  let preview = $state(false);
+  const fields = $derived(form.fields as typeof publishPost.fields);
+
   // After a submit that found issues, in the browser or on the server, the first field with an
   // issue gets the focus: it scrolls into view and a screen reader reads its message. `pending` goes
   // back to 0 once the preflight or the server has answered, even when the issues are the same as
@@ -66,21 +69,15 @@ shows each issue under its field, and moves the focus to the first issue.
   $effect(() => {
     if (form.pending > 0 || !submitting) return;
     submitting = false;
-    if (fields.allIssues()?.length) void focusFirstIssue();
+    if (fields.allIssues()?.length) void showFirstIssue();
   });
 
-  async function focusFirstIssue() {
+  async function showFirstIssue() {
+    // The body's issues are in the Write view.
+    if (fields.body.issues()?.length) preview = false;
     await tick();
     element.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }
-
-  let preview = $state(false);
-  const fields = $derived(form.fields as typeof publishPost.fields);
-
-  // The body's issues are in the Write view: show it when the server reports one.
-  $effect(() => {
-    if (fields.body.issues()?.length) preview = false;
-  });
   const messages = (issues: Array<{ message: string }> | undefined) =>
     issues?.map((issue) => issue.message);
 </script>

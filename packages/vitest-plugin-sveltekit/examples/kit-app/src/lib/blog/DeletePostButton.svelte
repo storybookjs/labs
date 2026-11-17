@@ -50,7 +50,6 @@ delete fails, an error toast gives the reason and the post stays.
 <Dialog bind:open title="Delete this post?" description="“{title}” will be gone for everyone. This cannot be undone.">
   {#snippet actions()}
     <!-- The dialog starts on the safe action. -->
-    <!-- svelte-ignore a11y_autofocus -->
     <Button variant="ghost" autofocus onclick={() => (open = false)}>Cancel</Button>
     <Button variant="danger" loading={deleting} onclick={confirm}>Delete post</Button>
   {/snippet}

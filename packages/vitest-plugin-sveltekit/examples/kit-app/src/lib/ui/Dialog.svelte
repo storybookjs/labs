@@ -31,11 +31,11 @@ main action last.
   let { open = $bindable(), title, description, children, actions, onclose }: Props = $props();
 
   const uid = $props.id();
-  let dialog: HTMLDialogElement;
   let opener: HTMLElement | null = null;
   let pressedBackdrop = false;
 
-  $effect(() => {
+  // Opens and closes the native dialog when `open` changes.
+  function syncOpen(dialog: HTMLDialogElement) {
     if (open && !dialog.open) {
       opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       dialog.showModal();
@@ -45,7 +45,7 @@ main action last.
     } else if (!open && dialog.open) {
       dialog.close();
     }
-  });
+  }
 
   // Closes through `open`, at once: the native `close` event comes a task later, and a click on the
   // opener in between would otherwise find `open` still true and not open the dialog again.
@@ -54,9 +54,9 @@ main action last.
   }
 
   // Fires however the dialog closes: Escape, the close button, the backdrop or `open = false`.
-  function handleClose() {
+  function handleClose(event: Event & { currentTarget: HTMLDialogElement }) {
     // A late event from an earlier close, after the dialog has opened again.
-    if (dialog.open) return;
+    if (event.currentTarget.open) return;
     open = false;
     onclose?.();
     if (opener?.isConnected) opener.focus();
@@ -65,7 +65,7 @@ main action last.
 
   // Handled here as well as natively: a browser only runs its own Escape handling for real key
   // presses, not for synthetic ones such as a test's `userEvent.keyboard`.
-  function handleKeydown(event: KeyboardEvent) {
+  function handleKeydown(event: KeyboardEvent & { currentTarget: HTMLDialogElement }) {
     if (event.key === 'Escape') {
       event.preventDefault();
       close();
@@ -75,7 +75,8 @@ main action last.
   }
 
   // Tab and Shift+Tab go round the controls of the dialog, without a stop on the dialog itself.
-  function keepFocusInside(event: KeyboardEvent) {
+  function keepFocusInside(event: KeyboardEvent & { currentTarget: HTMLDialogElement }) {
+    const dialog = event.currentTarget;
     const controls = Array.from(
       dialog.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -97,18 +98,17 @@ main action last.
   // The dialog element itself is only the target outside the panel, on the backdrop. Both ends of
   // the click must be there, so a text selection that ends outside does not close it.
   function handlePointerDown(event: PointerEvent) {
-    pressedBackdrop = event.target === dialog;
+    pressedBackdrop = event.target === event.currentTarget;
   }
 
   function handleClick(event: MouseEvent) {
-    if (pressedBackdrop && event.target === dialog) close();
+    if (pressedBackdrop && event.target === event.currentTarget) close();
     pressedBackdrop = false;
   }
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <dialog
-  bind:this={dialog}
+  {@attach syncOpen}
   class="dialog"
   tabindex="-1"
   aria-labelledby="{uid}-title"
