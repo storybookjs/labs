@@ -33,6 +33,22 @@
       "computedHash": "3c298ea76deed14e010d2ba4b03d2ad7c8a1fad567629ef565c997ff37737a91",
       "installMode": "copy"
     },
+    "svelte-code-writer": {
+      "source": "sveltejs/ai-tools",
+      "commit": "d3e755be770277d8c75fe61109b103b801b12775",
+      "sourceType": "github",
+      "skillPath": "tools/skills/svelte-code-writer/SKILL.md",
+      "computedHash": "8eccb2e23091d482aeaca1c95db6c5aa34d055ac2d0c9797efbbecbe5a8e4fd0",
+      "installMode": "copy"
+    },
+    "svelte-core-bestpractices": {
+      "source": "sveltejs/ai-tools",
+      "commit": "d3e755be770277d8c75fe61109b103b801b12775",
+      "sourceType": "github",
+      "skillPath": "tools/skills/svelte-core-bestpractices/SKILL.md",
+      "computedHash": "32070b91f54f92dba3f6e1739d82bf944c14e7a4a75cfe609a59bf1117c34338",
+      "installMode": "copy"
+    },
     "test-stories": {
       "source": "storybookjs/skills",
       "ref": "v11.0.0-beta.3",

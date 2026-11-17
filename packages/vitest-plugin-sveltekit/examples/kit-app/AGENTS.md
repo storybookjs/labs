@@ -12,6 +12,15 @@ For every change to how the UI looks (you create, change, or delete a component,
 
 <!-- END:storybook-skills -->
 
+## Svelte
+
+The Svelte MCP server (`svelte`, in `.mcp.json`) gives you the Svelte and SvelteKit docs, and the `svelte-autofixer`, a static check for Svelte code. Without the server, the `svelte-code-writer` skill runs the same tools from the command line.
+
+- **Before you write Svelte code**, load the `svelte-core-bestpractices` skill. If you are not sure of an API, call `list-sections`, then `get-documentation` for every section whose `use_cases` fit the task.
+- **After you write or change a `.svelte`, `.svelte.ts` or `.svelte.js` file**, run `svelte-autofixer` on it, with `async: true` and Svelte version `5.57.3`: this app uses async Svelte. Fix what it reports and run it again, until it reports no issues and no suggestions.
+- **To edit several Svelte files**, give each one to the `svelte-file-editor` subagent, if your client has it. It keeps the docs and the autofixer loop out of your context.
+- Don't make a playground link for code that is in this project.
+
 ## This project
 
 Field Notes, a SvelteKit blog. Its data comes from SvelteKit remote functions in `src/lib/blog/blog.remote.ts`. Components live in `src/lib/ui` (the design system) and `src/lib/blog` (blog blocks); pages live in `src/lib/pages`, and each route in `src/routes` renders one page.
