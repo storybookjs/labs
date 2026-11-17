@@ -2,6 +2,8 @@ import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import type { InlineConfig, ServerOptions } from 'vite';
 
+import { devtoolsBasePlugin } from './devtools.ts';
+
 /** Namespaced to avoid colliding with Storybook's own options. */
 export type VitePluginPresetOptions = {
   /** Host Vite settings forwarded to the preview. */
@@ -23,6 +25,7 @@ export const viteFinal = (
 ): InlineConfig => ({
   ...config,
   base: vitePlugin.base,
+  plugins: [...(config.plugins ?? []), devtoolsBasePlugin(vitePlugin.base)],
   server: {
     ...config.server,
     allowedHosts: vitePlugin.allowedHosts ?? config.server?.allowedHosts,
