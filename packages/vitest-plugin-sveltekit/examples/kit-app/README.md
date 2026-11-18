@@ -53,6 +53,7 @@ that changes this package, the Kit patch or the lockfile gets a deploy preview
 | Writes         | Only the `demo` user, with the `DEMO_PASSWORD` secret, on `/sign-in`                                                                   |
 | Nightly reset  | `netlify/functions/reset-database.mts` restores the seed at 03:00 UTC, production only                                                 |
 | Search engines | `static/robots.txt` and a `noindex` meta tag in `src/app.html`                                                                         |
+| Short links    | `/storybook` redirects to the Storybook on Chromatic and `/repo` to this package on GitHub (`src/lib/short-links.ts`)                  |
 
 Without `DEMO_PASSWORD` (local dev, stories and tests), anyone can write, and the `session`
 cookie is the plain name. With it, `src/lib/server/public-demo.ts` signs the cookie and the
