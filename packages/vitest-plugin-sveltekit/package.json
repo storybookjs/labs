@@ -1,6 +1,6 @@
 {
   "name": "vitest-plugin-sveltekit",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Storybook and Vitest support for SvelteKit remote functions",
   "license": "MIT",
   "repository": {
